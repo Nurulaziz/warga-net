@@ -1,0 +1,1068 @@
+# Rencana Implementasi: Sistem WargaNet
+
+## Ringkasan
+
+Dokumen ini berisi rencana implementasi lengkap untuk sistem WargaNet - sistem manajemen RT berbasis web dengan autentikasi OTP WhatsApp, RBAC dinamis, dan desain mobile-first. Sistem dibangun sebagai monorepo dengan backend NestJS dan frontend React.
+
+**Teknologi:**
+
+- Backend: NestJS, TypeScript, Prisma, PostgreSQL, Redis, JWT
+- Frontend: React, TypeScript, Vite, Tailwind CSS
+- Infrastructure: Docker, Docker Compose, Nginx
+
+**Prinsip Implementasi:**
+
+- Incremental development dengan validasi di setiap tahap
+- Security-first approach
+- Testing terintegrasi (unit tests + property-based tests)
+- Mobile-first responsive design
+
+## Daftar Tugas
+
+- [x] 1. Setup monorepo dan infrastruktur dasar
+  - Inisialisasi pnpm workspace dengan struktur monorepo
+  - Setup apps/backend dengan NestJS
+  - Setup apps/frontend dengan React + Vite
+  - Setup packages/shared-types untuk tipe data bersama
+  - Konfigurasi TypeScript untuk semua workspace
+  - Setup ESLint dan Prettier untuk code quality
+  - Buat .env.example dengan semua variabel lingkungan yang diperlukan
+  - Buat README.md dengan instruksi setup
+  - _Requirements: 17.1, 17.2, 17.3, 17.8_
+
+- [x] 2. Setup database dan Prisma ORM
+  - [x] 2.1 Konfigurasi PostgreSQL dan Redis di docker-compose.yml
+    - Setup PostgreSQL container dengan environment variables
+    - Setup Redis container untuk caching dan session management
+    - Konfigurasi volume untuk data persistence
+    - Konfigurasi network untuk komunikasi antar container
+    - _Requirements: 15.1, 17.3, 17.10_
+  - [x] 2.2 Implementasi Prisma schema lengkap
+    - Definisikan model User dengan soft delete dan indexes
+    - Definisikan model Role dan Permission dengan relasi many-to-many
+    - Definisikan model RolePermission sebagai junction table
+    - Definisikan model Family dan Resident dengan cascade delete
+    - Definisikan model LoginLog, PhoneChangeLog, AuditLog
+    - Implementasi soft delete dengan deletedAt pada semua model yang relevan
+    - Setup indexes untuk performa query (phoneNumber, idNumber, roleId, familyId)
+    - Gunakan UUID untuk semua primary keys
+    - Implementasi timestamps (createdAt, updatedAt) pada semua model
+    - _Requirements: 15.1, 15.2, 15.3, 15.4, 15.5, 15.6, 15.7, 15.11_
+  - [x] 2.3 Buat migration dan seed script
+    - Generate initial migration dari schema
+    - Buat seed script untuk 5 roles default (SUPER_ADMIN, ADMIN_RT, ADMIN_SEKRETARIS, ADMIN_BENDAHARA, WARGA)
+    - Buat seed script untuk permissions default (features: users, roles, families, residents, audit_logs; actions: create, read, update, delete)
+    - Buat seed script untuk role-permission assignments sesuai matriks izin
+    - Buat seed script untuk test users dengan berbagai roles
+    - Buat seed script untuk test families dan residents
+    - _Requirements: 4.1, 4.2, 4.3, 15.9_
+  - [x] 2.4 Write property test untuk database constraints
+    - **Property 17: Uniqueness Constraint untuk Nomor Telepon dan KTP**
+    - **Validates: Requirements 6.9, 7.5, 8.4, 15.3**
+
+- [x] 3. Setup Redis dan caching layer
+  - Implementasi RedisModule di NestJS dengan ConfigModule integration
+  - Buat RedisService dengan methods: set, get, del, setex, exists
+  - Setup connection pooling untuk Redis
+  - Implementasi error handling untuk Redis connection failures
+  - Buat health check untuk Redis connectivity
+  - _Requirements: 5.5, 11.3, 17.10_
+
+- [x] 4. Implementasi OTP Service dan WhatsApp integration
+  - [x] 4.1 Buat OtpService dengan core functionality
+    - Implementasi generateOtp() untuk 6-digit numeric OTP
+    - Implementasi hashOtp() menggunakan bcrypt dengan salt rounds 10
+    - Implementasi verifyOtp() untuk validasi hash
+    - Implementasi storeOtp() di Redis dengan TTL 5 menit dan attempt counter
+    - Implementasi getOtp() dan getOtpAttempts() dari Redis
+    - Implementasi invalidateOtp() untuk mark OTP as used
+    - Implementasi incrementOtpAttempts() untuk tracking failed verifications
+    - _Requirements: 1.4, 1.5, 1.6, 1.8, 1.9, 2.5, 18.1_
+  - [ ]\* 4.2 Write property test untuk OTP generation dan hashing
+    - **Property 3: OTP Generation dan Hashing**
+    - **Validates: Requirements 1.4, 1.5, 18.1**
+  - [ ]\* 4.3 Write property test untuk OTP TTL
+    - **Property 4: OTP Time-To-Live**
+    - **Validates: Requirements 1.6**
+  - [ ]\* 4.4 Write property test untuk OTP single-use
+    - **Property 5: OTP Single-Use (Idempotence)**
+    - **Validates: Requirements 1.9**
+  - [x] 4.5 Implementasi WhatsAppService
+    - Setup WhatsApp Business API client atau Gateway integration (pilih provider)
+    - Implementasi sendOtp() dengan template message standar
+    - Implementasi retry logic dengan exponential backoff (max 3 retries)
+    - Implementasi sendNotification() untuk notifikasi umum
+    - Implementasi checkHealth() untuk health check
+    - Implementasi error handling untuk gateway unavailable
+    - _Requirements: 1.7, 3.1, 3.2, 3.3, 3.4, 3.5, 11.4_
+  - [ ]\* 4.6 Write property test untuk retry logic
+    - **Property 11: Retry Logic dengan Exponential Backoff**
+    - **Validates: Requirements 3.1**
+  - [ ]\* 4.7 Write unit tests untuk WhatsAppService
+    - Test sendOtp dengan mock WhatsApp Gateway
+    - Test retry logic dengan simulated failures
+    - Test error handling untuk gateway unavailable
+    - Test message template formatting
+    - _Requirements: 3.1, 3.4, 3.5_
+
+- [x] 5. Implementasi JWT Service dan token management
+  - [x] 5.1 Buat JwtService dengan token operations
+    - Generate RSA key pair untuk RS256 signing (private/public keys)
+    - Implementasi generateAccessToken() dengan expiry 15 menit
+    - Implementasi generateRefreshToken() dengan expiry 30 hari
+    - Implementasi verifyToken() untuk validasi dan decode
+    - Implementasi storeRefreshToken() di Redis dengan user ID mapping
+    - Implementasi invalidateRefreshToken() untuk single token
+    - Implementasi invalidateAllRefreshTokens() untuk logout all devices
+    - Setup secure key storage (tidak di repository)
+    - _Requirements: 1.12, 5.1, 5.2, 5.5, 5.6, 5.7, 18.2, 18.3_
+  - [ ]\* 5.2 Write property test untuk token expiration
+    - **Property 13: Access Token Expiration**
+    - **Property 14: Refresh Token Expiration**
+    - **Validates: Requirements 5.1, 5.2**
+  - [ ]\* 5.3 Write property test untuk token rotation
+    - **Property 15: Refresh Token Rotation**
+    - **Validates: Requirements 5.4**
+  - [ ]\* 5.4 Write property test untuk token generation
+    - **Property 6: JWT Token Generation Completeness**
+    - **Validates: Requirements 1.12**
+  - [ ]\* 5.5 Write unit tests untuk JWT operations
+    - Test token generation dengan valid payload
+    - Test token verification dengan expired token
+    - Test token verification dengan invalid signature
+    - Test token verification dengan tampered payload
+    - _Requirements: 5.1, 5.2, 18.2_
+
+- [x] 6. Implementasi Rate Limiting
+  - [x] 6.1 Buat RateLimitService
+    - Implementasi checkOtpRateLimitByPhone() - 3 requests per 15 minutes
+    - Implementasi checkOtpRateLimitByIp() - 10 requests per 15 minutes
+    - Implementasi checkOtpVerificationLimit() - 5 attempts per OTP
+    - Implementasi incrementRateLimit() untuk tracking requests
+    - Implementasi blockIp() untuk temporary IP blocking (1 hour)
+    - Implementasi isIpBlocked() untuk checking blocked IPs
+    - Implementasi exponential backoff calculation untuk repeated failures
+    - Semua data disimpan di Redis dengan TTL otomatis
+    - _Requirements: 2.1, 2.2, 2.3, 2.5, 2.7, 2.8_
+  - [ ]\* 6.2 Write property test untuk rate limiting
+    - **Property 8: Rate Limiting OTP per Nomor Telepon**
+    - **Property 9: Rate Limiting OTP per IP Address**
+    - **Property 10: Rate Limiting Verifikasi OTP**
+    - **Validates: Requirements 2.1, 2.2, 2.5**
+  - [x] 6.3 Buat RateLimitGuard untuk NestJS
+    - Implementasi CanActivate interface
+    - Extract phone number dan IP address dari request
+    - Check rate limits sebelum request processing
+    - Return 429 Too Many Requests jika limit exceeded
+    - Log rate limit violations ke audit log
+    - _Requirements: 2.1, 2.2, 2.3, 2.4_
+
+- [x] 7. Checkpoint - Ensure core services are working
+  - Test OTP generation dan hashing manually
+  - Test Redis connectivity dan data storage
+  - Test rate limiting logic
+  - Ensure all tests pass, ask the user if questions arise.
+
+- [ ] 8. Implementasi Auth Module dan authentication flow
+  - [ ] 8.1 Buat AuthService dengan authentication logic
+    - Implementasi requestOtp() - validate phone format (E.164), check registration, generate & send OTP
+    - Implementasi verifyOtp() - validate OTP, check attempts, activate account on first login, generate tokens
+    - Implementasi refreshToken() - validate refresh token, rotate tokens (invalidate old, generate new)
+    - Implementasi logout() - invalidate access & refresh tokens untuk current device
+    - Implementasi logoutAllDevices() - invalidate all refresh tokens for user
+    - Integrate dengan OtpService, WhatsAppService, JwtService, RateLimitService
+    - Log semua authentication events ke LoginLog
+    - _Requirements: 1.1, 1.2, 1.3, 1.8, 1.9, 1.10, 1.11, 1.12, 1.14, 5.3, 5.4, 5.6, 5.7, 9.1_
+  - [ ]\* 8.2 Write property test untuk phone validation
+    - **Property 1: Validasi Format Nomor Telepon**
+    - **Validates: Requirements 1.1**
+  - [ ]\* 8.3 Write property test untuk phone registration check
+    - **Property 2: Pemeriksaan Registrasi Nomor Telepon**
+    - **Validates: Requirements 1.2**
+  - [ ]\* 8.4 Write property test untuk token refresh rotation
+    - **Property 15: Refresh Token Rotation**
+    - **Validates: Requirements 5.4**
+  - [ ]\* 8.5 Write property test untuk token invalidation
+    - **Property 16: Token Invalidation pada Logout**
+    - **Validates: Requirements 5.6**
+  - [ ] 8.6 Buat AuthController dengan endpoints
+    - POST /api/v1/auth/request-otp - request OTP dengan rate limiting
+    - POST /api/v1/auth/verify-otp - verify OTP dan login
+    - POST /api/v1/auth/refresh - refresh access token
+    - POST /api/v1/auth/logout - logout dari current device
+    - POST /api/v1/auth/logout-all - logout dari semua devices
+    - Apply RateLimitGuard pada request-otp endpoint
+    - Implement proper error responses dengan error codes
+    - _Requirements: 1.1, 1.8, 5.3, 5.6, 5.7, 14.6_
+  - [ ] 8.7 Buat DTOs untuk auth endpoints
+    - OtpRequestDto dengan phone number validation
+    - OtpVerifyDto dengan phone number dan OTP validation
+    - RefreshTokenDto dengan refresh token validation
+    - AuthResponseDto dengan tokens dan user info
+    - _Requirements: 1.1, 1.8, 18.6_
+  - [ ]\* 8.8 Write integration tests untuk auth endpoints
+    - Test request OTP untuk registered phone
+    - Test request OTP untuk unregistered phone (should fail)
+    - Test verify OTP dengan valid OTP
+    - Test verify OTP dengan invalid OTP
+    - Test verify OTP dengan expired OTP
+    - Test verify OTP dengan used OTP (should fail)
+    - Test refresh token flow
+    - Test logout flow
+    - Test rate limiting enforcement
+    - _Requirements: 1.1, 1.2, 1.3, 1.8, 1.9, 2.1, 2.2_
+
+- [ ] 9. Implementasi Roles & Permissions Module
+  - [ ] 9.1 Buat PermissionsService
+    - Implementasi getPermissions() - get all permissions
+    - Implementasi createPermission() - create new permission (feature + action)
+    - Implementasi checkPermission() - check if user has specific permission
+    - Implementasi buildPermissionMatrix() - build complete matrix for user dari role assignments
+    - Cache permission matrix di Redis untuk performa
+    - _Requirements: 4.2, 4.3, 4.7, 4.9_
+  - [ ]\* 9.2 Write property test untuk permission checking
+    - **Property 7: Permission Matrix dalam JWT**
+    - **Property 12: RBAC Permission Check Consistency**
+    - **Validates: Requirements 1.13, 4.7, 4.9**
+  - [ ] 9.3 Buat RolesService
+    - Implementasi getRoles() - get all roles
+    - Implementasi getRoleById() - get role by ID dengan permissions
+    - Implementasi createRole() - create custom role
+    - Implementasi updateRole() - update role info
+    - Implementasi assignPermissions() - assign multiple permissions to role
+    - Implementasi removePermissions() - remove permissions from role
+    - Implementasi getRolePermissions() - get all permissions for role
+    - Log semua role changes ke audit log
+    - _Requirements: 4.1, 4.4, 9.7_
+  - [ ] 9.4 Buat PermissionsGuard untuk NestJS
+    - Implementasi CanActivate interface
+    - Extract user permissions dari JWT payload
+    - Support @RequirePermission decorator untuk specify required permission
+    - Return 403 Forbidden jika permission denied
+    - Log permission failures ke audit log
+    - _Requirements: 4.6, 4.7, 4.8, 4.11, 9.2_
+  - [ ] 9.5 Buat @RequirePermission decorator
+    - Accept feature dan action parameters
+    - Attach metadata untuk PermissionsGuard
+    - Support multiple permissions (AND/OR logic)
+    - _Requirements: 4.6, 4.7_
+  - [ ] 9.6 Buat RolesController dan PermissionsController
+    - GET /api/v1/roles - get all roles (ADMIN_RT+)
+    - GET /api/v1/roles/:id - get role by ID (ADMIN_RT+)
+    - POST /api/v1/roles - create role (SUPER_ADMIN only)
+    - PATCH /api/v1/roles/:id - update role (SUPER_ADMIN only)
+    - POST /api/v1/roles/:id/permissions - assign permissions (SUPER_ADMIN only)
+    - GET /api/v1/permissions - get all permissions (ADMIN_RT+)
+    - Apply PermissionsGuard pada semua endpoints
+    - _Requirements: 4.1, 4.4, 4.6_
+  - [ ]\* 9.7 Write unit tests untuk PermissionsGuard
+    - Test guard dengan valid permission
+    - Test guard dengan missing permission
+    - Test guard dengan invalid JWT
+    - Test guard dengan multiple permissions (AND logic)
+    - Test guard dengan multiple permissions (OR logic)
+    - _Requirements: 4.6, 4.7, 4.8_
+
+- [ ] 10. Implementasi Audit Log Module
+  - [ ] 10.1 Buat AuditLogService
+    - Implementasi logAuthAttempt() - log login attempts (success/fail)
+    - Implementasi logPermissionFailure() - log permission check failures
+    - Implementasi logPhoneChange() - log phone number changes
+    - Implementasi logRateLimitViolation() - log rate limit violations
+    - Implementasi logOtpEvent() - log OTP generation dan verification
+    - Implementasi logAccountStatusChange() - log activation/deactivation
+    - Implementasi logRoleChange() - log role modifications
+    - Implementasi queryLogs() - query audit logs dengan filtering dan pagination
+    - Implementasi cleanOldLogs() - cleanup logs older than retention period (1 year)
+    - _Requirements: 9.1, 9.2, 9.3, 9.4, 9.5, 9.6, 9.7, 9.9_
+  - [ ]\* 10.2 Write property test untuk audit log immutability
+    - **Property 19: Audit Log Immutability**
+    - **Validates: Requirements 9.11**
+  - [ ] 10.3 Buat AuditLogInterceptor
+    - Implementasi NestInterceptor interface
+    - Capture request details (method, path, user, IP, user agent)
+    - Capture response status dan errors
+    - Log ke AuditLogService secara asynchronous
+    - Apply globally atau per-controller
+    - _Requirements: 9.1, 9.2_
+  - [ ] 10.4 Buat AuditLogController
+    - GET /api/v1/audit-logs - query audit logs (SUPER_ADMIN, ADMIN_RT only)
+    - Support filtering by: user, action, date range, resource
+    - Support pagination dan sorting
+    - Apply PermissionsGuard
+    - _Requirements: 9.10_
+  - [ ]\* 10.5 Write unit tests untuk AuditLogService
+    - Test logging berbagai event types
+    - Test query dengan berbagai filters
+    - Test pagination
+    - Test cleanup old logs
+    - _Requirements: 9.1, 9.9_
+
+- [ ] 11. Implementasi Users Module
+  - [ ] 11.1 Buat UsersService dengan CRUD operations
+    - Implementasi createUser() - pre-registration oleh admin dengan role assignment
+    - Implementasi getUserById() - get user by ID dengan role dan permissions
+    - Implementasi getUserByPhone() - get user by phone number
+    - Implementasi updateUser() - update user info (kecuali phone)
+    - Implementasi activateUser() - activate account on first login
+    - Implementasi deactivateUser() - deactivate account dan invalidate sessions
+    - Implementasi deleteUser() - soft delete user
+    - Implementasi getUserPermissions() - get permission matrix untuk user
+    - Validate uniqueness untuk phone number
+    - _Requirements: 7.1, 7.2, 7.3, 7.4, 7.5, 7.6, 7.7, 7.8, 7.10_
+  - [ ] 11.2 Implementasi phone change flow
+    - Implementasi requestPhoneChange() - request dengan dual OTP verification (current + new phone)
+    - Implementasi approvePhoneChange() - approve untuk WARGA (auto-approve untuk ADMIN_RT+)
+    - Implementasi completePhoneChange() - update phone, log change, invalidate sessions
+    - Implementasi rejectPhoneChange() - reject phone change request
+    - Validate new phone tidak sudah terdaftar
+    - Send notification ke old phone setelah change complete
+    - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 6.7, 6.8, 6.9, 6.10_
+  - [ ]\* 11.3 Write property test untuk phone uniqueness
+    - **Property 17: Uniqueness Constraint untuk Nomor Telepon dan KTP**
+    - **Validates: Requirements 6.9, 7.5**
+  - [ ] 11.4 Buat UsersController dengan endpoints
+    - POST /api/v1/users - create user (ADMIN_RT only)
+    - GET /api/v1/users - get all users dengan pagination (ADMIN_RT+)
+    - GET /api/v1/users/:id - get user by ID (ADMIN_RT+ atau self)
+    - GET /api/v1/users/me - get current user
+    - PATCH /api/v1/users/:id - update user (ADMIN_RT+ atau self untuk limited fields)
+    - DELETE /api/v1/users/:id - soft delete user (ADMIN_RT only)
+    - POST /api/v1/users/change-phone/request - request phone change
+    - POST /api/v1/users/change-phone/approve/:id - approve phone change (ADMIN_RT only)
+    - Apply PermissionsGuard pada semua endpoints
+    - _Requirements: 7.1, 7.3, 7.4, 7.6, 7.7, 6.1, 6.5_
+  - [ ]\* 11.5 Write integration tests untuk users endpoints
+    - Test create user dengan valid data
+    - Test create user dengan duplicate phone (should fail)
+    - Test update user info
+    - Test phone change flow untuk WARGA (requires approval)
+    - Test phone change flow untuk ADMIN (auto-approve)
+    - Test phone change dengan duplicate phone (should fail)
+    - Test soft delete user
+    - Test deactivate user invalidates sessions
+    - _Requirements: 7.1, 7.5, 6.4, 6.5, 6.9, 7.9, 7.10_
+
+- [ ] 12. Checkpoint - Ensure auth and user management works
+  - Test complete auth flow dari request OTP sampai login
+  - Test user creation dan management
+  - Test phone change flow
+  - Test permission checking
+  - Ensure all tests pass, ask the user if questions arise.
+
+- [ ] 13. Implementasi Families & Residents Module
+  - [ ] 13.1 Buat FamiliesService
+    - Implementasi createFamily() - create family dengan head of family dan address
+    - Implementasi getFamilyById() - get family by ID dengan residents
+    - Implementasi getFamilies() - get all families dengan pagination dan filtering
+    - Implementasi updateFamily() - update family info
+    - Implementasi deleteFamily() - soft delete family (cascade to residents)
+    - Implementasi getFamilyMembers() - get all residents in family
+    - Implementasi searchFamilies() - search by head of family atau address
+    - _Requirements: 8.1, 8.2, 8.5, 8.7, 8.8, 8.9_
+  - [ ]\* 13.2 Write property test untuk cascade soft delete
+    - **Property 18: Cascade Soft Delete untuk Family**
+    - **Validates: Requirements 8.9**
+  - [ ]\* 13.3 Write property test untuk soft delete implementation
+    - **Property 23: Soft Delete Implementation**
+    - **Validates: Requirements 15.6**
+  - [ ] 13.4 Buat ResidentsService
+    - Implementasi createResident() - create resident dengan family assignment
+    - Implementasi getResidentById() - get resident by ID
+    - Implementasi getResidents() - get all residents dengan pagination
+    - Implementasi searchResidents() - search by name, ID number, atau family
+    - Implementasi updateResident() - update resident info
+    - Implementasi deleteResident() - soft delete resident
+    - Implementasi exportToCSV() - export residents data ke CSV
+    - Validate uniqueness untuk ID number (KTP)
+    - _Requirements: 8.3, 8.4, 8.5, 8.8, 8.10, 10.1_
+  - [ ]\* 13.5 Write property test untuk ID number uniqueness
+    - **Property 17: Uniqueness Constraint untuk Nomor Telepon dan KTP**
+    - **Validates: Requirements 8.4**
+  - [ ] 13.6 Buat FamiliesController
+    - POST /api/v1/families - create family (ADMIN_RT, ADMIN_SEKRETARIS)
+    - GET /api/v1/families - get all families (ADMIN_RT, ADMIN_SEKRETARIS, WARGA sees own only)
+    - GET /api/v1/families/:id - get family by ID (ADMIN_RT, ADMIN_SEKRETARIS, WARGA sees own only)
+    - PATCH /api/v1/families/:id - update family (ADMIN_RT, ADMIN_SEKRETARIS)
+    - DELETE /api/v1/families/:id - soft delete family (ADMIN_RT only)
+    - GET /api/v1/families/:id/members - get family members
+    - Apply PermissionsGuard dengan role-based filtering
+    - _Requirements: 8.1, 8.2, 8.5, 8.6, 8.7_
+  - [ ] 13.7 Buat ResidentsController
+    - POST /api/v1/residents - create resident (ADMIN_RT, ADMIN_SEKRETARIS)
+    - GET /api/v1/residents - get all residents (ADMIN_RT, ADMIN_SEKRETARIS, WARGA sees own family only)
+    - GET /api/v1/residents/:id - get resident by ID (ADMIN_RT, ADMIN_SEKRETARIS, WARGA sees own family only)
+    - GET /api/v1/residents/search - search residents (ADMIN_RT, ADMIN_SEKRETARIS)
+    - PATCH /api/v1/residents/:id - update resident (ADMIN_RT, ADMIN_SEKRETARIS)
+    - DELETE /api/v1/residents/:id - soft delete resident (ADMIN_RT only)
+    - GET /api/v1/residents/export - export to CSV (ADMIN_RT, ADMIN_SEKRETARIS only)
+    - Apply PermissionsGuard dengan role-based filtering
+    - _Requirements: 8.3, 8.5, 8.6, 8.8, 8.10, 10.1, 10.3_
+  - [ ]\* 13.8 Write property test untuk export permission
+    - **Property 20: Permission-Based Export Access**
+    - **Validates: Requirements 10.3**
+  - [ ]\* 13.9 Write integration tests untuk families dan residents
+    - Test create family dengan valid data
+    - Test create resident dengan valid data
+    - Test create resident dengan duplicate ID number (should fail)
+    - Test soft delete family cascades to residents
+    - Test search residents by name
+    - Test search residents by ID number
+    - Test export CSV dengan proper permissions
+    - Test export CSV tanpa permission (should fail)
+    - Test WARGA can only see own family data
+    - _Requirements: 8.1, 8.3, 8.4, 8.6, 8.9, 8.10, 10.3_
+
+- [ ] 14. Implementasi Health Check dan Monitoring
+  - [ ] 14.1 Buat HealthModule dengan health checks
+    - Implementasi database health check (PostgreSQL connectivity)
+    - Implementasi Redis health check (Redis connectivity)
+    - Implementasi WhatsApp Gateway health check
+    - Implementasi memory usage check
+    - Implementasi disk space check
+    - Return HTTP 503 jika ada dependency yang unhealthy
+    - _Requirements: 11.1, 11.2, 11.3, 11.4, 11.5_
+  - [ ]\* 14.2 Write property test untuk health check
+    - **Property 21: Health Check Dependency Status**
+    - **Validates: Requirements 11.5**
+  - [ ] 14.3 Setup Prometheus metrics
+    - Implementasi PrometheusModule untuk metrics collection
+    - Collect metrics: request count, response time, error rate
+    - Collect metrics: database query time, Redis operations
+    - Collect metrics: OTP generation rate, authentication success/failure rate
+    - Expose /metrics endpoint untuk Prometheus scraping
+    - _Requirements: 11.6, 11.7_
+  - [ ] 14.4 Setup structured logging
+    - Implementasi LoggerModule dengan Winston
+    - Setup correlation ID untuk request tracking
+    - Log semua errors dengan stack trace
+    - Setup log levels (error, warn, info, debug)
+    - Integrate dengan Sentry untuk error tracking
+    - _Requirements: 11.8, 11.9, 11.10_
+  - [ ] 14.5 Buat HealthController
+    - GET /health - basic health check
+    - GET /health/detailed - detailed health check dengan dependency status
+    - GET /metrics - Prometheus metrics
+    - Public endpoints (no authentication required)
+    - _Requirements: 11.1, 11.6_
+
+- [ ] 15. Implementasi Data Export dan Backup
+  - [ ] 15.1 Buat ExportService
+    - Implementasi exportResidentsToCSV() - export residents dengan metadata
+    - Implementasi exportFamiliesToCSV() - export families dengan metadata
+    - Include timestamp dan user info dalam export metadata
+    - Respect user permissions (WARGA cannot export)
+    - Log semua export operations ke audit log
+    - _Requirements: 10.1, 10.2, 10.3, 10.4, 10.9_
+  - [ ] 15.2 Setup automated database backup
+    - Buat backup script untuk PostgreSQL (pg_dump)
+    - Schedule daily backups via cron atau scheduler
+    - Implement backup retention policy (30 days)
+    - Encrypt backup files saat disimpan
+    - Store backups di volume terpisah atau cloud storage
+    - _Requirements: 10.5, 10.6, 10.8_
+  - [ ] 15.3 Buat backup documentation
+    - Dokumentasi prosedur backup manual
+    - Dokumentasi prosedur restore dari backup
+    - Dokumentasi backup verification
+    - Include troubleshooting guide
+    - _Requirements: 10.7_
+  - [ ] 15.4 Buat ExportController
+    - GET /api/v1/export/residents - export residents to CSV (ADMIN_RT, ADMIN_SEKRETARIS)
+    - GET /api/v1/export/families - export families to CSV (ADMIN_RT, ADMIN_SEKRETARIS)
+    - POST /api/v1/backup/trigger - trigger manual backup (SUPER_ADMIN only)
+    - Apply PermissionsGuard
+    - _Requirements: 10.1, 10.2, 10.10_
+
+- [ ] 16. Checkpoint - Ensure backend is complete
+  - Test all API endpoints dengan Postman atau similar tool
+  - Verify all permissions are enforced correctly
+  - Verify all audit logging works
+  - Verify health checks dan metrics
+  - Ensure all tests pass, ask the user if questions arise.
+
+- [ ] 17. Setup API Documentation
+  - [ ] 17.1 Setup Swagger/OpenAPI documentation
+    - Install @nestjs/swagger dan dependencies
+    - Configure SwaggerModule di main.ts
+    - Add API decorators ke semua controllers (@ApiTags, @ApiOperation, @ApiResponse)
+    - Document semua DTOs dengan @ApiProperty
+    - Document authentication requirements per endpoint
+    - Document permission requirements per endpoint
+    - Include request/response examples
+    - Document error codes dan meanings
+    - _Requirements: 14.1, 14.2, 14.3, 14.4, 14.5, 14.6_
+  - [ ] 17.2 Setup API versioning
+    - Implement API versioning dengan prefix /api/v1
+    - Setup version routing di NestJS
+    - Document versioning strategy
+    - _Requirements: 14.9_
+  - [ ] 17.3 Buat API changelog
+    - Document initial API version (v1)
+    - Setup changelog format untuk future updates
+    - Include breaking changes section
+    - _Requirements: 14.10_
+  - [ ] 17.4 Expose Swagger UI
+    - Configure Swagger UI di /api/docs
+    - Add authentication support di Swagger UI (JWT bearer token)
+    - Include rate limiting info dalam documentation
+    - _Requirements: 14.7, 14.8_
+
+- [ ] 18. Implementasi Security Hardening
+  - [ ] 18.1 Implement global exception filter
+    - Buat GlobalExceptionFilter untuk handle semua exceptions
+    - Map exceptions ke appropriate HTTP status codes
+    - Sanitize error messages untuk production (no stack traces)
+    - Log detailed errors internally
+    - Return standardized error response format
+    - _Requirements: 18.10_
+  - [ ] 18.2 Implement security headers
+    - Setup Helmet middleware untuk secure headers
+    - Configure Content Security Policy
+    - Set X-Frame-Options, X-Content-Type-Options headers
+    - Set Strict-Transport-Security untuk HTTPS
+    - _Requirements: 18.7, 18.8_
+  - [ ] 18.3 Implement CSRF protection
+    - Setup CSRF protection untuk state-changing operations
+    - Configure CSRF token generation dan validation
+    - Exclude public endpoints dari CSRF check
+    - _Requirements: 18.4_
+  - [ ] 18.4 Implement input validation dan sanitization
+    - Setup class-validator untuk DTO validation
+    - Implement input sanitization untuk prevent SQL injection
+    - Validate semua user inputs terhadap expected format
+    - Setup request size limits untuk prevent DoS
+    - _Requirements: 18.5, 18.6, 18.9_
+  - [ ]\* 18.5 Write property test untuk input sanitization
+    - **Property 24: Input Sanitization untuk SQL Injection**
+    - **Validates: Requirements 18.5**
+  - [ ] 18.6 Setup secure cookie configuration
+    - Configure session cookies dengan HttpOnly, Secure, SameSite attributes
+    - Setup cookie signing untuk prevent tampering
+    - Configure cookie expiration
+    - _Requirements: 18.11_
+  - [ ] 18.7 Setup CORS configuration
+    - Configure CORS dengan whitelist domains
+    - Set appropriate CORS headers
+    - Allow credentials untuk authenticated requests
+    - _Requirements: 17.6_
+  - [ ] 18.8 Setup dependency security scanning
+    - Configure npm audit atau similar tool
+    - Setup automated dependency updates
+    - Document security update process
+    - _Requirements: 18.12_
+
+- [ ] 19. Setup Frontend Project
+  - [x] 19.1 Initialize React + Vite project
+    - Setup React dengan TypeScript di apps/frontend
+    - Configure Vite dengan optimizations
+    - Setup Tailwind CSS untuk styling
+    - Configure path aliases untuk imports
+    - Setup environment variables (.env)
+    - _Requirements: 17.2_
+  - [x] 19.2 Setup routing dan layout
+    - Install React Router untuk routing
+    - Buat route definitions untuk semua pages
+    - Buat ResponsiveLayout component dengan mobile/desktop navigation
+    - Buat MobileNavigation component (bottom nav)
+    - Buat DesktopNavigation component (sidebar)
+    - Implement responsive breakpoints
+    - _Requirements: 12.2, 12.3_
+  - [ ] 19.3 Setup API client
+    - Configure Axios dengan base URL dan interceptors
+    - Implement request interceptor untuk attach JWT token
+    - Implement response interceptor untuk handle errors dan token refresh
+    - Buat API service modules (auth, users, families, residents)
+    - _Requirements: 14.1_
+  - [ ] 19.4 Setup state management
+    - Setup React Context untuk auth state
+    - Setup React Context untuk permissions
+    - Buat custom hooks: useAuth, usePermissions, useApi
+    - Implement token storage di localStorage
+    - _Requirements: 1.12, 4.9_
+  - [x] 19.5 Setup UI component library
+    - Buat reusable UI components (Button, Input, Table, Modal, Card)
+    - Implement mobile-first responsive design
+    - Use minimum 44x44px touch targets untuk mobile
+    - Use minimum 16px font size untuk readability
+    - Implement high contrast ratios (WCAG AA compliance)
+    - _Requirements: 12.4, 12.5, 12.6_
+  - [x] 19.6 Implement theme support
+    - Setup light dan dark color schemes
+    - Implement theme toggle functionality
+    - Store theme preference di localStorage
+    - _Requirements: 12.7_
+
+- [ ] 20. Implementasi Auth UI
+  - [ ] 20.1 Buat LoginForm component
+    - Input untuk nomor telepon dengan validation
+    - Button untuk request OTP
+    - Display error messages
+    - Loading states
+    - Mobile-first responsive design
+    - _Requirements: 1.1_
+  - [ ] 20.2 Buat OtpVerificationForm component
+    - Input untuk 6-digit OTP
+    - Button untuk verify OTP
+    - Resend OTP functionality dengan countdown timer
+    - Display error messages
+    - Loading states
+    - _Requirements: 1.8_
+  - [ ] 20.3 Implement auth flow logic
+    - Handle request OTP API call
+    - Handle verify OTP API call
+    - Store tokens di localStorage
+    - Decode JWT untuk extract user info dan permissions
+    - Redirect ke dashboard setelah successful login
+    - Handle rate limiting errors
+    - _Requirements: 1.1, 1.8, 1.12, 1.13, 1.15_
+  - [ ] 20.4 Implement token refresh logic
+    - Auto-refresh access token sebelum expiry
+    - Handle refresh token expiry (redirect to login)
+    - Implement sliding session timeout
+    - _Requirements: 5.3, 5.9_
+  - [ ] 20.5 Implement logout functionality
+    - Logout button di navigation
+    - Call logout API
+    - Clear tokens dari localStorage
+    - Redirect ke login page
+    - _Requirements: 5.6_
+  - [ ]\* 20.6 Write component tests untuk auth UI
+    - Test LoginForm renders correctly
+    - Test phone number validation
+    - Test OTP request flow
+    - Test OTP verification flow
+    - Test error handling
+    - _Requirements: 1.1, 1.8_
+
+- [ ] 21. Implementasi Permission-Based UI Guards
+  - [ ] 21.1 Buat PermissionGuard component
+    - Accept feature dan action props
+    - Check user permissions dari context
+    - Render children jika permission granted
+    - Render fallback atau null jika permission denied
+    - _Requirements: 13.3, 13.4_
+  - [ ]\* 21.2 Write property test untuk UI component rendering
+    - **Property 22: Permission-Based UI Component Rendering**
+    - **Validates: Requirements 13.3**
+  - [ ] 21.3 Buat usePermissions hook
+    - Extract permissions dari JWT token
+    - Provide hasPermission() function
+    - Provide hasAnyPermission() function
+    - Provide hasAllPermissions() function
+    - _Requirements: 13.4_
+  - [ ] 21.4 Implement route guards
+    - Buat ProtectedRoute component
+    - Check authentication status
+    - Check required permissions untuk route
+    - Redirect ke login jika not authenticated
+    - Redirect ke dashboard jika insufficient permissions
+    - _Requirements: 13.5, 13.6_
+  - [ ] 21.5 Implement navigation filtering
+    - Filter menu items berdasarkan permissions
+    - Hide navigation items untuk features user tidak bisa akses
+    - Apply ke MobileNavigation dan DesktopNavigation
+    - _Requirements: 13.1_
+  - [ ] 21.6 Implement action button filtering
+    - Hide create/edit/delete buttons berdasarkan permissions
+    - Apply PermissionGuard ke semua action buttons
+    - _Requirements: 13.2_
+  - [ ]\* 21.7 Write component tests untuk permission guards
+    - Test PermissionGuard renders children dengan valid permission
+    - Test PermissionGuard hides children tanpa permission
+    - Test route guard redirects unauthorized users
+    - Test navigation filtering
+    - _Requirements: 13.1, 13.3, 13.5_
+
+- [ ] 22. Implementasi Dashboard UI
+  - [ ] 22.1 Buat Dashboard component
+    - Display role-specific dashboard content
+    - Show statistics cards (total families, residents, users)
+    - Show recent activities
+    - Mobile-first responsive layout
+    - _Requirements: 1.15, 13.7_
+  - [ ] 22.2 Buat dashboard widgets
+    - StatCard component untuk display statistics
+    - RecentActivityList component
+    - QuickActions component dengan permission-based buttons
+    - _Requirements: 13.7_
+  - [ ] 22.3 Implement role-based dashboard views
+    - SUPER_ADMIN dashboard: system overview, all statistics
+    - ADMIN_RT dashboard: community overview, management actions
+    - ADMIN_SEKRETARIS dashboard: data entry focus
+    - ADMIN_BENDAHARA dashboard: financial focus (if applicable)
+    - WARGA dashboard: family info, limited actions
+    - _Requirements: 13.7_
+
+- [ ] 23. Implementasi Users Management UI
+  - [ ] 23.1 Buat UsersList component
+    - Display users dalam table dengan pagination
+    - Show user info: name, phone, role, status
+    - Filter by role dan status
+    - Search by name atau phone
+    - Mobile-responsive table (card view on mobile)
+    - _Requirements: 7.3_
+  - [ ] 23.2 Buat UserForm component
+    - Form untuk create/edit user
+    - Input fields: phone, name, role, family
+    - Validation untuk semua fields
+    - Permission-based field visibility
+    - _Requirements: 7.1, 7.4_
+  - [ ] 23.3 Buat PhoneChangeForm component
+    - Form untuk request phone change
+    - Input untuk new phone number
+    - OTP verification untuk current dan new phone
+    - Display approval status untuk WARGA
+    - _Requirements: 6.1_
+  - [ ] 23.4 Implement user management actions
+    - Create user button (ADMIN_RT only)
+    - Edit user button (ADMIN_RT+ atau self)
+    - Deactivate user button (ADMIN_RT only)
+    - Delete user button (ADMIN_RT only)
+    - Change phone button (all users)
+    - Approve phone change button (ADMIN_RT only)
+    - Apply PermissionGuard ke semua actions
+    - _Requirements: 7.1, 7.4, 7.6, 7.7, 6.1, 6.5_
+  - [ ]\* 23.5 Write component tests untuk users UI
+    - Test UsersList renders correctly
+    - Test UserForm validation
+    - Test permission-based button visibility
+    - Test phone change flow
+    - _Requirements: 7.1, 7.3, 6.1_
+
+- [ ] 24. Implementasi Families & Residents UI
+  - [ ] 24.1 Buat FamiliesList component
+    - Display families dalam table/cards dengan pagination
+    - Show family info: head of family, address, member count
+    - Search by head of family atau address
+    - Filter by RT/RW
+    - Mobile-responsive layout
+    - WARGA sees only own family
+    - _Requirements: 8.2, 8.6_
+  - [ ] 24.2 Buat FamilyForm component
+    - Form untuk create/edit family
+    - Input fields: head of family, address, RT, RW, kelurahan, etc
+    - Validation untuk semua fields
+    - _Requirements: 8.1_
+  - [ ] 24.3 Buat ResidentsList component
+    - Display residents dalam table/cards dengan pagination
+    - Show resident info: name, ID number, birth date, relationship
+    - Search by name atau ID number
+    - Filter by family
+    - Mobile-responsive layout
+    - WARGA sees only own family members
+    - _Requirements: 8.3, 8.6, 8.10_
+  - [ ] 24.4 Buat ResidentForm component
+    - Form untuk create/edit resident
+    - Input fields: name, ID number, birth date, gender, relationship, family
+    - Validation untuk semua fields (ID number uniqueness)
+    - _Requirements: 8.3, 8.4_
+  - [ ] 24.5 Implement families & residents actions
+    - Create family button (ADMIN_RT, ADMIN_SEKRETARIS)
+    - Edit family button (ADMIN_RT, ADMIN_SEKRETARIS)
+    - Delete family button (ADMIN_RT only)
+    - Create resident button (ADMIN_RT, ADMIN_SEKRETARIS)
+    - Edit resident button (ADMIN_RT, ADMIN_SEKRETARIS)
+    - Delete resident button (ADMIN_RT only)
+    - Export button (ADMIN_RT, ADMIN_SEKRETARIS)
+    - Apply PermissionGuard ke semua actions
+    - _Requirements: 8.1, 8.5, 10.1_
+  - [ ] 24.6 Implement export functionality
+    - Export residents to CSV button
+    - Export families to CSV button
+    - Download file dengan proper filename (timestamp)
+    - Show loading state during export
+    - _Requirements: 10.1, 10.2_
+  - [ ]\* 24.7 Write component tests untuk families & residents UI
+    - Test FamiliesList renders correctly
+    - Test ResidentsList renders correctly
+    - Test form validation
+    - Test permission-based filtering (WARGA sees own only)
+    - Test export functionality
+    - _Requirements: 8.2, 8.3, 8.6, 10.1_
+
+- [ ] 25. Checkpoint - Ensure frontend is complete
+  - Test all pages dan components manually
+  - Verify responsive design pada berbagai screen sizes
+  - Verify permission-based UI guards work correctly
+  - Verify all forms validation work
+  - Ensure all tests pass, ask the user if questions arise.
+
+- [ ] 26. Implementasi Roles & Permissions UI
+  - [ ] 26.1 Buat RolesList component
+    - Display roles dalam table
+    - Show role info: name, description, permission count
+    - SUPER_ADMIN dan ADMIN_RT only
+    - _Requirements: 4.1_
+  - [ ] 26.2 Buat RoleForm component
+    - Form untuk create/edit role
+    - Input fields: name, description
+    - Permission assignment dengan checkboxes (grouped by feature)
+    - SUPER_ADMIN only
+    - _Requirements: 4.1, 4.4_
+  - [ ] 26.3 Buat PermissionMatrix component
+    - Display permissions dalam matrix format (features x actions)
+    - Visual representation of role permissions
+    - _Requirements: 4.9_
+  - [ ] 26.4 Implement role management actions
+    - Create role button (SUPER_ADMIN only)
+    - Edit role button (SUPER_ADMIN only)
+    - View permissions button (ADMIN_RT+)
+    - Apply PermissionGuard
+    - _Requirements: 4.1, 4.4_
+
+- [ ] 27. Implementasi Audit Logs UI
+  - [ ] 27.1 Buat AuditLogsList component
+    - Display audit logs dalam table dengan pagination
+    - Show log info: timestamp, user, action, resource, IP address
+    - Filter by: user, action, date range
+    - Search functionality
+    - SUPER_ADMIN dan ADMIN_RT only
+    - _Requirements: 9.10_
+  - [ ] 27.2 Buat AuditLogDetail component
+    - Display detailed log information
+    - Show full details JSON
+    - Show user agent, IP address
+    - _Requirements: 9.10_
+  - [ ] 27.3 Implement audit log filtering
+    - Date range picker
+    - User filter dropdown
+    - Action type filter dropdown
+    - Apply filters to API query
+    - _Requirements: 9.10_
+
+- [ ] 28. Implementasi Performance Optimizations
+  - [ ] 28.1 Implement lazy loading
+    - Lazy load route components
+    - Lazy load heavy components (charts, tables)
+    - Show loading skeletons
+    - _Requirements: 12.9_
+  - [ ] 28.2 Optimize images dan assets
+    - Compress images
+    - Use appropriate image formats (WebP)
+    - Implement responsive images
+    - _Requirements: 12.8_
+  - [ ] 28.3 Implement code splitting
+    - Split vendor bundles
+    - Split route bundles
+    - Optimize chunk sizes
+    - _Requirements: 12.9_
+  - [ ] 28.4 Run Lighthouse audit
+    - Test mobile performance
+    - Achieve score > 90
+    - Fix identified issues
+    - _Requirements: 12.10_
+
+- [ ] 29. Setup Deployment Infrastructure
+  - [ ] 29.1 Buat Dockerfile untuk backend
+    - Multi-stage build untuk optimize image size
+    - Install dependencies
+    - Build application
+    - Setup production environment
+    - _Requirements: 17.1_
+  - [ ] 29.2 Buat Dockerfile untuk frontend
+    - Multi-stage build
+    - Build static assets
+    - Setup Nginx untuk serving
+    - _Requirements: 17.2_
+  - [ ] 29.3 Setup docker-compose untuk production
+    - Configure all services (backend, frontend, PostgreSQL, Redis, Nginx)
+    - Setup networks dan volumes
+    - Configure environment variables
+    - Setup health checks
+    - _Requirements: 17.3_
+  - [ ] 29.4 Configure Nginx
+    - Setup reverse proxy untuk backend API
+    - Setup static file serving untuk frontend
+    - Configure SSL/TLS termination
+    - Configure CORS headers
+    - Setup rate limiting
+    - Setup gzip compression
+    - _Requirements: 17.4, 17.5, 17.6_
+  - [ ] 29.5 Setup environment configuration
+    - Create .env.example dengan all required variables
+    - Document all environment variables
+    - Setup different configs untuk dev/staging/production
+    - Ensure no secrets di repository
+    - _Requirements: 17.7, 17.8_
+  - [ ] 29.6 Buat deployment documentation
+    - Step-by-step deployment guide
+    - Environment setup instructions
+    - Database migration instructions
+    - Backup dan restore procedures
+    - Troubleshooting guide
+    - _Requirements: 17.11_
+
+- [ ] 30. Setup Testing Infrastructure
+  - [ ] 30.1 Configure Jest untuk backend
+    - Setup test environment
+    - Configure test database
+    - Setup test coverage reporting
+    - Configure minimum coverage thresholds (80%)
+    - _Requirements: 16.1, 16.2_
+  - [ ] 30.2 Configure fast-check untuk property-based testing
+    - Install fast-check
+    - Setup property test helpers
+    - Configure test runs (minimum 100 iterations)
+    - _Requirements: 16.7_
+  - [ ] 30.3 Configure React Testing Library
+    - Setup testing environment
+    - Configure test utilities
+    - Setup coverage reporting (minimum 70%)
+    - _Requirements: 16.8_
+  - [ ] 30.4 Setup E2E testing dengan Playwright
+    - Install Playwright
+    - Configure test browsers
+    - Setup test fixtures
+    - Write E2E tests untuk critical flows
+    - _Requirements: 16.4_
+  - [ ] 30.5 Setup CI/CD pipeline
+    - Configure GitHub Actions atau similar
+    - Run all tests on every commit
+    - Run linting dan type checking
+    - Fail build jika tests fail atau coverage drops
+    - _Requirements: 16.9, 16.10_
+
+- [ ] 31. Write Comprehensive Tests
+  - [ ]\* 31.1 Write property tests untuk semua correctness properties
+    - Property 1: Validasi Format Nomor Telepon
+    - Property 2: Pemeriksaan Registrasi Nomor Telepon
+    - Property 3: OTP Generation dan Hashing
+    - Property 4: OTP Time-To-Live
+    - Property 5: OTP Single-Use
+    - Property 6: JWT Token Generation Completeness
+    - Property 7: Permission Matrix dalam JWT
+    - Property 8: Rate Limiting OTP per Nomor Telepon
+    - Property 9: Rate Limiting OTP per IP Address
+    - Property 10: Rate Limiting Verifikasi OTP
+    - Property 11: Retry Logic dengan Exponential Backoff
+    - Property 12: RBAC Permission Check Consistency
+    - Property 13: Access Token Expiration
+    - Property 14: Refresh Token Expiration
+    - Property 15: Refresh Token Rotation
+    - Property 16: Token Invalidation pada Logout
+    - Property 17: Uniqueness Constraint
+    - Property 18: Cascade Soft Delete
+    - Property 19: Audit Log Immutability
+    - Property 20: Permission-Based Export Access
+    - Property 21: Health Check Dependency Status
+    - Property 22: Permission-Based UI Component Rendering
+    - Property 23: Soft Delete Implementation
+    - Property 24: Input Sanitization
+    - Minimum 100 iterations per test
+    - Tag each test dengan feature name dan property number
+    - _Requirements: All requirements covered by properties_
+  - [ ]\* 31.2 Write unit tests untuk semua services
+    - Test OtpService methods
+    - Test WhatsAppService methods
+    - Test JwtService methods
+    - Test RateLimitService methods
+    - Test AuthService methods
+    - Test UsersService methods
+    - Test RolesService dan PermissionsService methods
+    - Test FamiliesService dan ResidentsService methods
+    - Test AuditLogService methods
+    - Achieve minimum 80% coverage
+    - _Requirements: 16.2_
+  - [ ]\* 31.3 Write integration tests untuk semua API endpoints
+    - Test auth endpoints
+    - Test users endpoints
+    - Test roles dan permissions endpoints
+    - Test families dan residents endpoints
+    - Test audit logs endpoints
+    - Test export endpoints
+    - Test health check endpoints
+    - _Requirements: 16.3_
+  - [ ]\* 31.4 Write E2E tests untuk critical flows
+    - Test complete OTP login flow
+    - Test user creation dan management flow
+    - Test phone change flow
+    - Test family dan resident management flow
+    - Test permission-based UI visibility
+    - Test export functionality
+    - _Requirements: 16.4_
+  - [ ]\* 31.5 Write component tests untuk frontend
+    - Test all auth components
+    - Test all dashboard components
+    - Test all users management components
+    - Test all families & residents components
+    - Test PermissionGuard component
+    - Test route guards
+    - Achieve minimum 70% coverage
+    - _Requirements: 16.8_
+
+- [ ] 32. Final Integration dan Testing
+  - [ ] 32.1 Run full test suite
+    - Run all backend tests (unit + integration + property)
+    - Run all frontend tests (component + E2E)
+    - Verify coverage meets thresholds
+    - Fix any failing tests
+    - _Requirements: 16.9_
+  - [ ] 32.2 Manual testing
+    - Test complete user flows manually
+    - Test on different devices (mobile, tablet, desktop)
+    - Test on different browsers
+    - Test with different user roles
+    - Verify responsive design
+    - _Requirements: 12.1, 12.2, 12.3_
+  - [ ] 32.3 Security testing
+    - Test rate limiting enforcement
+    - Test permission enforcement
+    - Test input validation
+    - Test CSRF protection
+    - Test SQL injection prevention
+    - _Requirements: 2.1, 4.7, 18.4, 18.5_
+  - [ ] 32.4 Performance testing
+    - Run Lighthouse audit
+    - Test API response times
+    - Test database query performance
+    - Test with realistic data volumes
+    - _Requirements: 12.10_
+  - [ ] 32.5 Accessibility testing
+    - Test keyboard navigation
+    - Test screen reader compatibility
+    - Verify WCAG AA compliance
+    - Test color contrast ratios
+    - _Requirements: 12.6_
+
+- [ ] 33. Documentation dan Handover
+  - [ ] 33.1 Complete API documentation
+    - Verify Swagger documentation is complete
+    - Add examples untuk all endpoints
+    - Document all error codes
+    - _Requirements: 14.1, 14.5, 14.6_
+  - [ ] 33.2 Write user documentation
+    - User guide untuk each role
+    - Screenshots dan tutorials
+    - FAQ section
+    - _Requirements: N/A (nice to have)_
+  - [ ] 33.3 Write developer documentation
+    - Architecture overview
+    - Setup instructions
+    - Development workflow
+    - Testing guide
+    - Deployment guide
+    - _Requirements: 17.11_
+  - [ ] 33.4 Create README files
+    - Root README dengan project overview
+    - Backend README dengan setup instructions
+    - Frontend README dengan setup instructions
+    - _Requirements: N/A_
+
+- [ ] 34. Final Checkpoint - Production Readiness
+  - Verify all tests pass
+  - Verify all documentation is complete
+  - Verify deployment works in staging environment
+  - Verify backup dan restore procedures work
+  - Verify monitoring dan logging work
+  - Ensure all requirements are met, ask the user if questions arise.
+
+## Catatan
+
+- Tasks marked dengan `*` adalah optional dan dapat di-skip untuk faster MVP
+- Setiap task references specific requirements untuk traceability
+- Checkpoints ensure incremental validation
+- Property tests validate universal correctness properties (minimum 100 iterations)
+- Unit tests validate specific examples dan edge cases
+- Integration tests validate end-to-end flows
+- Semua testing tasks adalah optional tetapi highly recommended untuk production-ready system

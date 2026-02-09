@@ -1,0 +1,173 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============= Auth & Access =============
+
+model User {
+  id            String    @id @default(uuid())
+  phoneNumber   String    @unique @map("phone_number")
+  fullName      String    @map("full_name")
+  roleId        String    @map("role_id")
+  familyId      String?   @map("family_id")
+  isActive      Boolean   @default(false) @map("is_active")
+  lastLoginAt   DateTime? @map("last_login_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+  deletedAt     DateTime? @map("deleted_at")
+
+  role          Role      @relation(fields: [roleId], references: [id])
+  family        Family?   @relation(fields: [familyId], references: [id])
+  loginLogs     LoginLog[]
+  phoneChanges  PhoneChangeLog[]
+  auditLogs     AuditLog[]
+
+  @@map("users")
+  @@index([phoneNumber])
+  @@index([roleId])
+  @@index([familyId])
+}
+
+model Role {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  users       User[]
+  permissions RolePermission[]
+
+  @@map("roles")
+}
+
+model Permission {
+  id          String   @id @default(uuid())
+  feature     String
+  action      String
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  roles       RolePermission[]
+
+  @@unique([feature, action])
+  @@map("permissions")
+}
+
+model RolePermission {
+  id           String   @id @default(uuid())
+  roleId       String   @map("role_id")
+  permissionId String   @map("permission_id")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, permissionId])
+  @@map("role_permissions")
+  @@index([roleId])
+  @@index([permissionId])
+}
+
+// ============= Kependudukan =============
+
+model Family {
+  id              String    @id @default(uuid())
+  headOfFamily    String    @map("head_of_family")
+  address         String
+  housingComplex  String    @default("Satriamekar Raya Residence 2") @map("housing_complex")
+  rt              String    @default("04")
+  rw              String    @default("010")
+  kelurahan       String    @default("Satriamekar")
+  kecamatan       String    @default("Tambun Utara")
+  kabupaten       String    @default("Bekasi")
+  provinsi        String    @default("Jawa Barat")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+  deletedAt       DateTime? @map("deleted_at")
+
+  residents       Resident[]
+  users           User[]
+
+  @@map("families")
+}
+
+model Resident {
+  id              String    @id @default(uuid())
+  familyId        String    @map("family_id")
+  fullName        String    @map("full_name")
+  idNumber        String    @unique @map("id_number")
+  birthDate       DateTime  @map("birth_date")
+  gender          String
+  relationship    String
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+  deletedAt       DateTime? @map("deleted_at")
+
+  family          Family    @relation(fields: [familyId], references: [id], onDelete: Cascade)
+
+  @@map("residents")
+  @@index([familyId])
+  @@index([idNumber])
+}
+
+// ============= Security & Audit =============
+
+model LoginLog {
+  id          String   @id @default(uuid())
+  userId      String?  @map("user_id")
+  phoneNumber String   @map("phone_number")
+  ipAddress   String   @map("ip_address")
+  userAgent   String   @map("user_agent")
+  success     Boolean
+  failReason  String?  @map("fail_reason")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  user        User?    @relation(fields: [userId], references: [id])
+
+  @@map("login_logs")
+  @@index([userId])
+  @@index([phoneNumber])
+  @@index([createdAt])
+}
+
+model PhoneChangeLog {
+  id          String   @id @default(uuid())
+  userId      String   @map("user_id")
+  oldPhone    String   @map("old_phone")
+  newPhone    String   @map("new_phone")
+  status      String
+  requestedAt DateTime @default(now()) @map("requested_at")
+  approvedBy  String?  @map("approved_by")
+  approvedAt  DateTime? @map("approved_at")
+
+  user        User     @relation(fields: [userId], references: [id])
+
+  @@map("phone_change_logs")
+  @@index([userId])
+  @@index([status])
+}
+
+model AuditLog {
+  id          String   @id @default(uuid())
+  userId      String?  @map("user_id")
+  action      String
+  resource    String?
+  details     Json?
+  ipAddress   String   @map("ip_address")
+  userAgent   String   @map("user_agent")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  user        User?    @relation(fields: [userId], references: [id])
+
+  @@map("audit_logs")
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+}
