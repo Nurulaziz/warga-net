@@ -1,0 +1,17 @@
+name: Deploy ke Server
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {} # memungkinkan deploy manual dari tab Actions
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false # jangan batalkan deploy yang sedang berjalan
+
+jobs:
+  deploy:
+    runs-on: [self-hosted, warganet]
+    steps:
+      - name: Jalankan deploy di server
+        run: bash "$HOME/warga-net/scripts/deploy.sh"
