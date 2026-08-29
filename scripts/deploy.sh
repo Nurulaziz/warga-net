@@ -9,8 +9,9 @@
 
 set -euo pipefail
 
-# Root repo produksi di server (tempat aplikasi benar-benar dijalankan)
-APP_DIR="${WARGANET_APP_DIR:-$HOME/warga-net}"
+# Root repo produksi di server (tempat aplikasi benar-benar dijalankan).
+# Fallback ke path absolut jika HOME tidak ter-set di service runner.
+APP_DIR="${WARGANET_APP_DIR:-/home/userhcm/warga-net}"
 PM2_APP="${WARGANET_PM2_APP:-warganet-backend}"
 
 echo "==> Deploy WargaNet dimulai"
@@ -23,7 +24,7 @@ git fetch --all --prune
 git reset --hard origin/main
 
 echo "==> Install dependencies"
-pnpm install --frozen-lockfile
+pnpm install
 
 echo "==> Build backend"
 pnpm --filter @warganet/backend build
