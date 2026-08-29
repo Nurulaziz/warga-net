@@ -2,6 +2,7 @@ import { betterAuth } from 'better-auth';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
 import { phoneNumber, admin } from 'better-auth/plugins';
 import { PrismaClient } from '@prisma/client';
+import { sendWhatsAppViaFonnte } from '../whatsapp/fonnte.sender';
 
 const prisma = new PrismaClient();
 
@@ -27,14 +28,20 @@ export const auth: any = betterAuth({
       otpLength: 6,
       expiresIn: 300, // 5 menit
       sendOTP: async ({ phoneNumber: phone, code }, _ctx) => {
-        // Kirim OTP via WhatsApp
-        // Di production, gunakan WhatsApp Business API
-
-        // HANYA log di development — JANGAN log OTP di production
+        // Log OTP hanya di development untuk memudahkan testing
         if (process.env.NODE_ENV !== 'production') {
           console.log(`========================================`);
           console.log(`  [DEV] OTP untuk ${phone}: ${code}`);
           console.log(`========================================`);
+        }
+
+        // Kirim OTP via WhatsApp (Fonnte)
+        const message = `Kode OTP WargaNet Anda: ${code}. Berlaku 5 menit. Jangan bagikan kode ini kepada siapa pun.`;
+        const result = await sendWhatsAppViaFonnte(phone, message);
+
+        if (!result.success) {
+          // Lempar error agar better-auth tahu pengiriman gagal
+          throw new Error(`Gagal mengirim OTP: ${result.error}`);
         }
       },
       signUpOnVerification: {

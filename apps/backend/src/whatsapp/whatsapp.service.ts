@@ -1,5 +1,6 @@
 import { Injectable, Logger, ServiceUnavailableException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { sendWhatsAppViaFonnte } from './fonnte.sender';
 
 export interface SendResult {
   success: boolean;
@@ -10,16 +11,12 @@ export interface SendResult {
 @Injectable()
 export class WhatsAppService {
   private readonly logger = new Logger(WhatsAppService.name);
-  private readonly gatewayUrl: string;
-  private readonly apiKey: string;
-  private readonly phoneNumberId: string;
+  private readonly fonnteToken: string;
   private readonly maxRetries: number;
   private readonly retryDelay: number;
 
   constructor(private readonly configService: ConfigService) {
-    this.gatewayUrl = this.configService.get<string>('WHATSAPP_GATEWAY_URL', '');
-    this.apiKey = this.configService.get<string>('WHATSAPP_API_KEY', '');
-    this.phoneNumberId = this.configService.get<string>('WHATSAPP_PHONE_NUMBER_ID', '');
+    this.fonnteToken = this.configService.get<string>('FONNTE_TOKEN', '');
     this.maxRetries = this.configService.get<number>('WHATSAPP_MAX_RETRIES', 3);
     this.retryDelay = this.configService.get<number>('WHATSAPP_RETRY_DELAY_MS', 1000);
   }
@@ -36,21 +33,13 @@ export class WhatsAppService {
     return this.sendMessageWithRetry(phoneNumber, message);
   }
 
-  // Check WhatsApp Gateway health
+  // Cek apakah Fonnte sudah dikonfigurasi
   async checkHealth(): Promise<boolean> {
-    try {
-      if (!this.gatewayUrl || !this.apiKey) {
-        this.logger.warn('WhatsApp Gateway not configured');
-        return false;
-      }
-
-      // Simulate health check - in production, this would ping the gateway
-      // For now, just check if configuration exists
-      return true;
-    } catch (error) {
-      this.logger.error('WhatsApp Gateway health check failed:', error);
+    if (!this.fonnteToken) {
+      this.logger.warn('Fonnte token belum dikonfigurasi');
       return false;
     }
+    return true;
   }
 
   // Send message dengan retry logic dan exponential backoff
@@ -101,64 +90,13 @@ export class WhatsAppService {
     };
   }
 
-  // Actual message sending logic (to be implemented with real WhatsApp API)
+  // Kirim pesan lewat Fonnte
   private async sendMessage(phoneNumber: string, message: string): Promise<SendResult> {
-    try {
-      // Check if gateway is configured
-      if (!this.gatewayUrl || !this.apiKey) {
-        throw new ServiceUnavailableException('WhatsApp Gateway not configured');
-      }
-
-      // TODO: Implement actual WhatsApp Business API call
-      // For now, this is a mock implementation
-      // In production, this would make HTTP request to WhatsApp Gateway
-
-      // Simulate API call
-      this.logger.debug(`Mock: Sending to ${phoneNumber}: ${message}`);
-
-      // Mock success response
-      return {
-        success: true,
-        messageId: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      };
-
-      /* Production implementation example:
-      const response = await fetch(`${this.gatewayUrl}/messages`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${this.apiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          messaging_product: 'whatsapp',
-          to: phoneNumber,
-          type: 'text',
-          text: { body: message },
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`WhatsApp API error: ${response.statusText}`);
-      }
-
-      const data = await response.json();
-      return {
-        success: true,
-        messageId: data.messages[0].id,
-      };
-      */
-    } catch (error) {
-      this.logger.error(`WhatsApp send error for ${phoneNumber}:`, error);
-
-      if (error instanceof ServiceUnavailableException) {
-        throw error;
-      }
-
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
-      };
+    if (!this.fonnteToken) {
+      throw new ServiceUnavailableException('Fonnte token belum dikonfigurasi');
     }
+
+    return sendWhatsAppViaFonnte(phoneNumber, message);
   }
 
   // Calculate exponential backoff delay
