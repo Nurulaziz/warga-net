@@ -794,8 +794,8 @@ export function BillsPage() {
       )}
 
       {/* Filter periode & jenis iuran */}
-      <div className="flex flex-wrap items-end gap-3 mb-4">
-        <div>
+      <div className="flex flex-wrap items-end gap-3 mb-4 pb-5 sm:pb-0">
+        <div className="relative">
           <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
             Periode
           </label>
@@ -809,7 +809,7 @@ export function BillsPage() {
             className="max-w-[180px]"
           />
           {periodFilter && (
-            <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">
+            <p className="absolute left-0 top-full mt-1 whitespace-nowrap text-xs text-gray-400 dark:text-gray-500">
               Menampilkan: {formatPeriodId(periodFilter)}
             </p>
           )}
