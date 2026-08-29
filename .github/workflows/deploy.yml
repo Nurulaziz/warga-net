@@ -13,5 +13,16 @@ jobs:
   deploy:
     runs-on: [self-hosted, warganet]
     steps:
+      - name: Diagnostik environment
+        run: |
+          echo "whoami: $(whoami)"
+          echo "HOME: $HOME"
+          echo "PWD: $(pwd)"
+          echo "PATH: $PATH"
+          echo "which node: $(which node || echo TIDAK ADA)"
+          echo "which pnpm: $(which pnpm || echo TIDAK ADA)"
+          echo "which pm2: $(which pm2 || echo TIDAK ADA)"
+          echo "script ada? "; ls -la /home/userhcm/warga-net/scripts/deploy.sh || echo "SCRIPT TIDAK DITEMUKAN"
+
       - name: Jalankan deploy di server
-        run: bash /home/userhcm/warga-net/scripts/deploy.sh
+        run: bash -x /home/userhcm/warga-net/scripts/deploy.sh
