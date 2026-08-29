@@ -1,4 +1,6 @@
 export { StatCard } from './StatCard';
-export { StatsGrid } from './StatsGrid';
-export { FinancialSummary } from './FinancialSummary';
-export { ProjectsOverview } from './ProjectsOverview';
+export { TopMetrics } from './TopMetrics';
+export { CashFlowChart } from './CashFlowChart';
+export { PendingApprovals } from './PendingApprovals';
+export { RecentAuditLog } from './RecentAuditLog';
+export { RecentAnnouncements } from './RecentAnnouncements';

@@ -1,4 +1,5 @@
 import { ReactNode, useEffect } from 'react';
+import { XMarkIcon } from '@heroicons/react/24/outline';
 
 interface ModalProps {
   isOpen: boolean;
@@ -8,13 +9,7 @@ interface ModalProps {
   size?: 'sm' | 'md' | 'lg' | 'xl';
 }
 
-export const Modal = ({
-  isOpen,
-  onClose,
-  title,
-  children,
-  size = 'md',
-}: ModalProps) => {
+export const Modal = ({ isOpen, onClose, title, children, size = 'md' }: ModalProps) => {
   // Close on ESC key
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
@@ -53,13 +48,23 @@ export const Modal = ({
         className={`bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full ${sizeStyles[size]} max-h-[90vh] overflow-y-auto`}
         onClick={(e) => e.stopPropagation()}
       >
-        {title && (
-          <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+          {title ? (
             <h2 id="modal-title" className="text-xl font-semibold text-gray-900 dark:text-gray-100">
               {title}
             </h2>
-          </div>
-        )}
+          ) : (
+            <span />
+          )}
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Tutup"
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-200 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500"
+          >
+            <XMarkIcon className="h-5 w-5" aria-hidden="true" />
+          </button>
+        </div>
         <div className="px-6 py-4">{children}</div>
       </div>
     </div>

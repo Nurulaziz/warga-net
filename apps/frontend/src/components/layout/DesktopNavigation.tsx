@@ -1,156 +1,258 @@
-import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
+import { useSettings } from '@/hooks/useSettings';
+import { useAuth } from '@/contexts/AuthContext';
+import {
+  ChartBarIcon,
+  UserGroupIcon,
+  IdentificationIcon,
+  UserIcon,
+  LockClosedIcon,
+  ClipboardDocumentListIcon,
+  // UsersIcon dihapus: Warga kini pakai IdentificationIcon
+  DocumentTextIcon,
+  Cog6ToothIcon,
+  HomeModernIcon,
+  BanknotesIcon,
+  WalletIcon,
+  MegaphoneIcon,
+  EnvelopeIcon,
+  ChevronLeftIcon,
+  UserCircleIcon,
+} from '@heroicons/react/24/outline';
+
+// --- Menu configuration ---
 
 interface NavItem {
   path: string;
   label: string;
-  icon?: string;
-  badge?: string;
-  children?: NavItem[];
+  icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
+  adminOnly?: boolean;
 }
 
 interface NavSection {
-  title: string;
+  group: string;
   items: NavItem[];
+  adminOnly?: boolean;
 }
 
-const navSections: NavSection[] = [
+// Urutan grup: operasional harian di atas, konfigurasi di bawah.
+// KEUANGAN & KOMUNIKASI dipakai warga juga; sisanya khusus admin.
+const mainNavSections: NavSection[] = [
   {
-    title: 'MENU UTAMA',
+    group: 'KEUANGAN',
     items: [
-      { path: '/dashboard', label: 'Dashboard', icon: '📊' },
+      { path: '/bills', label: 'Iuran', icon: BanknotesIcon },
+      { path: '/cash', label: 'Kas RT', icon: WalletIcon, adminOnly: true },
+      { path: '/reports', label: 'Laporan', icon: DocumentTextIcon, adminOnly: true },
     ],
   },
   {
-    title: 'MANAJEMEN DATA',
+    group: 'DATA WARGA',
+    adminOnly: true,
     items: [
-      { path: '/users', label: 'Pengguna', icon: '👤' },
-      { path: '/families', label: 'Keluarga', icon: '👨‍👩‍👧‍👦' },
-      { path: '/residents', label: 'Warga', icon: '👥' },
+      { path: '/families', label: 'Keluarga', icon: UserGroupIcon, adminOnly: true },
+      { path: '/residents', label: 'Warga', icon: IdentificationIcon, adminOnly: true },
     ],
   },
   {
-    title: 'ADMINISTRASI',
+    group: 'KOMUNIKASI',
     items: [
-      { path: '/roles', label: 'Role & Permission', icon: '🔐' },
-      { path: '/audit-logs', label: 'Audit Log', icon: '📋' },
-      { path: '/reports', label: 'Laporan', icon: '📄' },
+      { path: '/announcements', label: 'Pengumuman', icon: MegaphoneIcon },
+      { path: '/letters', label: 'Surat', icon: EnvelopeIcon },
     ],
   },
   {
-    title: 'PENGATURAN',
+    group: 'PENGGUNA & AKSES',
+    adminOnly: true,
     items: [
-      { path: '/profile', label: 'Profil Saya', icon: '⚙️' },
-      { path: '/settings', label: 'Pengaturan', icon: '🔧' },
+      { path: '/users', label: 'Pengguna Sistem', icon: UserIcon, adminOnly: true },
+      { path: '/roles', label: 'Role & Permission', icon: LockClosedIcon, adminOnly: true },
+    ],
+  },
+  {
+    group: 'SISTEM',
+    adminOnly: true,
+    items: [
+      { path: '/audit-log', label: 'Audit Log', icon: ClipboardDocumentListIcon, adminOnly: true },
     ],
   },
 ];
 
-export function DesktopNavigation() {
-  const [expandedSections, setExpandedSections] = useState<string[]>(['MENU UTAMA', 'MANAJEMEN DATA']);
+const bottomNavItems: NavItem[] = [
+  { path: '/settings', label: 'Pengaturan', icon: Cog6ToothIcon, adminOnly: true },
+];
 
-  const toggleSection = (title: string) => {
-    setExpandedSections((prev) =>
-      prev.includes(title) ? prev.filter((t) => t !== title) : [...prev, title]
-    );
-  };
+const profileNavItem: NavItem = { path: '/profile', label: 'Profil Saya', icon: UserCircleIcon };
+
+// --- Component ---
+
+interface DesktopNavigationProps {
+  collapsed: boolean;
+  onToggle: () => void;
+}
+
+export function DesktopNavigation({ collapsed, onToggle }: DesktopNavigationProps) {
+  const { settings } = useSettings();
+  const { isAdmin } = useAuth();
+
+  const admin = isAdmin();
+
+  // Filter sections dan items berdasarkan role
+  const visibleSections = mainNavSections
+    .filter((section) => !section.adminOnly || admin)
+    .map((section) => ({
+      ...section,
+      items: section.items.filter((item) => !item.adminOnly || admin),
+    }))
+    .filter((section) => section.items.length > 0);
+
+  const visibleBottomItems = bottomNavItems.filter((item) => !item.adminOnly || admin);
 
   return (
-    <aside className="fixed left-0 top-0 h-screen w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 z-40 flex flex-col">
-      {/* Logo/Header */}
-      <div className="h-16 flex items-center justify-between px-6 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-            <span className="text-white font-bold text-sm">W</span>
+    <aside
+      className={`fixed left-0 top-0 h-screen bg-white dark:bg-gray-800 border-r border-[#E2E8F0] dark:border-gray-700 z-40 flex flex-col transition-all duration-300 ${
+        collapsed ? 'w-[68px]' : 'w-[230px]'
+      }`}
+      role="navigation"
+      aria-label="Sidebar navigation"
+    >
+      {/* Header */}
+      <div
+        className={`h-14 flex items-center border-b border-[#E2E8F0] dark:border-gray-700 flex-shrink-0 ${
+          collapsed ? 'justify-center px-2' : 'justify-between px-4'
+        }`}
+      >
+        <div className="flex items-center gap-2.5 overflow-hidden">
+          <div
+            className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${settings.app_logo_url ? '' : 'bg-[#0054A6]'}`}
+          >
+            {settings.app_logo_url ? (
+              <img
+                src={settings.app_logo_url}
+                alt={settings.app_name}
+                className="w-8 h-8 object-contain rounded-lg"
+              />
+            ) : (
+              <HomeModernIcon className="w-[18px] h-[18px] text-white" />
+            )}
           </div>
-          <h1 className="text-xl font-bold text-gray-900 dark:text-white">
-            WargaNet
-          </h1>
+          {!collapsed && (
+            <span className="text-base font-bold text-[#0F172A] dark:text-white whitespace-nowrap">
+              {settings.app_name}
+            </span>
+          )}
         </div>
-        <ThemeToggle />
       </div>
 
-      {/* Navigation Sections */}
-      <nav className="flex-1 overflow-y-auto px-4 py-6">
-        {navSections.map((section) => (
-          <div key={section.title} className="mb-6">
-            {/* Section Title */}
-            <button
-              onClick={() => toggleSection(section.title)}
-              className="w-full flex items-center justify-between px-3 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
-            >
-              <span>{section.title}</span>
-              <span className="text-gray-400">
-                {expandedSections.includes(section.title) ? '−' : '+'}
-              </span>
-            </button>
+      {/* Dashboard — always top, standalone */}
+      <div className={`px-2 pt-3 pb-1 ${collapsed ? 'px-2' : 'px-3'}`}>
+        <SidebarLink
+          item={{ path: '/dashboard', label: 'Dashboard', icon: ChartBarIcon }}
+          collapsed={collapsed}
+        />
+      </div>
 
-            {/* Section Items */}
-            {expandedSections.includes(section.title) && (
-              <div className="mt-2 space-y-1">
-                {section.items.map((item) => (
-                  <NavLink
-                    key={item.path}
-                    to={item.path}
-                    className={({ isActive }) =>
-                      `flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg transition-colors ${
-                        isActive
-                          ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
-                          : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50'
-                      }`
-                    }
-                  >
-                    <div className="flex items-center gap-3">
-                      {item.icon && (
-                        <span className="text-lg flex-shrink-0">{item.icon}</span>
-                      )}
-                      <span className="text-sm font-medium">{item.label}</span>
-                    </div>
-                    {item.badge && (
-                      <span
-                        className={`px-2 py-0.5 text-xs font-medium rounded ${
-                          item.badge === 'Online'
-                            ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-                            : item.badge === 'Offline'
-                            ? 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
-                            : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
-                        }`}
-                      >
-                        {item.badge}
-                      </span>
-                    )}
-                  </NavLink>
-                ))}
+      {/* Main navigation sections */}
+      <nav
+        className="flex-1 overflow-y-auto overflow-x-hidden px-2 py-1 scrollbar-none"
+        aria-label="Menu utama"
+        style={{ scrollbarWidth: 'none' }}
+      >
+        {visibleSections.map((section) => (
+          <div key={section.group} className="mt-4 first:mt-2">
+            {/* Group label — disembunyikan untuk warga agar daftar menu lebih ringkas */}
+            {!collapsed && admin && (
+              <div className="px-2 pb-1.5">
+                <span className="text-[10px] font-semibold text-[#94A3B8] dark:text-gray-500 uppercase tracking-[0.06em]">
+                  {section.group}
+                </span>
               </div>
             )}
+            {/* Items */}
+            <div className="space-y-0.5">
+              {section.items.map((item) => (
+                <SidebarLink key={item.path} item={item} collapsed={collapsed} />
+              ))}
+            </div>
           </div>
         ))}
       </nav>
 
-      {/* Promo Card */}
-      <div className="flex-shrink-0 p-4 border-t border-gray-200 dark:border-gray-700">
-        <div className="relative bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-4 overflow-hidden">
-          {/* Background decoration */}
-          <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full -mr-8 -mt-8" />
-          <div className="absolute bottom-0 left-0 w-16 h-16 bg-white/10 rounded-full -ml-4 -mb-4" />
-          
-          <div className="relative z-10">
-            <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center mb-3">
-              <span className="text-2xl">🏘️</span>
-            </div>
-            <h3 className="text-white font-semibold text-sm mb-1">
-              Sistem Manajemen RT
-            </h3>
-            <p className="text-white/90 text-xs mb-3">
-              WargaNet membantu mengelola data warga dengan mudah dan efisien
-            </p>
-            <button className="w-full bg-white text-blue-600 text-xs font-medium py-2 px-3 rounded-lg hover:bg-blue-50 transition-colors">
-              Pelajari Lebih Lanjut
-            </button>
+      {/* Bottom section: Pengaturan, lalu Profil + Theme Toggle dalam 1 row */}
+      <div className="flex-shrink-0 border-t border-[#E2E8F0] dark:border-gray-700 px-2 py-2">
+        <div className="space-y-0.5">
+          {visibleBottomItems.map((item) => (
+            <SidebarLink key={item.path} item={item} collapsed={collapsed} />
+          ))}
+        </div>
+        {/* Profil + theme toggle sejajar dalam satu baris */}
+        <div className={`mt-0.5 flex items-center gap-1 ${collapsed ? 'flex-col' : ''}`}>
+          <div className="flex-1 min-w-0">
+            <SidebarLink item={profileNavItem} collapsed={collapsed} />
+          </div>
+          <div className="flex-shrink-0 pr-1">
+            <ThemeToggle />
           </div>
         </div>
       </div>
+
+      {/* Floating border toggle button */}
+      <button
+        onClick={onToggle}
+        className="absolute -right-3 top-[72px] w-6 h-6 bg-white dark:bg-gray-800 border border-[#E2E8F0] dark:border-gray-600 rounded-full shadow-md flex items-center justify-center hover:bg-[#F8FAFC] dark:hover:bg-gray-700 hover:shadow-lg transition-all duration-200 z-50"
+        title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+        aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+      >
+        <ChevronLeftIcon
+          className={`w-3.5 h-3.5 text-[#64748B] transition-transform duration-300 ${
+            collapsed ? 'rotate-180' : ''
+          }`}
+        />
+      </button>
     </aside>
+  );
+}
+
+// --- Reusable sidebar link ---
+
+function SidebarLink({ item, collapsed }: { item: NavItem; collapsed: boolean }) {
+  return (
+    <NavLink
+      to={item.path}
+      title={collapsed ? item.label : undefined}
+      aria-label={collapsed ? item.label : undefined}
+      className={({ isActive }) =>
+        `group relative flex items-center gap-2.5 rounded-lg transition-colors duration-150 min-h-[40px] ${
+          collapsed ? 'justify-center px-2' : 'px-3'
+        } ${
+          isActive
+            ? 'bg-[#E8F0FF] dark:bg-[#0054A6]/15 text-[#0054A6] dark:text-blue-400'
+            : 'text-[#64748B] dark:text-gray-400 hover:bg-[#F8FAFC] dark:hover:bg-gray-700/50 hover:text-[#0054A6] dark:hover:text-gray-200'
+        }`
+      }
+    >
+      {({ isActive }) => (
+        <>
+          {/* Active indicator */}
+          {isActive && !collapsed && (
+            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 bg-[#0054A6] dark:bg-blue-400 rounded-r" />
+          )}
+          <item.icon
+            className={`w-[18px] h-[18px] flex-shrink-0 ${
+              isActive ? 'text-[#0054A6] dark:text-blue-400' : ''
+            }`}
+            aria-hidden="true"
+          />
+          {!collapsed && <span className="text-[13px] font-medium truncate">{item.label}</span>}
+          {/* Tooltip for collapsed */}
+          {collapsed && (
+            <div className="absolute left-full ml-2 px-2.5 py-1.5 bg-[#0F172A] text-white text-xs rounded-md whitespace-nowrap opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150 pointer-events-none z-50 shadow-lg">
+              {item.label}
+            </div>
+          )}
+        </>
+      )}
+    </NavLink>
   );
 }

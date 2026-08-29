@@ -7,6 +7,80 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ============= Better Auth Tables =============
+
+model BetterAuthUser {
+  id                  String    @id
+  name                String
+  email               String    @unique
+  emailVerified       Boolean   @default(false) @map("email_verified")
+  image               String?
+  phoneNumber         String?   @unique @map("phone_number")
+  phoneNumberVerified Boolean   @default(false) @map("phone_number_verified")
+  role                String?
+  banned              Boolean?
+  banReason           String?   @map("ban_reason")
+  banExpires          DateTime? @map("ban_expires")
+  createdAt           DateTime  @default(now()) @map("created_at")
+  updatedAt           DateTime  @updatedAt @map("updated_at")
+
+  sessions            Session[]
+  accounts            Account[]
+
+  @@map("ba_user")
+}
+
+model Session {
+  id               String   @id
+  expiresAt        DateTime @map("expires_at")
+  token            String   @unique
+  ipAddress        String?  @map("ip_address")
+  userAgent        String?  @map("user_agent")
+  userId           String   @map("user_id")
+  impersonatedBy   String?  @map("impersonated_by")
+
+  user      BetterAuthUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("ba_session")
+  @@index([userId])
+  @@index([token])
+}
+
+model Account {
+  id                    String    @id
+  accountId             String    @map("account_id")
+  providerId            String    @map("provider_id")
+  userId                String    @map("user_id")
+  accessToken           String?   @map("access_token")
+  refreshToken          String?   @map("refresh_token")
+  idToken               String?   @map("id_token")
+  accessTokenExpiresAt  DateTime? @map("access_token_expires_at")
+  refreshTokenExpiresAt DateTime? @map("refresh_token_expires_at")
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @updatedAt @map("updated_at")
+
+  user                  BetterAuthUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("ba_account")
+  @@index([userId])
+}
+
+model Verification {
+  id         String    @id
+  identifier String
+  value      String
+  expiresAt  DateTime  @map("expires_at")
+  createdAt  DateTime? @default(now()) @map("created_at")
+  updatedAt  DateTime? @updatedAt @map("updated_at")
+
+  @@map("ba_verification")
+}
+
 // ============= Auth & Access =============
 
 model User {
@@ -94,6 +168,7 @@ model Family {
 
   residents       Resident[]
   users           User[]
+  bills           Bill[]
 
   @@map("families")
 }
@@ -170,4 +245,185 @@ model AuditLog {
   @@index([userId])
   @@index([action])
   @@index([createdAt])
+}
+
+// ============= Iuran & Pembayaran =============
+
+model BillType {
+  id           String   @id @default(uuid())
+  name         String   @unique
+  amount       Float
+  period       String   @default("monthly") // monthly, yearly, once
+  description  String?
+  isActive     Boolean  @default(true) @map("is_active")
+  autoGenerate Boolean  @default(true) @map("auto_generate") // ikut auto-generate bulanan
+  generateDay  Int      @default(1) @map("generate_day") // tanggal terbit tagihan (1-28)
+  dueDay       Int      @default(10) @map("due_day") // tanggal jatuh tempo (1-28)
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  bills        Bill[]
+
+  @@map("bill_types")
+}
+
+model Bill {
+  id          String    @id @default(uuid())
+  billTypeId  String    @map("bill_type_id")
+  familyId    String    @map("family_id")
+  amount      Float
+  dueDate     DateTime  @map("due_date")
+  status      String    @default("unpaid") // unpaid, paid, overdue
+  period      String    // "2025-01", "2025-02", dll
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  billType    BillType  @relation(fields: [billTypeId], references: [id])
+  family      Family    @relation(fields: [familyId], references: [id])
+  payments    Payment[]
+
+  @@unique([billTypeId, familyId, period])
+  @@map("bills")
+  @@index([familyId])
+  @@index([billTypeId])
+  @@index([status])
+  @@index([period])
+}
+
+model Payment {
+  id              String   @id @default(uuid())
+  billId          String   @map("bill_id")
+  amount          Float
+  paidAt          DateTime @default(now()) @map("paid_at")
+  paidBy          String?  @map("paid_by") // nama pembayar
+  method          String   @default("cash") // cash, transfer, qris, bank_transfer, e_wallet
+  note            String?
+  receivedBy      String?  @map("received_by") // user id bendahara
+  // Midtrans payment gateway fields
+  transactionId   String?  @map("transaction_id") // Midtrans transaction_id
+  orderId         String?  @unique @map("order_id") // order_id unik untuk Midtrans
+  snapToken       String?  @map("snap_token")
+  paymentType     String?  @map("payment_type") // qris, bank_transfer, gopay, shopeepay, dll
+  transactionStatus String? @map("transaction_status") // pending, settlement, cancel, expire
+  referenceNo     String?  @map("reference_no") // nomor referensi dari payment channel
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  bill            Bill     @relation(fields: [billId], references: [id])
+  cashTransaction CashTransaction?
+
+  @@map("payments")
+  @@index([billId])
+  @@index([paidAt])
+  @@index([orderId])
+}
+
+// ============= Kas RT =============
+
+model CashCategory {
+  id          String   @id @default(uuid())
+  name        String
+  type        String   // income, expense
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  transactions CashTransaction[]
+
+  @@unique([name, type])
+  @@map("cash_categories")
+}
+
+model CashTransaction {
+  id          String   @id @default(uuid())
+  categoryId  String   @map("category_id")
+  type        String   // income, expense
+  amount      Float
+  description String
+  date        DateTime @default(now())
+  createdBy   String?  @map("created_by") // user id
+  paymentId   String?  @unique @map("payment_id") // penanda: kas dari pembayaran iuran (anti-duplikat)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  category    CashCategory @relation(fields: [categoryId], references: [id])
+  payment     Payment?     @relation(fields: [paymentId], references: [id])
+
+  @@map("cash_transactions")
+  @@index([categoryId])
+  @@index([type])
+  @@index([date])
+}
+
+// ============= Pengumuman =============
+
+model Announcement {
+  id             String    @id @default(uuid())
+  title          String
+  content        String
+  priority       String    @default("normal") // low, normal, high, urgent
+  targetScope    String    @default("all") @map("target_scope") // all, pengurus
+  attachmentUrl  String?   @map("attachment_url")
+  attachmentName String?   @map("attachment_name")
+  isPublished    Boolean   @default(true) @map("is_published")
+  publishedAt    DateTime? @map("published_at")
+  createdBy      String?   @map("created_by")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  @@map("announcements")
+  @@index([isPublished])
+  @@index([createdAt])
+  @@index([priority])
+}
+
+// ============= Surat-Menyurat =============
+
+model LetterTemplate {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  type        String   // domisili, pengantar, keterangan, custom
+  content     String   // template HTML dengan placeholder {{nama}}, {{alamat}}, dll
+  description String?
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  letters     Letter[]
+
+  @@map("letter_templates")
+}
+
+model Letter {
+  id           String   @id @default(uuid())
+  templateId   String   @map("template_id")
+  letterNumber String   @unique @map("letter_number")
+  residentId   String?  @map("resident_id")
+  recipientName String  @map("recipient_name")
+  content      String   // rendered HTML
+  purpose      String?
+  status       String   @default("draft") // draft, signed, archived
+  issuedAt     DateTime? @map("issued_at")
+  createdBy    String?  @map("created_by")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  template     LetterTemplate @relation(fields: [templateId], references: [id])
+
+  @@map("letters")
+  @@index([templateId])
+  @@index([residentId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+// ============= Pengaturan Sistem =============
+
+model SystemSetting {
+  id    String @id @default(uuid())
+  key   String @unique
+  value String
+  label String?
+  group String @default("general") // general, rt_info, letter, notification
+
+  @@map("system_settings")
+  @@index([group])
 }

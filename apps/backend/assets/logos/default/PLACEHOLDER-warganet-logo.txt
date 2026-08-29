@@ -1,0 +1,31 @@
+# PLACEHOLDER: WargaNet Logo Required
+
+## Action Required
+You need to add the actual WargaNet logo file here.
+
+## File Name
+warganet-logo.png
+
+## Specifications
+- Format: PNG with transparent background
+- Size: 400x400px (recommended)
+- Max File Size: 500KB
+- Color Mode: RGB
+
+## How to Add
+1. Prepare your WargaNet logo file (warganet-logo.png)
+2. Copy it to this directory: apps/backend/assets/logos/default/
+3. Delete this placeholder file
+4. Commit the logo to git
+
+```bash
+# Example command
+cp /path/to/your/warganet-logo.png apps/backend/assets/logos/default/
+rm apps/backend/assets/logos/default/PLACEHOLDER-warganet-logo.txt
+git add apps/backend/assets/logos/default/warganet-logo.png
+git commit -m "Add default WargaNet logo"
+```
+
+## Note
+The application will use this logo as a fallback when RT doesn't have their own logo.
+For detailed instructions, see: apps/backend/assets/SETUP-LOGOS.md

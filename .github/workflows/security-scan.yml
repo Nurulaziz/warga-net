@@ -1,0 +1,97 @@
+name: Security Scan
+
+on:
+  # Run on push to main branch
+  push:
+    branches: [main, develop]
+  
+  # Run on pull requests
+  pull_request:
+    branches: [main, develop]
+  
+  # Run weekly on Monday at 9 AM
+  schedule:
+    - cron: '0 9 * * 1'
+  
+  # Allow manual trigger
+  workflow_dispatch:
+
+jobs:
+  security-scan:
+    name: Security Vulnerability Scan
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+      
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      
+      - name: Run npm audit
+        run: |
+          cd apps/backend
+          pnpm audit --audit-level=moderate
+        continue-on-error: true
+      
+      - name: Generate audit report
+        run: |
+          cd apps/backend
+          pnpm audit --json > security-audit-report.json
+        continue-on-error: true
+      
+      - name: Upload audit report
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-audit-report
+          path: apps/backend/security-audit-report.json
+          retention-days: 30
+      
+      - name: Check for outdated packages
+        run: |
+          cd apps/backend
+          pnpm outdated
+        continue-on-error: true
+      
+      - name: Comment PR with security findings
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const auditReport = JSON.parse(fs.readFileSync('apps/backend/security-audit-report.json', 'utf8'));
+            
+            const vulnerabilities = auditReport.metadata.vulnerabilities;
+            const total = vulnerabilities.total;
+            
+            if (total > 0) {
+              const comment = `## 🔒 Security Scan Results
+              
+              Found **${total}** vulnerabilities:
+              - Critical: ${vulnerabilities.critical}
+              - High: ${vulnerabilities.high}
+              - Moderate: ${vulnerabilities.moderate}
+              - Low: ${vulnerabilities.low}
+              
+              Please review and fix vulnerabilities before merging.
+              
+              Run \`pnpm audit --fix\` to automatically fix vulnerabilities.
+              `;
+              
+              github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: comment
+              });
+            }

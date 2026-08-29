@@ -1,45 +1,46 @@
 import { useTheme } from '@/hooks/useTheme';
+import { MoonIcon, SunIcon } from '@heroicons/react/24/solid';
 
-export const ThemeToggle = () => {
+interface ThemeToggleProps {
+  // Tampilkan label teks di samping switch
+  showLabel?: boolean;
+}
+
+export const ThemeToggle = ({ showLabel = false }: ThemeToggleProps) => {
   const { theme, toggleTheme } = useTheme();
+  const isDark = theme === 'dark';
 
   return (
-    <button
-      onClick={toggleTheme}
-      className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-      aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
-    >
-      {theme === 'light' ? (
-        // Moon icon untuk dark mode
-        <svg
-          className="w-6 h-6 text-gray-700"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"
-          />
-        </svg>
-      ) : (
-        // Sun icon untuk light mode
-        <svg
-          className="w-6 h-6 text-gray-200"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"
-          />
-        </svg>
+    <div className="flex items-center gap-2">
+      {showLabel && (
+        <span className="text-[13px] font-medium text-[#64748B] dark:text-gray-400">
+          {isDark ? 'Mode Gelap' : 'Mode Terang'}
+        </span>
       )}
-    </button>
+      <button
+        type="button"
+        role="switch"
+        aria-checked={isDark}
+        onClick={toggleTheme}
+        title="Ubah Tema"
+        aria-label={`Ubah ke mode ${isDark ? 'terang' : 'gelap'}`}
+        className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-[#0054A6] focus:ring-offset-2 dark:focus:ring-offset-gray-800 ${
+          isDark ? 'bg-[#0054A6]' : 'bg-gray-300'
+        }`}
+      >
+        {/* Knob dengan ikon kontekstual */}
+        <span
+          className={`inline-flex h-5 w-5 transform items-center justify-center rounded-full bg-white shadow-sm transition-transform duration-300 ${
+            isDark ? 'translate-x-[22px]' : 'translate-x-[2px]'
+          }`}
+        >
+          {isDark ? (
+            <MoonIcon className="h-3 w-3 text-[#0054A6]" aria-hidden="true" />
+          ) : (
+            <SunIcon className="h-3 w-3 text-amber-500" aria-hidden="true" />
+          )}
+        </span>
+      </button>
+    </div>
   );
 };

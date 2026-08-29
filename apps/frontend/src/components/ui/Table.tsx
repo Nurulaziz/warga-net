@@ -70,11 +70,12 @@ export const TableHead = ({ children, className = '', ...props }: TableHeadProps
 
 interface TableCellProps extends HTMLAttributes<HTMLTableCellElement> {
   children: ReactNode;
+  colSpan?: number;
 }
 
-export const TableCell = ({ children, className = '', ...props }: TableCellProps) => {
+export const TableCell = ({ children, className = '', colSpan, ...props }: TableCellProps) => {
   return (
-    <td className={`px-4 py-3 text-gray-700 dark:text-gray-300 ${className}`} {...props}>
+    <td className={`px-4 py-3 text-gray-700 dark:text-gray-300 ${className}`} colSpan={colSpan} {...props}>
       {children}
     </td>
   );
