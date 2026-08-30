@@ -1,4 +1,5 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from '../src/generated/prisma/client';
+import { PrismaPg } from '@prisma/adapter-pg';
 import * as fc from 'fast-check';
 import * as dotenv from 'dotenv';
 import * as path from 'path';
@@ -25,11 +26,7 @@ describe('Property 17: Uniqueness Constraint untuk Nomor Telepon dan KTP', () =>
   beforeAll(async () => {
     // Use explicit DATABASE_URL
     prisma = new PrismaClient({
-      datasources: {
-        db: {
-          url: process.env.DATABASE_URL || 'postgresql://warganet:warganet_password@localhost:5432/warganet_db?schema=public',
-        },
-      },
+      adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL || 'postgresql://warganet:warganet_password@localhost:5432/warganet_db?schema=public' }),
     });
     await prisma.$connect();
 

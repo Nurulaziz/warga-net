@@ -1,10 +1,14 @@
+import 'dotenv/config';
 import { betterAuth } from 'better-auth';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
 import { phoneNumber, admin } from 'better-auth/plugins';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from '../generated/prisma/client';
+import { PrismaPg } from '@prisma/adapter-pg';
 import { sendWhatsAppViaFonnte } from '../whatsapp/fonnte.sender';
 
-const prisma = new PrismaClient();
+const prisma = new PrismaClient({
+  adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }),
+});
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const auth: any = betterAuth({
@@ -40,7 +44,12 @@ export const auth: any = betterAuth({
         const result = await sendWhatsAppViaFonnte(phone, message);
 
         if (!result.success) {
-          // Lempar error agar better-auth tahu pengiriman gagal
+          // Di development, jangan gagalkan request: OTP sudah tercetak di console
+          if (process.env.NODE_ENV !== 'production') {
+            console.warn(`[DEV] WhatsApp gagal dikirim ke ${phone}: ${result.error} — gunakan OTP dari console.`);
+            return;
+          }
+          // Di production, lempar error agar better-auth tahu pengiriman gagal
           throw new Error(`Gagal mengirim OTP: ${result.error}`);
         }
       },

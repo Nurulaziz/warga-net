@@ -31,8 +31,8 @@ Sistem manajemen RT berbasis web dengan autentikasi OTP WhatsApp, RBAC dinamis, 
 
 Pastikan Anda telah menginstall:
 
-- **Node.js** >= 18.0.0
-- **pnpm** >= 8.0.0
+- **Node.js** >= 22.12.0
+- **pnpm** >= 11.0.0
 - **Docker** dan **Docker Compose** (untuk development dengan database)
 - **PostgreSQL** >= 14 (jika tidak menggunakan Docker)
 - **Redis** >= 6 (jika tidak menggunakan Docker)

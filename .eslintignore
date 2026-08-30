@@ -5,3 +5,5 @@ coverage
 *.config.js
 *.config.ts
 .eslintrc.js
+**/generated
+src/generated

@@ -1,7 +1,8 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from './src/generated/prisma/client';
+import { PrismaPg } from '@prisma/adapter-pg';
 import { mapAppRoleToBetterAuth } from './src/common/role-mapping';
 
-const prisma = new PrismaClient();
+const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }) });
 
 // Script untuk menyinkronkan ba_user.role dengan app role (tabel users)
 // App role adalah sumber kebenaran

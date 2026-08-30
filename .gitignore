@@ -43,6 +43,10 @@ lerna-debug.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# Prisma 7 generated client
+apps/backend/src/generated
+**/src/generated
+
 # IDE
 .vscode
 .idea

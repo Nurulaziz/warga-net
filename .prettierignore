@@ -5,6 +5,8 @@ coverage
 .next
 .turbo
 *.log
+**/generated
+src/generated
 .env
 .env.*
 !.env.example

@@ -19,3 +19,6 @@ allowBuilds:
   bcrypt: true
   esbuild: true
   prisma: true
+
+minimumReleaseAgeExclude:
+  - happy-dom@20.12.0

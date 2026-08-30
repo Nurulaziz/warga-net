@@ -3,9 +3,10 @@
  * Task 3.2: Implement income transactions fetching
  */
 
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from './src/generated/prisma/client';
+import { PrismaPg } from '@prisma/adapter-pg';
 
-const prisma = new PrismaClient();
+const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }) });
 
 async function verifyIncomeTransactions() {
   console.log('🔍 Verifying fetchIncomeTransactions implementation...\n');

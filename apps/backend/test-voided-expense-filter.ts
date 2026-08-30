@@ -2,9 +2,10 @@
  * Test that voided expenses are correctly filtered out
  */
 
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from './src/generated/prisma/client';
+import { PrismaPg } from '@prisma/adapter-pg';
 
-const prisma = new PrismaClient();
+const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }) });
 
 async function testVoidedExpenseFilter() {
   console.log('🧪 Testing voided expense filter...\n');

@@ -26,6 +26,9 @@ git reset --hard origin/main
 echo "==> Install dependencies"
 pnpm install
 
+echo "==> Generate Prisma Client (Prisma 7: tidak otomatis saat install)"
+pnpm --filter @warganet/backend exec prisma generate
+
 echo "==> Build backend"
 pnpm --filter @warganet/backend build
 

@@ -176,9 +176,6 @@ export function BillsPage() {
   const [confirmPay, setConfirmPay] = useState<Bill | null>(null);
   // Modal pembayaran Snap embedded (di dalam halaman, bukan popup)
   const [snapBill, setSnapBill] = useState<Bill | null>(null);
-  // Info pembayaran online massal (beberapa tagihan dalam satu transaksi)
-  const [snapGroup, setSnapGroup] = useState<{ billCount: number; amount: number } | null>(null);
-  const [bulkOnlinePaying, setBulkOnlinePaying] = useState(false);
 
   // Tampilkan toast, auto-hilang setelah 4 detik
   const showToast = useCallback((type: 'success' | 'error' | 'info', message: string) => {
@@ -231,7 +228,6 @@ export function BillsPage() {
     const container = document.getElementById(SNAP_CONTAINER_ID);
     if (container) container.innerHTML = '';
     setSnapBill(null);
-    setSnapGroup(null);
   }, []);
 
   // Bayar online via Midtrans Snap (mode embedded di dalam halaman)
@@ -298,81 +294,6 @@ export function BillsPage() {
           'Gagal memproses pembayaran';
         showToast('error', msg);
         setPayingOnline(null);
-      }
-    },
-    [periodFilter, showToast, closeSnapModal],
-  );
-
-  // Bayar beberapa tagihan sekaligus dalam satu transaksi online (Midtrans Snap)
-  const handlePayOnlineBulk = useCallback(
-    async (billIds: string[]) => {
-      if (billIds.length === 0) return;
-      setBulkOnlinePaying(true);
-      try {
-        const { data } = await api.post('/bills/pay-bulk', { billIds });
-        const { token, orderId, amount, billCount } = data as {
-          token: string;
-          orderId: string;
-          amount: number;
-          billCount: number;
-        };
-
-        // Verifikasi status grup ke backend (fallback jika webhook tak sampai di lokal)
-        const verifyAndRefresh = async () => {
-          try {
-            await api.post(`/bills/verify-group/${orderId}`);
-          } catch {
-            // abaikan; tetap refresh
-          }
-          fetchData();
-          api
-            .get('/bills/summary', { params: { period: periodFilter || undefined } })
-            .then((res) => setSummary(res.data))
-            .catch(() => {});
-        };
-
-        // Tampilkan modal grup dulu agar container tersedia, lalu embed Snap
-        setSnapGroup({ billCount, amount });
-        setBulkOnlinePaying(false);
-
-        setTimeout(() => {
-          const snap = (window as any).snap;
-          const container = document.getElementById(SNAP_CONTAINER_ID);
-          if (!snap?.embed || !container) {
-            closeSnapModal();
-            showToast('error', 'Layanan pembayaran belum siap. Coba lagi sebentar.');
-            return;
-          }
-          container.innerHTML = '';
-          snap.embed(token, {
-            embedId: SNAP_CONTAINER_ID,
-            onSuccess: async () => {
-              await verifyAndRefresh();
-              closeSnapModal();
-              clearSelection();
-              showToast('success', `${billCount} tagihan berhasil dibayar. Terima kasih!`);
-            },
-            onPending: async () => {
-              await verifyAndRefresh();
-              closeSnapModal();
-              showToast('info', 'Pembayaran sedang diproses. Status akan diperbarui otomatis.');
-            },
-            onError: () => {
-              closeSnapModal();
-              showToast('error', 'Pembayaran gagal atau dibatalkan.');
-            },
-            onClose: () => {
-              verifyAndRefresh();
-              setSnapGroup(null);
-            },
-          });
-        }, 60);
-      } catch (err: unknown) {
-        const msg =
-          (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
-          'Gagal memproses pembayaran massal';
-        showToast('error', msg);
-        setBulkOnlinePaying(false);
       }
     },
     [periodFilter, showToast, closeSnapModal],
@@ -1819,7 +1740,7 @@ export function BillsPage() {
                           <>
                             <button
                               type="button"
-                              onClick={() => setProofPreview(settled.proofUrl)}
+                              onClick={() => { if (settled.proofUrl) setProofPreview(settled.proofUrl); }}
                               className="flex items-center gap-1.5 font-medium text-primary-600 hover:text-primary-700 dark:text-primary-400"
                             >
                               <img

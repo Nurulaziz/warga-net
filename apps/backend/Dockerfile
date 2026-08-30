@@ -1,5 +1,5 @@
 # Stage 1: Build
-FROM node:18-alpine AS builder
+FROM node:24-alpine AS builder
 
 # Install pnpm
 RUN npm install -g pnpm
@@ -25,7 +25,7 @@ RUN cd apps/backend && pnpm prisma generate
 RUN cd apps/backend && pnpm build
 
 # Stage 2: Production
-FROM node:18-alpine
+FROM node:24-alpine
 
 # Install Chromium and dependencies for Puppeteer
 RUN apk add --no-cache \
@@ -57,7 +57,6 @@ RUN pnpm install --prod --frozen-lockfile
 
 # Copy built application from builder
 COPY --from=builder /app/apps/backend/dist ./apps/backend/dist
-COPY --from=builder /app/apps/backend/node_modules/.prisma ./apps/backend/node_modules/.prisma
 
 # Copy assets and keys directories
 COPY apps/backend/assets ./apps/backend/assets

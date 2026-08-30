@@ -1,6 +1,7 @@
-import { PrismaClient, BillStatus } from '@prisma/client';
+import { PrismaClient } from './src/generated/prisma/client';
+import { PrismaPg } from '@prisma/adapter-pg';
 
-const prisma = new PrismaClient();
+const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }) });
 
 async function addInitialBalance() {
   try {
@@ -76,9 +77,9 @@ async function addInitialBalance() {
     const billTotalAmount = Number(bill.totalAmount);
 
     // Determine status
-    let newStatus: BillStatus = BillStatus.SEBAGIAN;
+    let newStatus: string = 'sebagian';
     if (newPaidAmount >= billTotalAmount) {
-      newStatus = BillStatus.LUNAS;
+      newStatus = 'lunas';
     }
 
     // Update bill status
