@@ -36,13 +36,27 @@ export class LettersService {
     return this.prisma.letterTemplate.findMany({ orderBy: { name: 'asc' } });
   }
 
-  async createTemplate(data: { name: string; type: string; content: string; description?: string }) {
+  async createTemplate(data: {
+    name: string;
+    type: string;
+    content: string;
+    description?: string;
+  }) {
     return this.prisma.letterTemplate.create({
       data: { ...data, content: sanitizeHtml(data.content) },
     });
   }
 
-  async updateTemplate(id: string, data: { name?: string; type?: string; content?: string; description?: string; isActive?: boolean }) {
+  async updateTemplate(
+    id: string,
+    data: {
+      name?: string;
+      type?: string;
+      content?: string;
+      description?: string;
+      isActive?: boolean;
+    },
+  ) {
     const template = await this.prisma.letterTemplate.findUnique({ where: { id } });
     if (!template) throw new NotFoundException('Template tidak ditemukan');
     const updateData = { ...data };
@@ -58,13 +72,36 @@ export class LettersService {
 
   // === Letters ===
 
-  async findAllLetters(query: { page?: number; limit?: number; status?: string; templateId?: string }) {
-    const { page = 1, limit = 20, status, templateId } = query;
+  async findAllLetters(query: {
+    page?: number;
+    limit?: number;
+    status?: string;
+    templateId?: string;
+    // Scoping: warga hanya melihat surat keluarganya sendiri / yang dibuat oleh dirinya
+    familyId?: string;
+    userId?: string;
+  }) {
+    const { page = 1, limit = 20, status, templateId, familyId, userId } = query;
     const skip = (page - 1) * limit;
 
     const where: Record<string, unknown> = {};
     if (status) where.status = status;
     if (templateId) where.templateId = templateId;
+
+    if (familyId || userId) {
+      const residentIds = familyId
+        ? (
+            await this.prisma.resident.findMany({
+              where: { familyId, deletedAt: null },
+              select: { id: true },
+            })
+          ).map((r) => r.id)
+        : [];
+      where.OR = [
+        ...(residentIds.length > 0 ? [{ residentId: { in: residentIds } }] : []),
+        ...(userId ? [{ createdBy: userId }] : []),
+      ];
+    }
 
     const [data, total] = await Promise.all([
       this.prisma.letter.findMany({
@@ -81,13 +118,40 @@ export class LettersService {
   }
 
   async findOneLetter(id: string) {
-    const letter = await this.prisma.letter.findUnique({ where: { id }, include: { template: true } });
+    const letter = await this.prisma.letter.findUnique({
+      where: { id },
+      include: { template: true },
+    });
     if (!letter) throw new NotFoundException('Surat tidak ditemukan');
     return letter;
   }
 
-  async generateLetter(data: { templateId: string; residentId?: string; recipientName: string; purpose?: string; variables?: Record<string, string>; createdBy?: string }) {
-    const template = await this.prisma.letterTemplate.findUnique({ where: { id: data.templateId } });
+  // Ambil family dari seorang resident (untuk cek kepemilikan surat oleh warga)
+  async getResidentFamilyId(residentId: string | null | undefined): Promise<string | null> {
+    if (!residentId) return null;
+    const resident = await this.prisma.resident.findUnique({
+      where: { id: residentId },
+      select: { familyId: true },
+    });
+    return resident?.familyId ?? null;
+  }
+
+  // Ambil data resident (untuk memaksa recipientName sesuai data warga / anti-tamper)
+  async getResident(residentId: string) {
+    return this.prisma.resident.findUnique({ where: { id: residentId } });
+  }
+
+  async generateLetter(data: {
+    templateId: string;
+    residentId?: string;
+    recipientName: string;
+    purpose?: string;
+    variables?: Record<string, string>;
+    createdBy?: string;
+  }) {
+    const template = await this.prisma.letterTemplate.findUnique({
+      where: { id: data.templateId },
+    });
     if (!template) throw new NotFoundException('Template tidak ditemukan');
 
     const rtInfo = await this.getRtInfo();
@@ -107,13 +171,18 @@ export class LettersService {
     let renderedContent = template.content;
     const vars = data.variables || {};
     vars.nama = vars.nama || data.recipientName;
-    vars.tanggal = vars.tanggal || now.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+    vars.tanggal =
+      vars.tanggal ||
+      now.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
     vars.nomor_surat = letterNumber;
     vars.keperluan = data.purpose || '-';
 
     // Replace semua placeholder {{key}} — escape values untuk mencegah XSS
     for (const [key, value] of Object.entries(vars)) {
-      renderedContent = renderedContent.replace(new RegExp(`\\{\\{${key}\\}\\}`, 'g'), escapeHtml(value));
+      renderedContent = renderedContent.replace(
+        new RegExp(`\\{\\{${key}\\}\\}`, 'g'),
+        escapeHtml(value),
+      );
     }
 
     return this.prisma.letter.create({
@@ -159,7 +228,9 @@ export class LettersService {
     const rwNum = rtInfo.rw_name.replace(/\D/g, '').padStart(3, '0');
     const headerTitle = `RUKUN TETANGGA ${rtNum} / RUKUN WARGA ${rwNum}`;
     const headerSubtitle = `Kelurahan ${rtInfo.kelurahan}, Kec. ${rtInfo.kecamatan}, Kab. ${rtInfo.kabupaten}`;
-    const headerComplex = rtInfo.housing_complex ? `<h3>Perumahan ${escapeHtml(rtInfo.housing_complex)}</h3>` : '';
+    const headerComplex = rtInfo.housing_complex
+      ? `<h3>Perumahan ${escapeHtml(rtInfo.housing_complex)}</h3>`
+      : '';
     const signerTitle = rtInfo.ketua_rt ? escapeHtml(rtInfo.ketua_rt) : `Ketua ${rtInfo.rt_name}`;
 
     // Wrap content dalam HTML template untuk cetak

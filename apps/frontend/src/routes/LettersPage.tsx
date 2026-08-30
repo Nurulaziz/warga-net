@@ -14,6 +14,7 @@ import { FilterBar, FilterSelect } from '@/components/ui/FilterBar';
 import { Pagination } from '@/components/ui/Pagination';
 import { api } from '@/services/api';
 import { useSettings } from '@/hooks/useSettings';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface LetterTemplate {
   id: string;
@@ -56,6 +57,8 @@ const VARIABLE_CHIPS = [
 
 export function LettersPage() {
   const { settings } = useSettings();
+  const { isAdmin } = useAuth();
+  const admin = isAdmin();
   const [letters, setLetters] = useState<Letter[]>([]);
   const [templates, setTemplates] = useState<LetterTemplate[]>([]);
   const [residents, setResidents] = useState<Resident[]>([]);
@@ -497,9 +500,11 @@ export function LettersPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <h1 className="text-2xl font-bold text-[#0F172A] dark:text-gray-100">Surat-Menyurat</h1>
         <div className="flex gap-2">
-          <Button variant="secondary" size="sm" onClick={() => { setView('template'); setFormError(''); }}>
-            <PlusIcon className="w-4 h-4 mr-1" /> Template
-          </Button>
+          {admin && (
+            <Button variant="secondary" size="sm" onClick={() => { setView('template'); setFormError(''); }}>
+              <PlusIcon className="w-4 h-4 mr-1" /> Template
+            </Button>
+          )}
           <Button variant="primary" size="sm" onClick={() => { setView('create'); resetForm(); }}>
             <PlusIcon className="w-4 h-4 mr-1" /> Buat Surat
           </Button>
@@ -561,7 +566,7 @@ export function LettersPage() {
                   <TableCell>{statusBadge(letter.status)}</TableCell>
                   <TableCell>
                     <div className="flex gap-1">
-                      {letter.status === 'draft' && (
+                      {admin && letter.status === 'draft' && (
                         <button onClick={() => handleSign(letter.id)} className="text-green-600 hover:text-green-800 min-h-[44px] min-w-[44px] flex items-center justify-center" title="Tandatangani">
                           <CheckCircleIcon className="w-4 h-4" />
                         </button>
@@ -569,9 +574,11 @@ export function LettersPage() {
                       <button onClick={() => handlePrint(letter.id)} className="text-[#0054A6] hover:text-[#003A77] min-h-[44px] min-w-[44px] flex items-center justify-center" title="Cetak">
                         <PrinterIcon className="w-4 h-4" />
                       </button>
-                      <button onClick={() => handleDelete(letter.id)} className="text-red-500 hover:text-red-700 min-h-[44px] min-w-[44px] flex items-center justify-center" title="Hapus">
-                        <TrashIcon className="w-4 h-4" />
-                      </button>
+                      {admin && (
+                        <button onClick={() => handleDelete(letter.id)} className="text-red-500 hover:text-red-700 min-h-[44px] min-w-[44px] flex items-center justify-center" title="Hapus">
+                          <TrashIcon className="w-4 h-4" />
+                        </button>
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>
