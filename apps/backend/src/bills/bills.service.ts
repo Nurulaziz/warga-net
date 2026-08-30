@@ -261,7 +261,11 @@ export class BillsService {
     });
     if (!bill) throw new NotFoundException('Tagihan tidak ditemukan');
 
-    const totalPaid = bill.payments.reduce((sum, p) => sum + p.amount, 0) + data.amount;
+    // Hanya pembayaran sah (cash/transfer/settlement) yang dihitung; pending tidak.
+    // Konsisten dengan deletePayment & createSnapTransaction.
+    const totalPaid =
+      bill.payments.filter((p) => isSettledPayment(p)).reduce((sum, p) => sum + p.amount, 0) +
+      data.amount;
 
     // Buat payment
     const payment = await this.prisma.payment.create({ data });
