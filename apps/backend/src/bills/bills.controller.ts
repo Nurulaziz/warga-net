@@ -9,12 +9,28 @@ import {
   Query,
   ForbiddenException,
   NotFoundException,
+  BadRequestException,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+import { extname, join } from 'path';
+import { existsSync, mkdirSync } from 'fs';
+import { unlink } from 'fs/promises';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiConsumes } from '@nestjs/swagger';
 import { AllowAnonymous, Session, UserSession } from '@thallesp/nestjs-better-auth';
 import { BillsService } from './bills.service';
 import { UsersService } from '../users/users.service';
 import { getSessionPhoneNumber } from '../common/session.util';
+
+// Folder upload bukti bayar
+const PROOF_UPLOAD_DIR = join(process.cwd(), 'uploads', 'payments');
+
+// Pastikan folder ada
+if (!existsSync(PROOF_UPLOAD_DIR)) {
+  mkdirSync(PROOF_UPLOAD_DIR, { recursive: true });
+}
 
 @ApiTags('Bills & Payments')
 @ApiBearerAuth()
@@ -186,6 +202,63 @@ export class BillsController {
     return this.billsService.deletePayment(id);
   }
 
+  @Post('payments/:id/proof')
+  @ApiOperation({
+    summary: 'Upload bukti bayar (foto struk transfer / bukti manual) untuk sebuah payment',
+  })
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: diskStorage({
+        destination: PROOF_UPLOAD_DIR,
+        filename: (_req, file, cb) => {
+          const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e6);
+          cb(null, uniqueSuffix + extname(file.originalname));
+        },
+      }),
+      limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+      fileFilter: (_req, file, cb) => {
+        const allowed = /\.(jpg|jpeg|png)$/i;
+        if (!allowed.test(extname(file.originalname))) {
+          cb(
+            new BadRequestException(
+              'Hanya gambar (JPG, PNG) yang diperbolehkan sebagai bukti bayar',
+            ),
+            false,
+          );
+          return;
+        }
+        cb(null, true);
+      },
+    }),
+  )
+  async uploadPaymentProof(
+    @Param('id') id: string,
+    @UploadedFile() file: Express.Multer.File,
+    @Session() session: UserSession,
+  ) {
+    try {
+      await this.assertAdmin(session);
+      if (!file) {
+        throw new BadRequestException('File wajib diupload');
+      }
+      return await this.billsService.attachPaymentProof(id, {
+        url: `/uploads/payments/${file.filename}`,
+        name: file.originalname,
+      });
+    } catch (error) {
+      // Interceptor menulis file sebelum cek auth — bersihkan bila gagal
+      if (file?.filename) {
+        try {
+          await unlink(join(PROOF_UPLOAD_DIR, file.filename));
+        } catch {
+          // abaikan jika file tak ada
+        }
+      }
+      throw error;
+    }
+  }
+
   // === Midtrans Online Payment ===
 
   @Get('midtrans/config')
@@ -224,6 +297,30 @@ export class BillsController {
       }
     }
     return this.billsService.verifyPayment(billId);
+  }
+
+  @Post('pay-bulk')
+  @ApiOperation({ summary: 'Create one Midtrans Snap transaction for multiple bills' })
+  async createBulkSnapTransaction(
+    @Body() body: { billIds: string[] },
+    @Session() session: UserSession,
+  ) {
+    if (!Array.isArray(body?.billIds) || body.billIds.length === 0) {
+      throw new BadRequestException('billIds wajib diisi');
+    }
+    const scope = await this.resolveScope(session);
+    // Warga dibatasi ke tagihan keluarganya sendiri; admin bebas
+    const allowedFamilyId = scope.isAdmin ? undefined : scope.familyId || '__none__';
+    return this.billsService.createBulkSnapTransaction(body.billIds, allowedFamilyId);
+  }
+
+  @Post('verify-group/:orderId')
+  @ApiOperation({ summary: 'Verify a bulk payment group status directly from Midtrans' })
+  async verifyPaymentGroup(@Param('orderId') orderId: string, @Session() session: UserSession) {
+    // Verifikasi status boleh dilakukan pemilik transaksi maupun admin;
+    // otorisasi detail sudah tercermin saat pembuatan grup (kepemilikan tagihan).
+    await this.resolveScope(session);
+    return this.billsService.verifyPaymentGroup(orderId);
   }
 
   @Post('webhook/midtrans')

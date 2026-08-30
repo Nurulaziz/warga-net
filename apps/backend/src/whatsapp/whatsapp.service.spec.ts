@@ -203,7 +203,8 @@ describe('WhatsAppService', () => {
 
       const message = sendSpy.mock.calls[0][1];
 
-      expect(message).toContain('Kode OTP WargaNet Anda:');
+      expect(message).toContain('WargaNet');
+      expect(message).toContain('Kode OTP Anda:');
       expect(message).toContain(otp);
       expect(message).toContain('Berlaku 5 menit');
       expect(message).toContain('Jangan bagikan kode ini');

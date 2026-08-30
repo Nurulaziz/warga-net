@@ -299,6 +299,9 @@ model Payment {
   method          String   @default("cash") // cash, transfer, qris, bank_transfer, e_wallet
   note            String?
   receivedBy      String?  @map("received_by") // user id bendahara
+  // Bukti bayar (foto struk transfer / bukti manual) yang diunggah admin
+  proofUrl        String?  @map("proof_url")
+  proofName       String?  @map("proof_name")
   // Midtrans payment gateway fields
   transactionId   String?  @map("transaction_id") // Midtrans transaction_id
   orderId         String?  @unique @map("order_id") // order_id unik untuk Midtrans
@@ -306,14 +309,39 @@ model Payment {
   paymentType     String?  @map("payment_type") // qris, bank_transfer, gopay, shopeepay, dll
   transactionStatus String? @map("transaction_status") // pending, settlement, cancel, expire
   referenceNo     String?  @map("reference_no") // nomor referensi dari payment channel
+  // Grup pembayaran: banyak tagihan dibayar dalam satu transaksi Midtrans
+  paymentGroupId  String?  @map("payment_group_id")
   createdAt       DateTime @default(now()) @map("created_at")
 
   bill            Bill     @relation(fields: [billId], references: [id])
   cashTransaction CashTransaction?
+  paymentGroup    PaymentGroup? @relation(fields: [paymentGroupId], references: [id])
 
   @@map("payments")
   @@index([billId])
   @@index([paidAt])
+  @@index([orderId])
+  @@index([paymentGroupId])
+}
+
+// Grup pembayaran online: satu transaksi Midtrans mencakup beberapa tagihan.
+// Setiap tagihan tetap punya satu Payment sendiri (relasi Payment↔Bill 1:1 terjaga),
+// tapi semua Payment dalam grup berbagi satu orderId & snapToken.
+model PaymentGroup {
+  id                String   @id @default(uuid())
+  orderId           String   @unique @map("order_id")
+  snapToken         String?  @map("snap_token")
+  grossAmount       Float    @map("gross_amount")
+  transactionId     String?  @map("transaction_id")
+  paymentType       String?  @map("payment_type")
+  transactionStatus String?  @map("transaction_status") // pending, settlement, cancel, expire
+  paidBy            String?  @map("paid_by")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  payments          Payment[]
+
+  @@map("payment_groups")
   @@index([orderId])
 }
 

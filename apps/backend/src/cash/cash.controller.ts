@@ -51,13 +51,33 @@ export class CashController {
 
   @Post('transactions')
   @ApiOperation({ summary: 'Create cash transaction' })
-  createTransaction(@Body() body: { categoryId: string; type: string; amount: number; description: string; date?: string; createdBy?: string }) {
+  createTransaction(
+    @Body()
+    body: {
+      categoryId: string;
+      type: string;
+      amount: number;
+      description: string;
+      date?: string;
+      createdBy?: string;
+    },
+  ) {
     return this.cashService.createTransaction(body);
   }
 
   @Put('transactions/:id')
   @ApiOperation({ summary: 'Update cash transaction' })
-  updateTransaction(@Param('id') id: string, @Body() body: { categoryId?: string; type?: string; amount?: number; description?: string; date?: string }) {
+  updateTransaction(
+    @Param('id') id: string,
+    @Body()
+    body: {
+      categoryId?: string;
+      type?: string;
+      amount?: number;
+      description?: string;
+      date?: string;
+    },
+  ) {
     return this.cashService.updateTransaction(id, body);
   }
 
@@ -68,6 +88,12 @@ export class CashController {
   }
 
   // === Summary ===
+
+  @Get('cashflow')
+  @ApiOperation({ summary: 'Get cash flow series for the last N months (dashboard chart)' })
+  getCashflow(@Query('months') months?: string) {
+    return this.cashService.getCashflow(months ? parseInt(months, 10) : 6);
+  }
 
   @Get('summary')
   @ApiOperation({ summary: 'Get cash summary (total income, expense, balance)' })

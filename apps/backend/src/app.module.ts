@@ -38,7 +38,11 @@ import { auth } from './auth/auth';
       {
         name: 'short',
         ttl: 1000, // 1 detik
-        limit: 10, // max 10 request per detik
+        // Max 30 request/detik. Dinaikkan dari 10 karena dashboard admin
+        // mengirimkan ledakan ~10-15 request paralel saat mount (Metrik +
+        // chart + antrean approval + log + pengumuman). OTP/verifikasi punya
+        // rate-limit terpisah di RateLimitGuard (per-phone & per-IP).
+        limit: 30,
       },
       {
         name: 'medium',

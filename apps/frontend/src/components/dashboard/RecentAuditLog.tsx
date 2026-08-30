@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Card } from '../ui/Card';
 import { ClockIcon } from '@heroicons/react/24/outline';
 import { api } from '@/services/api';
+import { humanizeAuditAction } from '@/lib/auditLogHumanize';
 
 interface AuditEntry {
   id: string;
@@ -46,10 +47,15 @@ export function RecentAuditLog() {
     <Card className="p-6">
       <div className="flex items-center justify-between mb-5">
         <div>
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Aktivitas Terbaru</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+            Aktivitas Terbaru
+          </h3>
           <p className="text-sm text-gray-500 dark:text-gray-400">5 log sistem terakhir</p>
         </div>
-        <Link to="/audit-log" className="text-sm text-primary-600 hover:text-primary-700 dark:text-primary-400">
+        <Link
+          to="/audit-log"
+          className="text-sm text-primary-600 hover:text-primary-700 dark:text-primary-400"
+        >
           Lihat semua
         </Link>
       </div>
@@ -68,13 +74,17 @@ export function RecentAuditLog() {
       ) : (
         <ul className="space-y-1">
           {logs.map((log) => (
-            <li key={log.id} className="flex items-start gap-3 py-2 border-b border-gray-100 dark:border-gray-800 last:border-0">
+            <li
+              key={log.id}
+              className="flex items-start gap-3 py-2 border-b border-gray-100 dark:border-gray-800 last:border-0"
+            >
               <div className="w-2 h-2 rounded-full bg-primary-500 mt-1.5 shrink-0" />
               <div className="flex-1 min-w-0">
                 <p className="text-sm text-gray-800 dark:text-gray-200">
                   <span className="font-medium">{log.user?.fullName || 'Sistem'}</span>{' '}
-                  <span className="text-gray-600 dark:text-gray-400">{log.action}</span>
-                  {log.resource && <span className="text-gray-500 dark:text-gray-500"> · {log.resource}</span>}
+                  <span className="text-gray-600 dark:text-gray-400">
+                    {humanizeAuditAction(log.action, log.resource)}
+                  </span>
                 </p>
                 <p className="text-xs text-gray-400 dark:text-gray-500">{timeAgo(log.createdAt)}</p>
               </div>

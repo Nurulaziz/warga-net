@@ -36,7 +36,7 @@ export const auth: any = betterAuth({
         }
 
         // Kirim OTP via WhatsApp (Fonnte)
-        const message = `Kode OTP WargaNet Anda: ${code}. Berlaku 5 menit. Jangan bagikan kode ini kepada siapa pun.`;
+        const message = `*WargaNet* - Kode Verifikasi\n\nKode OTP Anda: *${code}*\n\nBerlaku 5 menit. Jangan bagikan kode ini kepada siapa pun.`;
         const result = await sendWhatsAppViaFonnte(phone, message);
 
         if (!result.success) {

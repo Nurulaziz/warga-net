@@ -7,9 +7,17 @@ interface ModalProps {
   title?: string;
   children: ReactNode;
   size?: 'sm' | 'md' | 'lg' | 'xl';
+  headerExtra?: ReactNode;
 }
 
-export const Modal = ({ isOpen, onClose, title, children, size = 'md' }: ModalProps) => {
+export const Modal = ({
+  isOpen,
+  onClose,
+  title,
+  children,
+  size = 'md',
+  headerExtra,
+}: ModalProps) => {
   // Close on ESC key
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
@@ -56,14 +64,17 @@ export const Modal = ({ isOpen, onClose, title, children, size = 'md' }: ModalPr
           ) : (
             <span />
           )}
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Tutup"
-            className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-200 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500"
-          >
-            <XMarkIcon className="h-5 w-5" aria-hidden="true" />
-          </button>
+          <div className="flex items-center gap-1">
+            {headerExtra}
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Tutup"
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-200 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500"
+            >
+              <XMarkIcon className="h-5 w-5" aria-hidden="true" />
+            </button>
+          </div>
         </div>
         <div className="px-6 py-4">{children}</div>
       </div>

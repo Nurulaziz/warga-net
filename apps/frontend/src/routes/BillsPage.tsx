@@ -17,6 +17,10 @@ import {
   ExclamationTriangleIcon,
   ExclamationCircleIcon,
   MagnifyingGlassIcon,
+  PaperClipIcon,
+  ArrowDownTrayIcon,
+  EyeIcon,
+  TrashIcon,
 } from '@heroicons/react/24/outline';
 import {
   Table,
@@ -33,6 +37,7 @@ import { Card } from '@/components/ui/Card';
 import { Pagination } from '@/components/ui/Pagination';
 import { api } from '@/services/api';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSettings } from '@/hooks/useSettings';
 
 interface BillType {
   id: string;
@@ -67,6 +72,12 @@ interface Bill {
     paidAt: string;
     method?: string;
     transactionStatus?: string | null;
+    paidBy?: string | null;
+    proofUrl?: string | null;
+    proofName?: string | null;
+    orderId?: string | null;
+    referenceNo?: string | null;
+    paymentType?: string | null;
   }[];
 }
 
@@ -103,6 +114,7 @@ interface Summary {
 export function BillsPage() {
   const { isAdmin } = useAuth();
   const admin = isAdmin();
+  const { settings } = useSettings();
   const [bills, setBills] = useState<Bill[]>([]);
   const [billTypes, setBillTypes] = useState<BillType[]>([]);
   const [summary, setSummary] = useState<Summary | null>(null);
@@ -149,6 +161,10 @@ export function BillsPage() {
   const [generatingMonthly, setGeneratingMonthly] = useState(false);
   const [deletingPayment, setDeletingPayment] = useState(false);
   const [confirmDeletePayment, setConfirmDeletePayment] = useState(false);
+  // Bukti bayar: preview (lightbox) + proses unggah
+  const [proofPreview, setProofPreview] = useState<string | null>(null);
+  const [uploadingProof, setUploadingProof] = useState(false);
+  const proofFileInput = useRef<HTMLInputElement | null>(null);
 
   // Notifikasi inline (pengganti alert)
   const [toast, setToast] = useState<{
@@ -160,6 +176,9 @@ export function BillsPage() {
   const [confirmPay, setConfirmPay] = useState<Bill | null>(null);
   // Modal pembayaran Snap embedded (di dalam halaman, bukan popup)
   const [snapBill, setSnapBill] = useState<Bill | null>(null);
+  // Info pembayaran online massal (beberapa tagihan dalam satu transaksi)
+  const [snapGroup, setSnapGroup] = useState<{ billCount: number; amount: number } | null>(null);
+  const [bulkOnlinePaying, setBulkOnlinePaying] = useState(false);
 
   // Tampilkan toast, auto-hilang setelah 4 detik
   const showToast = useCallback((type: 'success' | 'error' | 'info', message: string) => {
@@ -212,6 +231,7 @@ export function BillsPage() {
     const container = document.getElementById(SNAP_CONTAINER_ID);
     if (container) container.innerHTML = '';
     setSnapBill(null);
+    setSnapGroup(null);
   }, []);
 
   // Bayar online via Midtrans Snap (mode embedded di dalam halaman)
@@ -278,6 +298,81 @@ export function BillsPage() {
           'Gagal memproses pembayaran';
         showToast('error', msg);
         setPayingOnline(null);
+      }
+    },
+    [periodFilter, showToast, closeSnapModal],
+  );
+
+  // Bayar beberapa tagihan sekaligus dalam satu transaksi online (Midtrans Snap)
+  const handlePayOnlineBulk = useCallback(
+    async (billIds: string[]) => {
+      if (billIds.length === 0) return;
+      setBulkOnlinePaying(true);
+      try {
+        const { data } = await api.post('/bills/pay-bulk', { billIds });
+        const { token, orderId, amount, billCount } = data as {
+          token: string;
+          orderId: string;
+          amount: number;
+          billCount: number;
+        };
+
+        // Verifikasi status grup ke backend (fallback jika webhook tak sampai di lokal)
+        const verifyAndRefresh = async () => {
+          try {
+            await api.post(`/bills/verify-group/${orderId}`);
+          } catch {
+            // abaikan; tetap refresh
+          }
+          fetchData();
+          api
+            .get('/bills/summary', { params: { period: periodFilter || undefined } })
+            .then((res) => setSummary(res.data))
+            .catch(() => {});
+        };
+
+        // Tampilkan modal grup dulu agar container tersedia, lalu embed Snap
+        setSnapGroup({ billCount, amount });
+        setBulkOnlinePaying(false);
+
+        setTimeout(() => {
+          const snap = (window as any).snap;
+          const container = document.getElementById(SNAP_CONTAINER_ID);
+          if (!snap?.embed || !container) {
+            closeSnapModal();
+            showToast('error', 'Layanan pembayaran belum siap. Coba lagi sebentar.');
+            return;
+          }
+          container.innerHTML = '';
+          snap.embed(token, {
+            embedId: SNAP_CONTAINER_ID,
+            onSuccess: async () => {
+              await verifyAndRefresh();
+              closeSnapModal();
+              clearSelection();
+              showToast('success', `${billCount} tagihan berhasil dibayar. Terima kasih!`);
+            },
+            onPending: async () => {
+              await verifyAndRefresh();
+              closeSnapModal();
+              showToast('info', 'Pembayaran sedang diproses. Status akan diperbarui otomatis.');
+            },
+            onError: () => {
+              closeSnapModal();
+              showToast('error', 'Pembayaran gagal atau dibatalkan.');
+            },
+            onClose: () => {
+              verifyAndRefresh();
+              setSnapGroup(null);
+            },
+          });
+        }, 60);
+      } catch (err: unknown) {
+        const msg =
+          (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+          'Gagal memproses pembayaran massal';
+        showToast('error', msg);
+        setBulkOnlinePaying(false);
       }
     },
     [periodFilter, showToast, closeSnapModal],
@@ -485,6 +580,275 @@ export function BillsPage() {
     } finally {
       setDeletingPayment(false);
     }
+  }
+
+  // Unggah bukti bayar (foto struk transfer / bukti manual) untuk pembayaran yang ditampilkan
+  async function handleUploadProof(file: File) {
+    if (!detailModal) return;
+    const settled = getSettledPayment(detailModal);
+    if (!settled) return;
+    setUploadingProof(true);
+    try {
+      const form = new FormData();
+      form.append('file', file);
+      const { data } = await api.post(`/bills/payments/${settled.id}/proof`, form);
+      const updatedPayment = { ...settled, proofUrl: data.proofUrl, proofName: data.proofName };
+      setDetailModal({
+        ...detailModal,
+        payments: detailModal.payments.map((p) => (p.id === settled.id ? updatedPayment : p)),
+      });
+      showToast('success', 'Bukti bayar berhasil diunggah.');
+      fetchData();
+    } catch (err: unknown) {
+      showToast(
+        'error',
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+          'Gagal mengunggah bukti bayar',
+      );
+    } finally {
+      setUploadingProof(false);
+    }
+  }
+
+  // Pemicu input file tersembunyi; reset value agar file yang sama bisa dipilih lagi
+  function handleProofFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    handleUploadProof(file);
+    e.target.value = '';
+  }
+
+  // Unduh struk pembayaran digital sebagai gambar PNG (nama keluarga, jenis iuran,
+  // nominal, ID transaksi, stempel LUNAS). Dirender lewat Canvas tanpa dependensi.
+  function downloadStrukImage(
+    bill: NonNullable<typeof detailModal>,
+    payment: NonNullable<ReturnType<typeof getSettledPayment>>,
+  ) {
+    const receiptNo = `STK-${payment.id.replace(/-/g, '').slice(0, 10).toUpperCase()}`;
+    const methodLabel = METHOD_LABELS[payment.method || ''] || payment.method || '-';
+    const rtClean = (settings.rt_name || '').replace(/^RT\s*/i, '');
+    const rwClean = (settings.rw_name || '').replace(/^RW\s*/i, '');
+    const address = [
+      settings.housing_complex,
+      `RT ${rtClean} / RW ${rwClean}`,
+      [settings.kelurahan, settings.kecamatan, settings.kabupaten, settings.provinsi]
+        .filter(Boolean)
+        .join(', '),
+    ]
+      .filter(Boolean)
+      .join(' · ');
+
+    // Skala 2x supaya hasil unduhan tajam
+    const S = 2;
+    const W = 400;
+    const PAD = 24;
+    const FONT = "'Segoe UI', Helvetica, Arial, sans-serif";
+    const wrapText = (
+      ctx: CanvasRenderingContext2D,
+      text: string,
+      size: number,
+      weight: number,
+      maxWidth: number,
+    ) => {
+      ctx.font = `${weight} ${size}px ${FONT}`;
+      const words = text.split(' ');
+      const lines: string[] = [];
+      let line = '';
+      for (const word of words) {
+        const test = line ? `${line} ${word}` : word;
+        if (ctx.measureText(test).width > maxWidth && line) {
+          lines.push(line);
+          line = word;
+        } else {
+          line = test;
+        }
+      }
+      if (line) lines.push(line);
+      return lines;
+    };
+    const roundedRect = (
+      ctx: CanvasRenderingContext2D,
+      x: number,
+      y: number,
+      w: number,
+      h: number,
+      r: number,
+    ) => {
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.arcTo(x + w, y, x + w, y + h, r);
+      ctx.arcTo(x + w, y + h, x, y + h, r);
+      ctx.arcTo(x, y + h, x, y, r);
+      ctx.arcTo(x, y, x + w, y, r);
+      ctx.closePath();
+    };
+
+    // --- Hitung layout (pass pengukuran) ---
+    const scratch = document.createElement('canvas');
+    const sctx = scratch.getContext('2d')!;
+    const contentW = W - PAD * 2;
+    const brand = settings.app_name || 'WargaNet';
+    const addressLines = wrapText(sctx, address, 11, 400, contentW);
+    const titleText = `STRUK PEMBAYARAN IURAN · ${receiptNo}`;
+    const amountLabel = 'TOTAL PEMBAYARAN';
+    const amountText = formatCurrency(payment.amount);
+    const rows: [string, string][] = [
+      ['Keluarga', bill.family?.headOfFamily || '-'],
+      ['Jenis Iuran', bill.billType?.name || '-'],
+      ['Periode', formatPeriodId(bill.period)],
+      ['Tanggal Bayar', `${formatDateTime(payment.paidAt)} WIB`],
+      ['Metode', methodLabel],
+    ];
+    const paidBy = (payment.paidBy || '').trim();
+    const headOfFamily = bill.family?.headOfFamily || '';
+    if (paidBy && paidBy.toLowerCase() !== headOfFamily.toLowerCase()) {
+      rows.push(['Dibayar oleh', paidBy]);
+    }
+    const stampText = 'LUNAS';
+    const metaLines = [
+      'Diterima oleh Bendahara / Pengurus RT',
+      `${formatDateTime(new Date().toISOString())} WIB`,
+    ];
+    const footText = `Dicetak dari ${settings.app_name || 'WargaNet'} · ${settings.housing_complex || ''}`;
+
+    let y = PAD; // akumulasi tinggi guci
+    const brandH = 26;
+    y += brandH;
+    y += addressLines.length * 15 + 6;
+    const titleH = 14;
+    y += titleH + 6;
+    const dashH = 10;
+    y += dashH + 8;
+    const bodyTop = y;
+    const rowH = 22;
+    y += rows.length * rowH + 14;
+    const boxH = 58;
+    y += boxH + 18;
+    const bodyCenterY = (bodyTop + y) / 2;
+    y += metaLines.length * 15 + 12;
+    y += 14;
+    const finalH = Math.ceil(y);
+
+    // --- Gambar final ---
+    const canvas = document.createElement('canvas');
+    canvas.width = W * S;
+    canvas.height = finalH * S;
+    const ctx = canvas.getContext('2d')!;
+    ctx.scale(S, S);
+    ctx.textBaseline = 'alphabetic';
+
+    // Latar
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, W, finalH);
+
+    // Watermark stempel LUNAS — besar, di belakang seluruh konten, terpusat di area body
+    ctx.save();
+    ctx.globalAlpha = 0.12;
+    ctx.translate(W / 2, bodyCenterY);
+    ctx.rotate((-18 * Math.PI) / 180);
+    ctx.font = `900 96px ${FONT}`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.strokeStyle = '#16a34a';
+    ctx.lineWidth = 6;
+    ctx.lineJoin = 'round';
+    ctx.strokeText(stampText, 0, 2);
+    ctx.fillStyle = '#16a34a';
+    ctx.fillText(stampText, 0, 2);
+    ctx.restore();
+    ctx.textBaseline = 'alphabetic';
+
+    let cursor = PAD;
+
+    // Header
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#111827';
+    ctx.font = `800 18px ${FONT}`;
+    ctx.fillText(brand, W / 2, cursor + 16);
+    cursor += brandH;
+    ctx.fillStyle = '#6b7280';
+    ctx.font = `400 11px ${FONT}`;
+    for (let i = 0; i < addressLines.length; i++) {
+      ctx.fillText(addressLines[i], W / 2, cursor + 12);
+      cursor += 15;
+    }
+    cursor += 6;
+    ctx.fillStyle = '#6b7280';
+    ctx.font = `600 9px ${FONT}`;
+    ctx.fillText(titleText, W / 2, cursor + 11);
+    cursor += titleH + 6;
+    ctx.strokeStyle = '#d1d5db';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([4, 4]);
+    ctx.beginPath();
+    ctx.moveTo(PAD, cursor);
+    ctx.lineTo(W - PAD, cursor);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    cursor += dashH + 8;
+
+    // Baris rincian (label kiri, nilai kanan)
+    ctx.textAlign = 'left';
+    for (const [label, value] of rows) {
+      ctx.fillStyle = '#6b7280';
+      ctx.font = `400 12px ${FONT}`;
+      ctx.fillText(label, PAD, cursor + 12);
+      ctx.textAlign = 'right';
+      ctx.fillStyle = '#111827';
+      ctx.font = `600 12px ${FONT}`;
+      const valueText = value.length > 34 ? `${value.slice(0, 33)}…` : value;
+      ctx.fillText(valueText, W - PAD, cursor + 12);
+      ctx.textAlign = 'left';
+      cursor += rowH;
+    }
+    cursor += 14;
+
+    // Kotak nominal
+    const amountBoxX = PAD + 8;
+    const amountBoxW = W - PAD * 2 - 16;
+    roundedRect(ctx, amountBoxX, cursor, amountBoxW, boxH, 10);
+    ctx.fillStyle = 'rgba(240, 253, 244, 0.7)';
+    ctx.fill();
+    ctx.strokeStyle = '#bbf7d0';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#16a34a';
+    ctx.font = `600 9px ${FONT}`;
+    ctx.fillText(amountLabel, W / 2, cursor + 16);
+    ctx.fillStyle = '#15803d';
+    ctx.font = `800 21px ${FONT}`;
+    ctx.fillText(amountText, W / 2, cursor + 40);
+    cursor += boxH + 18;
+
+    // Meta
+    ctx.fillStyle = '#6b7280';
+    ctx.font = `400 10px ${FONT}`;
+    ctx.textAlign = 'center';
+    for (const line of metaLines) {
+      ctx.fillText(line, W / 2, cursor + 11);
+      cursor += 15;
+    }
+    cursor += 12;
+
+    // Footer
+    ctx.fillStyle = '#9ca3af';
+    ctx.font = `400 10px ${FONT}`;
+    ctx.fillText(footText, W / 2, cursor + 10);
+
+    // Ekspor PNG → unduh
+    const out = document.createElement('canvas');
+    out.width = W * S;
+    out.height = finalH * S;
+    const octx = out.getContext('2d')!;
+    octx.drawImage(canvas, 0, 0, W * S, finalH * S, 0, 0, W * S, finalH * S);
+    const url = out.toDataURL('image/png');
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `struk-${payment.id.replace(/-/g, '').slice(0, 8)}.png`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
   }
 
   async function handlePay() {
@@ -1385,6 +1749,19 @@ export function BillsPage() {
         }}
         title="Detail Pembayaran"
         size="md"
+        headerExtra={
+          admin && detailModal && getSettledPayment(detailModal) ? (
+            <button
+              type="button"
+              onClick={() => setConfirmDeletePayment((v) => !v)}
+              title={confirmDeletePayment ? 'Batalkan hapus' : 'Hapus Transaksi'}
+              aria-label="Hapus Transaksi"
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-rose-500 transition-colors hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-900/20 dark:hover:text-rose-400 focus:outline-none focus:ring-2 focus:ring-rose-500"
+            >
+              <TrashIcon className="h-5 w-5" aria-hidden="true" />
+            </button>
+          ) : undefined
+        }
       >
         {detailModal &&
           (() => {
@@ -1434,50 +1811,135 @@ export function BillsPage() {
                       value={METHOD_LABELS[settled.method] || settled.method}
                     />
                   )}
+                  {settled && (
+                    <div className="flex justify-between gap-4 text-sm">
+                      <span className="text-gray-500 dark:text-gray-400">Bukti Pembayaran</span>
+                      <span className="flex items-center justify-end gap-2 text-right">
+                        {settled.proofUrl ? (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => setProofPreview(settled.proofUrl)}
+                              className="flex items-center gap-1.5 font-medium text-primary-600 hover:text-primary-700 dark:text-primary-400"
+                            >
+                              <img
+                                src={settled.proofUrl}
+                                alt="Bukti bayar"
+                                className="h-8 w-8 rounded object-cover border border-gray-200 dark:border-gray-700"
+                                loading="lazy"
+                              />
+                              <EyeIcon className="w-4 h-4" /> Lihat Bukti
+                            </button>
+                            {admin && (
+                              <button
+                                type="button"
+                                onClick={() => proofFileInput.current?.click()}
+                                className="text-xs text-gray-400 dark:text-gray-500 underline hover:text-gray-600 dark:hover:text-gray-300"
+                              >
+                                Ganti
+                              </button>
+                            )}
+                          </>
+                        ) : (
+                          <>
+                            <span className="text-gray-400 dark:text-gray-500">Belum ada</span>
+                            {admin && (
+                              <button
+                                type="button"
+                                onClick={() => proofFileInput.current?.click()}
+                                disabled={uploadingProof}
+                                className="flex items-center gap-1 text-xs font-medium text-primary-600 hover:text-primary-700 dark:text-primary-400 disabled:opacity-60"
+                              >
+                                <PaperClipIcon className="w-3.5 h-3.5" />{' '}
+                                {uploadingProof ? 'Mengunggah…' : 'Unggah'}
+                              </button>
+                            )}
+                          </>
+                        )}
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
             );
           })()}
         {/* Konfirmasi hapus (admin) */}
         {admin && confirmDeletePayment && (
-          <p className="mt-4 text-sm text-red-600">
-            Hapus pembayaran ini? Entri kas terkait akan dihapus dan status tagihan dikembalikan ke
-            belum bayar.
-          </p>
+          <div className="mt-4 flex flex-col gap-3 rounded-lg border border-red-200 dark:border-red-900/60 bg-red-50 dark:bg-red-900/15 p-4">
+            <p className="text-sm text-red-700 dark:text-red-300">
+              Hapus pembayaran ini? Entri kas terkait akan dihapus dan status tagihan dikembalikan
+              ke belum bayar.
+            </p>
+            <div className="flex justify-end gap-3">
+              <Button variant="secondary" size="sm" onClick={() => setConfirmDeletePayment(false)}>
+                Batal
+              </Button>
+              <Button
+                variant="danger"
+                size="sm"
+                loading={deletingPayment}
+                onClick={handleDeletePayment}
+              >
+                Ya, Hapus
+              </Button>
+            </div>
+          </div>
         )}
-        <ModalFooter>
-          {admin &&
-            (confirmDeletePayment ? (
-              <>
+        {detailModal &&
+          (() => {
+            const settled = getSettledPayment(detailModal);
+            const isPaid = detailModal.status === 'paid';
+            return (
+              <ModalFooter>
                 <Button
                   variant="secondary"
                   size="sm"
-                  onClick={() => setConfirmDeletePayment(false)}
+                  onClick={() => {
+                    setDetailModal(null);
+                    setConfirmDeletePayment(false);
+                  }}
                 >
-                  Batal
+                  Tutup
                 </Button>
-                <Button
-                  variant="danger"
-                  size="sm"
-                  loading={deletingPayment}
-                  onClick={handleDeletePayment}
-                >
-                  Ya, Hapus
-                </Button>
-              </>
-            ) : (
-              <Button variant="danger" size="sm" onClick={() => setConfirmDeletePayment(true)}>
-                Hapus Pembayaran
-              </Button>
-            ))}
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={() => {
-              setDetailModal(null);
-              setConfirmDeletePayment(false);
-            }}
-          >
+                {settled && isPaid && (
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={() => downloadStrukImage(detailModal, settled)}
+                  >
+                    <ArrowDownTrayIcon className="w-4 h-4 mr-1" /> Unduh Struk
+                  </Button>
+                )}
+              </ModalFooter>
+            );
+          })()}
+        <input
+          ref={proofFileInput}
+          type="file"
+          accept=".jpg,.jpeg,.png,image/jpeg,image/png"
+          className="hidden"
+          onChange={handleProofFileChange}
+        />
+      </Modal>
+
+      {/* Preview bukti bayar (lightbox) */}
+      <Modal
+        isOpen={!!proofPreview}
+        onClose={() => setProofPreview(null)}
+        title="Bukti Pembayaran"
+        size="lg"
+      >
+        {proofPreview && (
+          <div className="rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-900">
+            <img
+              src={proofPreview}
+              alt="Bukti pembayaran"
+              className="w-full h-auto max-h-[70vh] object-contain"
+            />
+          </div>
+        )}
+        <ModalFooter>
+          <Button variant="secondary" size="sm" onClick={() => setProofPreview(null)}>
             Tutup
           </Button>
         </ModalFooter>

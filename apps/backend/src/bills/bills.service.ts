@@ -3,6 +3,7 @@ import {
   NotFoundException,
   ConflictException,
   BadRequestException,
+  ForbiddenException,
   Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
@@ -377,6 +378,17 @@ export class BillsService {
     return { data, meta: { total, page, limit, totalPages: Math.ceil(total / limit) } };
   }
 
+  // Lampirkan bukti bayar (foto struk transfer / bukti manual) ke sebuah payment.
+  async attachPaymentProof(paymentId: string, proof: { url: string; name: string }) {
+    const payment = await this.prisma.payment.findUnique({ where: { id: paymentId } });
+    if (!payment) throw new NotFoundException('Pembayaran tidak ditemukan');
+
+    return this.prisma.payment.update({
+      where: { id: paymentId },
+      data: { proofUrl: proof.url, proofName: proof.name },
+    });
+  }
+
   // === Summary ===
 
   // Ambil satu tagihan (untuk cek kepemilikan sebelum pembayaran)
@@ -470,6 +482,126 @@ export class BillsService {
     };
   }
 
+  // Buat SATU Snap transaction untuk membayar beberapa tagihan sekaligus.
+  // Setiap tagihan tetap punya Payment sendiri, tapi semua tergabung dalam satu PaymentGroup.
+  async createBulkSnapTransaction(billIds: string[], allowedFamilyId?: string) {
+    const uniqueIds = Array.from(new Set(billIds));
+    if (uniqueIds.length === 0) throw new BadRequestException('Tidak ada tagihan yang dipilih');
+
+    const bills = await this.prisma.bill.findMany({
+      where: { id: { in: uniqueIds } },
+      include: { billType: true, family: true, payments: true },
+    });
+    if (bills.length !== uniqueIds.length) {
+      throw new NotFoundException('Sebagian tagihan tidak ditemukan');
+    }
+
+    // Warga hanya boleh membayar tagihan keluarganya sendiri
+    if (allowedFamilyId) {
+      const foreign = bills.find((b) => b.familyId !== allowedFamilyId);
+      if (foreign) throw new ForbiddenException('Ada tagihan yang bukan milik keluarga Anda');
+    }
+
+    // Hitung sisa tiap tagihan (hanya pembayaran sah yang mengurangi)
+    const items = bills.map((bill) => {
+      if (bill.status === 'paid') {
+        throw new BadRequestException(`Tagihan "${bill.billType.name}" sudah lunas`);
+      }
+      const settled = bill.payments
+        .filter((p) => isSettledPayment(p))
+        .reduce((sum, p) => sum + p.amount, 0);
+      const remaining = bill.amount - settled;
+      if (remaining <= 0) {
+        throw new BadRequestException(`Tagihan "${bill.billType.name}" sudah lunas`);
+      }
+      return { bill, remaining };
+    });
+
+    const grossAmount = items.reduce((sum, it) => sum + it.remaining, 0);
+    const orderId = `WNG-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+    const payerName = bills[0].family.headOfFamily;
+
+    // Bersihkan payment pending lama (midtrans) untuk tagihan-tagihan ini agar tidak menumpuk
+    await this.prisma.payment.deleteMany({
+      where: {
+        billId: { in: uniqueIds },
+        method: 'midtrans',
+        transactionStatus: 'pending',
+      },
+    });
+
+    // Buat Snap token via Midtrans dengan banyak item
+    const snap = await this.midtransService.createTransaction({
+      orderId,
+      grossAmount,
+      customerName: payerName,
+      items: items.map((it) => ({
+        id: it.bill.id.slice(0, 20),
+        name: `${it.bill.billType.name} ${it.bill.period}`,
+        price: it.remaining,
+      })),
+    });
+
+    // Buat grup + payment pending per tagihan dalam satu transaksi DB
+    await this.prisma.$transaction(async (tx) => {
+      const group = await tx.paymentGroup.create({
+        data: {
+          orderId,
+          snapToken: snap.token,
+          grossAmount,
+          transactionStatus: 'pending',
+          paidBy: payerName,
+        },
+      });
+
+      for (const it of items) {
+        await tx.payment.create({
+          data: {
+            billId: it.bill.id,
+            amount: it.remaining,
+            method: 'midtrans',
+            snapToken: snap.token,
+            transactionStatus: 'pending',
+            paidBy: it.bill.family.headOfFamily,
+            paymentGroupId: group.id,
+          },
+        });
+      }
+    });
+
+    return {
+      token: snap.token,
+      redirectUrl: snap.redirect_url,
+      orderId,
+      amount: grossAmount,
+      billCount: items.length,
+      clientKey: this.midtransService.getClientKey(),
+      isProduction: this.midtransService.getIsProduction(),
+    };
+  }
+
+  // Verifikasi status pembayaran grup langsung ke Midtrans (fallback tanpa webhook).
+  async verifyPaymentGroup(orderId: string) {
+    const group = await this.prisma.paymentGroup.findUnique({ where: { orderId } });
+    if (!group) throw new NotFoundException('Grup pembayaran tidak ditemukan');
+
+    const notification = await this.midtransService.getTransactionStatus(orderId);
+    if (!notification) {
+      return {
+        status: group.transactionStatus || 'pending',
+        message: 'Transaksi belum ditemukan di Midtrans',
+      };
+    }
+
+    await this.applyNotification(notification);
+
+    const updated = await this.prisma.paymentGroup.findUnique({ where: { orderId } });
+    return {
+      status: updated?.transactionStatus || group.transactionStatus,
+      transactionStatus: notification.transaction_status,
+    };
+  }
+
   // Handle notification dari Midtrans (webhook)
   async handleMidtransNotification(notification: MidtransNotification) {
     // Verifikasi signature
@@ -479,10 +611,15 @@ export class BillsService {
       throw new BadRequestException('Invalid notification signature');
     }
 
+    // order_id bisa milik pembayaran tunggal (Payment) atau grup (PaymentGroup)
     const payment = await this.prisma.payment.findUnique({
       where: { orderId: notification.order_id },
     });
-    if (!payment) {
+    const group = payment
+      ? null
+      : await this.prisma.paymentGroup.findUnique({ where: { orderId: notification.order_id } });
+
+    if (!payment && !group) {
       this.logger.warn(`Payment not found for order ${notification.order_id}`);
       return { status: 'ignored', message: 'Payment not found' };
     }
@@ -491,48 +628,96 @@ export class BillsService {
     return { status: 'ok', transaction_status: notification.transaction_status };
   }
 
-  // Terapkan status transaksi Midtrans ke payment + bill (dipakai webhook & verifyPayment)
+  // Terapkan status transaksi Midtrans ke payment(s) + bill(s).
+  // Menangani baik pembayaran tunggal (order_id di Payment) maupun grup (order_id di PaymentGroup).
   private async applyNotification(notification: MidtransNotification) {
     const { order_id, transaction_status, payment_type, transaction_id } = notification;
-
-    const payment = await this.prisma.payment.findUnique({ where: { orderId: order_id } });
-    if (!payment) return;
-
     const isSuccess = this.midtransService.isTransactionSuccess(notification);
-    await this.prisma.payment.update({
+
+    // Coba pembayaran tunggal dulu
+    const payment = await this.prisma.payment.findUnique({ where: { orderId: order_id } });
+    if (payment) {
+      await this.prisma.payment.update({
+        where: { orderId: order_id },
+        data: {
+          transactionId: transaction_id,
+          paymentType: payment_type,
+          transactionStatus: transaction_status,
+          referenceNo: order_id,
+          paidAt: isSuccess ? new Date() : payment.paidAt,
+        },
+      });
+
+      if (isSuccess) {
+        await this.settlePaymentSuccess(payment.id);
+        this.logger.log(`Payment settled: ${order_id} via ${payment_type}`);
+      } else if (this.midtransService.isTransactionFailed(notification)) {
+        this.logger.log(`Payment failed/expired: ${order_id} (${transaction_status})`);
+      }
+      return;
+    }
+
+    // Pembayaran grup (banyak tagihan dalam satu transaksi)
+    const group = await this.prisma.paymentGroup.findUnique({
       where: { orderId: order_id },
+      include: { payments: true },
+    });
+    if (!group) return;
+
+    await this.prisma.paymentGroup.update({
+      where: { id: group.id },
+      data: {
+        transactionId: transaction_id,
+        paymentType: payment_type,
+        transactionStatus: transaction_status,
+      },
+    });
+
+    // Update semua payment anggota grup
+    await this.prisma.payment.updateMany({
+      where: { paymentGroupId: group.id },
       data: {
         transactionId: transaction_id,
         paymentType: payment_type,
         transactionStatus: transaction_status,
         referenceNo: order_id,
-        paidAt: isSuccess ? new Date() : payment.paidAt,
+        ...(isSuccess ? { paidAt: new Date() } : {}),
       },
     });
 
     if (isSuccess) {
-      const bill = await this.prisma.bill.findUnique({
-        where: { id: payment.billId },
-        include: { payments: true },
-      });
-
-      if (bill) {
-        // Hitung total terbayar; payment yang baru sukses ini ikut dihitung
-        const totalPaid = bill.payments.reduce((sum, p) => {
-          if (p.id === payment.id) return sum + p.amount;
-          if (isSettledPayment(p)) return sum + p.amount;
-          return sum;
-        }, 0);
-
-        const newStatus = totalPaid >= bill.amount ? 'paid' : 'unpaid';
-        await this.prisma.bill.update({ where: { id: bill.id }, data: { status: newStatus } });
+      // Settle tiap tagihan anggota + catat kas per pembayaran (idempoten)
+      for (const member of group.payments) {
+        await this.settlePaymentSuccess(member.id);
       }
-      // Pembayaran online sukses -> catat ke Kas RT (idempoten)
-      await this.recordBillPaymentToCash(payment.id);
-      this.logger.log(`Payment settled: ${order_id} via ${payment_type}`);
+      this.logger.log(
+        `Payment group settled: ${order_id} (${group.payments.length} tagihan) via ${payment_type}`,
+      );
     } else if (this.midtransService.isTransactionFailed(notification)) {
-      this.logger.log(`Payment failed/expired: ${order_id} (${transaction_status})`);
+      this.logger.log(`Payment group failed/expired: ${order_id} (${transaction_status})`);
     }
+  }
+
+  // Tandai satu pembayaran sukses: hitung ulang status tagihannya & catat ke Kas RT.
+  // Idempoten — aman dipanggil ulang (kas dijaga unik via paymentId).
+  private async settlePaymentSuccess(paymentId: string) {
+    const payment = await this.prisma.payment.findUnique({ where: { id: paymentId } });
+    if (!payment) return;
+
+    const bill = await this.prisma.bill.findUnique({
+      where: { id: payment.billId },
+      include: { payments: true },
+    });
+    if (bill) {
+      const totalPaid = bill.payments.reduce((sum, p) => {
+        if (p.id === payment.id) return sum + p.amount;
+        if (isSettledPayment(p)) return sum + p.amount;
+        return sum;
+      }, 0);
+      const newStatus = totalPaid >= bill.amount ? 'paid' : 'unpaid';
+      await this.prisma.bill.update({ where: { id: bill.id }, data: { status: newStatus } });
+    }
+    await this.recordBillPaymentToCash(payment.id);
   }
 
   // Verifikasi pembayaran sebuah bill langsung ke Midtrans (fallback tanpa webhook).

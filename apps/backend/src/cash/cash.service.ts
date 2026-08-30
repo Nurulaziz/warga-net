@@ -32,7 +32,14 @@ export class CashService {
 
   // === Transactions ===
 
-  async findAllTransactions(query: { page?: number; limit?: number; type?: string; categoryId?: string; startDate?: string; endDate?: string }) {
+  async findAllTransactions(query: {
+    page?: number;
+    limit?: number;
+    type?: string;
+    categoryId?: string;
+    startDate?: string;
+    endDate?: string;
+  }) {
     const { page = 1, limit = 20, type, categoryId, startDate, endDate } = query;
     const skip = (page - 1) * limit;
 
@@ -59,7 +66,14 @@ export class CashService {
     return { data, meta: { total, page, limit, totalPages: Math.ceil(total / limit) } };
   }
 
-  async createTransaction(data: { categoryId: string; type: string; amount: number; description: string; date?: string; createdBy?: string }) {
+  async createTransaction(data: {
+    categoryId: string;
+    type: string;
+    amount: number;
+    description: string;
+    date?: string;
+    createdBy?: string;
+  }) {
     return this.prisma.cashTransaction.create({
       data: {
         categoryId: data.categoryId,
@@ -73,14 +87,27 @@ export class CashService {
     });
   }
 
-  async updateTransaction(id: string, data: { categoryId?: string; type?: string; amount?: number; description?: string; date?: string }) {
+  async updateTransaction(
+    id: string,
+    data: {
+      categoryId?: string;
+      type?: string;
+      amount?: number;
+      description?: string;
+      date?: string;
+    },
+  ) {
     const tx = await this.prisma.cashTransaction.findUnique({ where: { id } });
     if (!tx) throw new NotFoundException('Transaksi tidak ditemukan');
 
     const updateData: Record<string, unknown> = { ...data };
     if (data.date) updateData.date = new Date(data.date);
 
-    return this.prisma.cashTransaction.update({ where: { id }, data: updateData, include: { category: true } });
+    return this.prisma.cashTransaction.update({
+      where: { id },
+      data: updateData,
+      include: { category: true },
+    });
   }
 
   async deleteTransaction(id: string) {
@@ -102,8 +129,14 @@ export class CashService {
     }
 
     const [incomeAgg, expenseAgg, totalIncomeAgg, totalExpenseAgg] = await Promise.all([
-      this.prisma.cashTransaction.aggregate({ where: { ...where, type: 'income' }, _sum: { amount: true } }),
-      this.prisma.cashTransaction.aggregate({ where: { ...where, type: 'expense' }, _sum: { amount: true } }),
+      this.prisma.cashTransaction.aggregate({
+        where: { ...where, type: 'income' },
+        _sum: { amount: true },
+      }),
+      this.prisma.cashTransaction.aggregate({
+        where: { ...where, type: 'expense' },
+        _sum: { amount: true },
+      }),
       this.prisma.cashTransaction.aggregate({ where: { type: 'income' }, _sum: { amount: true } }),
       this.prisma.cashTransaction.aggregate({ where: { type: 'expense' }, _sum: { amount: true } }),
     ]);
@@ -118,5 +151,40 @@ export class CashService {
       totalExpense,
       balance: totalIncome - totalExpense,
     };
+  }
+
+  // === Cash flow series (dashboard chart) ===
+
+  async getCashflow(months?: number) {
+    const count = Math.min(Math.max(months ?? 6, 1), 12);
+    const now = new Date();
+    const result = [];
+
+    for (let i = count - 1; i >= 0; i--) {
+      const ref = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const month = `${ref.getFullYear()}-${String(ref.getMonth() + 1).padStart(2, '0')}`;
+      const start = new Date(`${month}-01`);
+      const end = new Date(start.getFullYear(), start.getMonth() + 1, 0, 23, 59, 59);
+      const where: Record<string, unknown> = { date: { gte: start, lte: end } };
+
+      const [incomeAgg, expenseAgg] = await Promise.all([
+        this.prisma.cashTransaction.aggregate({
+          where: { ...where, type: 'income' },
+          _sum: { amount: true },
+        }),
+        this.prisma.cashTransaction.aggregate({
+          where: { ...where, type: 'expense' },
+          _sum: { amount: true },
+        }),
+      ]);
+
+      result.push({
+        month,
+        income: incomeAgg._sum.amount || 0,
+        expense: expenseAgg._sum.amount || 0,
+      });
+    }
+
+    return { data: result };
   }
 }

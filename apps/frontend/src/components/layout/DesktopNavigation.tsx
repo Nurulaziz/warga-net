@@ -197,18 +197,21 @@ export function DesktopNavigation({ collapsed, onToggle }: DesktopNavigationProp
         </div>
       </div>
 
-      {/* Floating border toggle button */}
+      {/* Toggle collapse — selalu aksesibel, tidak melayang di atas konten */}
       <button
         onClick={onToggle}
-        className="absolute -right-3 top-[72px] w-6 h-6 bg-white dark:bg-gray-800 border border-[#E2E8F0] dark:border-gray-600 rounded-full shadow-md flex items-center justify-center hover:bg-[#F8FAFC] dark:hover:bg-gray-700 hover:shadow-lg transition-all duration-200 z-50"
-        title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-        aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+        className={`w-full flex items-center gap-2.5 min-h-[40px] text-[13px] font-medium rounded-none border-t border-[#E2E8F0] dark:border-gray-700 px-3 text-[#64748B] dark:text-gray-400 hover:bg-[#F8FAFC] dark:hover:bg-gray-700/50 hover:text-[#0054A6] dark:hover:text-gray-200 transition-colors duration-150 flex-shrink-0 ${
+          collapsed ? 'justify-center px-0' : ''
+        }`}
+        title={collapsed ? 'Perbesar sidebar' : 'Perkecil sidebar'}
       >
         <ChevronLeftIcon
-          className={`w-3.5 h-3.5 text-[#64748B] transition-transform duration-300 ${
+          className={`w-[18px] h-[18px] shrink-0 transition-transform duration-300 ${
             collapsed ? 'rotate-180' : ''
           }`}
+          aria-hidden="true"
         />
+        {!collapsed && <span className="truncate">Perkecil</span>}
       </button>
     </aside>
   );

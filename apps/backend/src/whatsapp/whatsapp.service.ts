@@ -23,7 +23,7 @@ export class WhatsAppService {
 
   // Kirim OTP via WhatsApp dengan template standar
   async sendOtp(phoneNumber: string, otp: string): Promise<SendResult> {
-    const message = `Kode OTP WargaNet Anda: ${otp}. Berlaku 5 menit. Jangan bagikan kode ini.`;
+    const message = `*WargaNet* - Kode Verifikasi\n\nKode OTP Anda: *${otp}*\n\nBerlaku 5 menit. Jangan bagikan kode ini kepada siapa pun.`;
 
     return this.sendMessageWithRetry(phoneNumber, message);
   }

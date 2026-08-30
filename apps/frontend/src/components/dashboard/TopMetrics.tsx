@@ -74,24 +74,37 @@ export function TopMetrics() {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       <StatCard
+        to="/residents"
         icon={<UserGroupIcon className="w-6 h-6" aria-hidden="true" />}
-        value={`${metrics.totalResidents} / ${metrics.totalFamilies} KK`}
-        label="Total Warga / Keluarga"
+        value={`${metrics.totalResidents} Warga (${metrics.totalFamilies} KK)`}
+        label="Total Warga & Keluarga"
         iconBgColor="bg-primary-500"
       />
       <StatCard
+        to="/cash"
         icon={<BanknotesIcon className="w-6 h-6" aria-hidden="true" />}
         value={formatCurrency(metrics.balance)}
         label="Saldo Kas RT"
-        iconBgColor="bg-emerald-500"
+        iconBgColor={metrics.balance < 0 ? 'bg-red-500' : 'bg-emerald-500'}
+        valueClassName={metrics.balance < 0 ? 'text-red-600 dark:text-rose-400' : ''}
+        badge={
+          metrics.balance < 0
+            ? {
+                text: 'Defisit',
+                className: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-rose-400',
+              }
+            : undefined
+        }
       />
       <StatCard
+        to="/bills"
         icon={<ExclamationTriangleIcon className="w-6 h-6" aria-hidden="true" />}
         value={metrics.unpaidBills.toString()}
         label="Iuran Belum Lunas (Bulan Ini)"
         iconBgColor="bg-yellow-500"
       />
       <StatCard
+        to="/letters"
         icon={<DocumentTextIcon className="w-6 h-6" aria-hidden="true" />}
         value={metrics.pendingLetters.toString()}
         label="Permohonan Surat Pending"

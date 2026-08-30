@@ -3,13 +3,23 @@ import { ConfigService } from '@nestjs/config';
 import * as crypto from 'crypto';
 
 // Midtrans Snap API interface
+interface SnapItem {
+  id: string;
+  name: string;
+  price: number;
+  quantity?: number;
+}
+
 interface SnapTransactionParams {
   orderId: string;
   grossAmount: number;
   customerName: string;
   customerPhone?: string;
-  itemName: string;
+  // Satu item (single bill) — dipertahankan untuk kompatibilitas
+  itemName?: string;
   itemId?: string;
+  // Banyak item (bulk / beberapa tagihan dalam satu transaksi)
+  items?: SnapItem[];
 }
 
 interface SnapResponse {
@@ -67,6 +77,25 @@ export class MidtransService {
 
   // Buat Snap transaction token
   async createTransaction(params: SnapTransactionParams): Promise<SnapResponse> {
+    // Susun item_details: dari daftar items (bulk) atau item tunggal (single)
+    const itemDetails =
+      params.items && params.items.length > 0
+        ? params.items.map((item) => ({
+            id: item.id,
+            price: item.price,
+            quantity: item.quantity ?? 1,
+            // Midtrans membatasi nama item maksimal 50 karakter
+            name: item.name.slice(0, 50),
+          }))
+        : [
+            {
+              id: params.itemId || params.orderId,
+              price: params.grossAmount,
+              quantity: 1,
+              name: (params.itemName || 'Pembayaran').slice(0, 50),
+            },
+          ];
+
     const payload = {
       transaction_details: {
         order_id: params.orderId,
@@ -76,14 +105,7 @@ export class MidtransService {
         first_name: params.customerName,
         phone: params.customerPhone || '',
       },
-      item_details: [
-        {
-          id: params.itemId || params.orderId,
-          price: params.grossAmount,
-          quantity: 1,
-          name: params.itemName,
-        },
-      ],
+      item_details: itemDetails,
       callbacks: {
         finish: '/bills?payment=success',
       },
