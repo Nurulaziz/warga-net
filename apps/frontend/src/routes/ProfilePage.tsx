@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSettings } from '@/hooks/useSettings';
 import { Card } from '@/components/ui/Card';
+import { ProfilePostsSection } from '@/components/posts/ProfilePostsSection';
 import {
   UserCircleIcon,
   CheckBadgeIcon,
@@ -57,9 +58,8 @@ export function ProfilePage() {
   }
 
   // Nama display — fallback jika hanya nomor HP
-  const displayName = user?.name && !user.name.startsWith('+')
-    ? user.name
-    : `Warga ${settings.app_name}`;
+  const displayName =
+    user?.name && !user.name.startsWith('+') ? user.name : `Warga ${settings.app_name}`;
 
   // Cek apakah email real atau dummy
   const isRealEmail = user?.email && !user.email.endsWith('@warganet.local');
@@ -219,13 +219,24 @@ export function ProfilePage() {
           </Card>
         </div>
       </div>
+      {currentUser?.id && <ProfilePostsSection userId={currentUser.id} />}
     </div>
   );
 }
 
 // --- Sub-components ---
 
-function InfoField({ icon, label, value, placeholder }: { icon: React.ReactNode | null; label: string; value: string | null | undefined; placeholder?: string }) {
+function InfoField({
+  icon,
+  label,
+  value,
+  placeholder,
+}: {
+  icon: React.ReactNode | null;
+  label: string;
+  value: string | null | undefined;
+  placeholder?: string;
+}) {
   return (
     <div>
       <p className="text-xs text-[#94A3B8] dark:text-gray-500 mb-1 flex items-center gap-1">
@@ -235,13 +246,23 @@ function InfoField({ icon, label, value, placeholder }: { icon: React.ReactNode 
       {value ? (
         <p className="text-sm font-medium text-[#0F172A] dark:text-gray-200">{value}</p>
       ) : (
-        <p className="text-sm text-[#CBD5E1] dark:text-gray-600 italic">{placeholder || 'Belum diatur'}</p>
+        <p className="text-sm text-[#CBD5E1] dark:text-gray-600 italic">
+          {placeholder || 'Belum diatur'}
+        </p>
       )}
     </div>
   );
 }
 
-function NavTab({ icon, label, active = false }: { icon: React.ReactNode; label: string; active?: boolean }) {
+function NavTab({
+  icon,
+  label,
+  active = false,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  active?: boolean;
+}) {
   return (
     <button
       className={`w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-colors min-h-[40px] ${
@@ -250,7 +271,9 @@ function NavTab({ icon, label, active = false }: { icon: React.ReactNode; label:
           : 'text-[#64748B] dark:text-gray-400 hover:bg-[#F8FAFC] dark:hover:bg-gray-700/50 hover:text-[#0F172A] dark:hover:text-gray-200'
       }`}
     >
-      <span className={active ? 'text-[#0054A6] dark:text-blue-400' : 'text-[#94A3B8]'}>{icon}</span>
+      <span className={active ? 'text-[#0054A6] dark:text-blue-400' : 'text-[#94A3B8]'}>
+        {icon}
+      </span>
       {label}
     </button>
   );

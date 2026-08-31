@@ -21,6 +21,8 @@ import {
   ArrowDownTrayIcon,
   EyeIcon,
   TrashIcon,
+  ShieldCheckIcon,
+  LockClosedIcon,
 } from '@heroicons/react/24/outline';
 import {
   Table,
@@ -540,7 +542,7 @@ export function BillsPage() {
   }
 
   // Unduh struk pembayaran digital sebagai gambar PNG (nama keluarga, jenis iuran,
-  // nominal, ID transaksi, stempel LUNAS). Dirender lewat Canvas tanpa dependensi.
+  // nominal, referensi transaksi, dan status pembayaran). Dirender lewat Canvas.
   function downloadStrukImage(
     bill: NonNullable<typeof detailModal>,
     payment: NonNullable<ReturnType<typeof getSettledPayment>>,
@@ -610,7 +612,7 @@ export function BillsPage() {
     const contentW = W - PAD * 2;
     const brand = settings.app_name || 'WargaNet';
     const addressLines = wrapText(sctx, address, 11, 400, contentW);
-    const titleText = `STRUK PEMBAYARAN IURAN · ${receiptNo}`;
+    const titleText = 'BUKTI PEMBAYARAN IURAN';
     const amountLabel = 'TOTAL PEMBAYARAN';
     const amountText = formatCurrency(payment.amount);
     const rows: [string, string][] = [
@@ -620,15 +622,17 @@ export function BillsPage() {
       ['Tanggal Bayar', `${formatDateTime(payment.paidAt)} WIB`],
       ['Metode', methodLabel],
     ];
+    const transactionRef = payment.referenceNo || payment.orderId;
+    if (transactionRef) rows.push(['Referensi', transactionRef]);
     const paidBy = (payment.paidBy || '').trim();
     const headOfFamily = bill.family?.headOfFamily || '';
     if (paidBy && paidBy.toLowerCase() !== headOfFamily.toLowerCase()) {
       rows.push(['Dibayar oleh', paidBy]);
     }
-    const stampText = 'LUNAS';
+    const isOnlinePayment = payment.method === 'midtrans';
     const metaLines = [
-      'Diterima oleh Bendahara / Pengurus RT',
-      `${formatDateTime(new Date().toISOString())} WIB`,
+      isOnlinePayment ? 'Tercatat otomatis oleh sistem' : 'Dicatat oleh Bendahara / Pengurus RT',
+      `Struk dibuat ${formatDateTime(new Date().toISOString())} WIB`,
     ];
     const footText = `Dicetak dari ${settings.app_name || 'WargaNet'} · ${settings.housing_complex || ''}`;
 
@@ -637,15 +641,17 @@ export function BillsPage() {
     y += brandH;
     y += addressLines.length * 15 + 6;
     const titleH = 14;
-    y += titleH + 6;
+    y += titleH + 5;
+    const receiptMetaH = 15;
+    y += receiptMetaH;
+    const statusH = 28;
+    y += statusH + 8;
     const dashH = 10;
     y += dashH + 8;
-    const bodyTop = y;
     const rowH = 22;
     y += rows.length * rowH + 14;
     const boxH = 58;
     y += boxH + 18;
-    const bodyCenterY = (bodyTop + y) / 2;
     y += metaLines.length * 15 + 12;
     y += 14;
     const finalH = Math.ceil(y);
@@ -662,23 +668,6 @@ export function BillsPage() {
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, W, finalH);
 
-    // Watermark stempel LUNAS — besar, di belakang seluruh konten, terpusat di area body
-    ctx.save();
-    ctx.globalAlpha = 0.12;
-    ctx.translate(W / 2, bodyCenterY);
-    ctx.rotate((-18 * Math.PI) / 180);
-    ctx.font = `900 96px ${FONT}`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.strokeStyle = '#16a34a';
-    ctx.lineWidth = 6;
-    ctx.lineJoin = 'round';
-    ctx.strokeText(stampText, 0, 2);
-    ctx.fillStyle = '#16a34a';
-    ctx.fillText(stampText, 0, 2);
-    ctx.restore();
-    ctx.textBaseline = 'alphabetic';
-
     let cursor = PAD;
 
     // Header
@@ -694,10 +683,27 @@ export function BillsPage() {
       cursor += 15;
     }
     cursor += 6;
-    ctx.fillStyle = '#6b7280';
-    ctx.font = `600 9px ${FONT}`;
+    ctx.fillStyle = '#374151';
+    ctx.font = `700 9px ${FONT}`;
     ctx.fillText(titleText, W / 2, cursor + 11);
-    cursor += titleH + 6;
+    cursor += titleH + 5;
+
+    // Nomor struk dan status dibuat eksplisit agar mudah diverifikasi tanpa
+    // mengganggu rincian maupun nominal seperti watermark berukuran besar.
+    ctx.fillStyle = '#9ca3af';
+    ctx.font = `500 9px ${FONT}`;
+    ctx.fillText(receiptNo, W / 2, cursor + 10);
+    cursor += receiptMetaH;
+    const statusW = 66;
+    const statusX = (W - statusW) / 2;
+    roundedRect(ctx, statusX, cursor + 2, statusW, 22, 11);
+    ctx.fillStyle = '#dcfce7';
+    ctx.fill();
+    ctx.fillStyle = '#15803d';
+    ctx.font = `800 9px ${FONT}`;
+    ctx.fillText('✓  LUNAS', W / 2, cursor + 16);
+    cursor += statusH + 8;
+
     ctx.strokeStyle = '#d1d5db';
     ctx.lineWidth = 1;
     ctx.setLineDash([4, 4]);
@@ -710,16 +716,25 @@ export function BillsPage() {
 
     // Baris rincian (label kiri, nilai kanan)
     ctx.textAlign = 'left';
-    for (const [label, value] of rows) {
+    for (let index = 0; index < rows.length; index++) {
+      const [label, value] = rows[index];
       ctx.fillStyle = '#6b7280';
-      ctx.font = `400 12px ${FONT}`;
+      ctx.font = `400 11px ${FONT}`;
       ctx.fillText(label, PAD, cursor + 12);
       ctx.textAlign = 'right';
       ctx.fillStyle = '#111827';
-      ctx.font = `600 12px ${FONT}`;
-      const valueText = value.length > 34 ? `${value.slice(0, 33)}…` : value;
+      ctx.font = `600 11px ${FONT}`;
+      const valueText = value.length > 36 ? `${value.slice(0, 35)}…` : value;
       ctx.fillText(valueText, W - PAD, cursor + 12);
       ctx.textAlign = 'left';
+      if (index < rows.length - 1) {
+        ctx.strokeStyle = '#f3f4f6';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(PAD, cursor + rowH - 2);
+        ctx.lineTo(W - PAD, cursor + rowH - 2);
+        ctx.stroke();
+      }
       cursor += rowH;
     }
     cursor += 14;
@@ -728,17 +743,17 @@ export function BillsPage() {
     const amountBoxX = PAD + 8;
     const amountBoxW = W - PAD * 2 - 16;
     roundedRect(ctx, amountBoxX, cursor, amountBoxW, boxH, 10);
-    ctx.fillStyle = 'rgba(240, 253, 244, 0.7)';
+    ctx.fillStyle = '#f0fdf4';
     ctx.fill();
     ctx.strokeStyle = '#bbf7d0';
     ctx.lineWidth = 1;
     ctx.stroke();
     ctx.textAlign = 'center';
-    ctx.fillStyle = '#16a34a';
+    ctx.fillStyle = '#15803d';
     ctx.font = `600 9px ${FONT}`;
     ctx.fillText(amountLabel, W / 2, cursor + 16);
-    ctx.fillStyle = '#15803d';
-    ctx.font = `800 21px ${FONT}`;
+    ctx.fillStyle = '#166534';
+    ctx.font = `800 23px ${FONT}`;
     ctx.fillText(amountText, W / 2, cursor + 40);
     cursor += boxH + 18;
 
@@ -1927,33 +1942,62 @@ export function BillsPage() {
       </Modal>
 
       {/* Pembayaran online — Snap embedded di dalam modal */}
-      <Modal isOpen={!!snapBill} onClose={closeSnapModal} title="Pembayaran Online" size="md">
+      <Modal
+        isOpen={!!snapBill}
+        onClose={closeSnapModal}
+        title="Selesaikan Pembayaran"
+        size="lg"
+        panelClassName="overflow-hidden"
+        contentClassName="p-0"
+      >
         {snapBill && (
-          <div className="mb-4 flex items-center justify-between gap-3 rounded-lg border border-gray-200 dark:border-gray-700 p-3">
-            <div className="min-w-0">
-              <p className="font-medium text-gray-900 dark:text-gray-100 truncate">
-                {snapBill.billType?.name}
-              </p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">
-                {snapBill.family?.headOfFamily} · {snapBill.period}
-              </p>
+          <div className="border-b border-gray-200 bg-gradient-to-br from-primary-50 via-white to-blue-50 px-6 py-5 dark:border-gray-700 dark:from-primary-950/30 dark:via-gray-800 dark:to-blue-950/20">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex min-w-0 items-center gap-3">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary-600 text-white shadow-sm shadow-primary-600/30">
+                  <CreditCardIcon className="h-5 w-5" aria-hidden="true" />
+                </div>
+                <div className="min-w-0">
+                  <p className="truncate font-semibold text-gray-900 dark:text-gray-100">
+                    {snapBill.billType?.name}
+                  </p>
+                  <p className="mt-0.5 truncate text-sm text-gray-500 dark:text-gray-400">
+                    {snapBill.family?.headOfFamily} · Periode {snapBill.period}
+                  </p>
+                </div>
+              </div>
+              <div className="sm:text-right">
+                <p className="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                  Total pembayaran
+                </p>
+                <p className="mt-0.5 text-2xl font-bold tracking-tight text-gray-950 dark:text-white">
+                  {formatCurrency(snapBill.amount)}
+                </p>
+              </div>
             </div>
-            <span className="text-lg font-bold text-gray-900 dark:text-gray-100 whitespace-nowrap">
-              {formatCurrency(snapBill.amount)}
-            </span>
           </div>
         )}
 
-        {/* Container tempat Snap dirender (min. 320x560 sesuai standar Midtrans) */}
-        <div className="flex justify-center">
-          <div id={SNAP_CONTAINER_ID} className="w-full min-h-[560px]" />
+        <div className="bg-gray-50 px-3 py-4 dark:bg-gray-900/50 sm:px-6">
+          <div className="mb-3 flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+            <ShieldCheckIcon className="h-4 w-4 text-emerald-600" aria-hidden="true" />
+            <span>Pilih metode pembayaran yang paling nyaman untuk Anda</span>
+          </div>
+          {/* Container tempat Snap dirender (min. 320x560 sesuai standar Midtrans) */}
+          <div className="mx-auto max-w-md overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-gray-200 dark:ring-gray-700">
+            <div id={SNAP_CONTAINER_ID} className="w-full min-h-[560px]" />
+          </div>
         </div>
 
-        <ModalFooter>
+        <div className="flex flex-col gap-3 border-t border-gray-200 bg-white px-6 py-4 dark:border-gray-700 dark:bg-gray-800 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+            <LockClosedIcon className="h-4 w-4" aria-hidden="true" />
+            Transaksi diproses secara aman oleh Midtrans
+          </div>
           <Button variant="secondary" size="sm" onClick={closeSnapModal}>
-            Tutup
+            Batalkan Pembayaran
           </Button>
-        </ModalFooter>
+        </div>
       </Modal>
     </div>
   );

@@ -98,10 +98,7 @@ export class RateLimitService {
   }
 
   // Increment rate limit counter
-  async incrementRateLimit(
-    type: 'phone' | 'ip' | 'verify',
-    identifier: string,
-  ): Promise<number> {
+  async incrementRateLimit(type: 'phone' | 'ip' | 'verify', identifier: string): Promise<number> {
     let key: string;
     let ttl: number;
 

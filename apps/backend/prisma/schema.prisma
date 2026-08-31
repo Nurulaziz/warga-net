@@ -24,29 +24,29 @@ model BetterAuthUser {
   createdAt           DateTime  @default(now()) @map("created_at")
   updatedAt           DateTime  @updatedAt @map("updated_at")
 
-  sessions            Session[]
-  accounts            Account[]
+  sessions Session[]
+  accounts Account[]
 
   @@map("ba_user")
 }
 
 model Session {
-  id               String   @id
-  expiresAt        DateTime @map("expires_at")
-  token            String   @unique
-  ipAddress        String?  @map("ip_address")
-  userAgent        String?  @map("user_agent")
-  userId           String   @map("user_id")
-  impersonatedBy   String?  @map("impersonated_by")
+  id             String   @id
+  expiresAt      DateTime @map("expires_at")
+  token          String   @unique
+  ipAddress      String?  @map("ip_address")
+  userAgent      String?  @map("user_agent")
+  userId         String   @map("user_id")
+  impersonatedBy String?  @map("impersonated_by")
 
-  user      BetterAuthUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user BetterAuthUser @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  @@map("ba_session")
   @@index([userId])
   @@index([token])
+  @@map("ba_session")
 }
 
 model Account {
@@ -64,10 +64,10 @@ model Account {
   createdAt             DateTime  @default(now()) @map("created_at")
   updatedAt             DateTime  @updatedAt @map("updated_at")
 
-  user                  BetterAuthUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user BetterAuthUser @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@map("ba_account")
   @@index([userId])
+  @@map("ba_account")
 }
 
 model Verification {
@@ -84,27 +84,36 @@ model Verification {
 // ============= Auth & Access =============
 
 model User {
-  id            String    @id @default(uuid())
-  phoneNumber   String    @unique @map("phone_number")
-  fullName      String    @map("full_name")
-  roleId        String    @map("role_id")
-  familyId      String?   @map("family_id")
-  isActive      Boolean   @default(false) @map("is_active")
-  lastLoginAt   DateTime? @map("last_login_at")
-  createdAt     DateTime  @default(now()) @map("created_at")
-  updatedAt     DateTime  @updatedAt @map("updated_at")
-  deletedAt     DateTime? @map("deleted_at")
+  id          String    @id @default(uuid())
+  phoneNumber String    @unique @map("phone_number")
+  fullName    String    @map("full_name")
+  roleId      String    @map("role_id")
+  familyId    String?   @map("family_id")
+  isActive    Boolean   @default(false) @map("is_active")
+  lastLoginAt DateTime? @map("last_login_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
 
-  role          Role      @relation(fields: [roleId], references: [id])
-  family        Family?   @relation(fields: [familyId], references: [id])
-  loginLogs     LoginLog[]
-  phoneChanges  PhoneChangeLog[]
-  auditLogs     AuditLog[]
+  role             Role             @relation(fields: [roleId], references: [id])
+  family           Family?          @relation(fields: [familyId], references: [id])
+  loginLogs        LoginLog[]
+  phoneChanges     PhoneChangeLog[]
+  auditLogs        AuditLog[]
+  posts            Post[]
+  postReactions    PostReaction[]
+  comments         Comment[]
+  postShares       PostShare[]
+  savedPosts       SavedPost[]
+  mentions         Mention[]        @relation("mentions")
+  submittedReports Report[]         @relation("submittedReports")
+  resolvedReports  Report[]         @relation("resolvedReports")
+  pollVotes        PollVote[]
 
-  @@map("users")
   @@index([phoneNumber])
   @@index([roleId])
   @@index([familyId])
+  @@map("users")
 }
 
 model Role {
@@ -128,7 +137,7 @@ model Permission {
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
-  roles       RolePermission[]
+  roles RolePermission[]
 
   @@unique([feature, action])
   @@map("permissions")
@@ -140,56 +149,56 @@ model RolePermission {
   permissionId String   @map("permission_id")
   createdAt    DateTime @default(now()) @map("created_at")
 
-  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
-  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
 
   @@unique([roleId, permissionId])
-  @@map("role_permissions")
   @@index([roleId])
   @@index([permissionId])
+  @@map("role_permissions")
 }
 
 // ============= Kependudukan =============
 
 model Family {
-  id              String    @id @default(uuid())
-  headOfFamily    String    @map("head_of_family")
-  address         String
-  housingComplex  String    @default("Satriamekar Raya Residence 2") @map("housing_complex")
-  rt              String    @default("04")
-  rw              String    @default("010")
-  kelurahan       String    @default("Satriamekar")
-  kecamatan       String    @default("Tambun Utara")
-  kabupaten       String    @default("Bekasi")
-  provinsi        String    @default("Jawa Barat")
-  createdAt       DateTime  @default(now()) @map("created_at")
-  updatedAt       DateTime  @updatedAt @map("updated_at")
-  deletedAt       DateTime? @map("deleted_at")
+  id             String    @id @default(uuid())
+  headOfFamily   String    @map("head_of_family")
+  address        String
+  housingComplex String    @default("Satriamekar Raya Residence 2") @map("housing_complex")
+  rt             String    @default("04")
+  rw             String    @default("010")
+  kelurahan      String    @default("Satriamekar")
+  kecamatan      String    @default("Tambun Utara")
+  kabupaten      String    @default("Bekasi")
+  provinsi       String    @default("Jawa Barat")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+  deletedAt      DateTime? @map("deleted_at")
 
-  residents       Resident[]
-  users           User[]
-  bills           Bill[]
+  residents Resident[]
+  users     User[]
+  bills     Bill[]
 
   @@map("families")
 }
 
 model Resident {
-  id              String    @id @default(uuid())
-  familyId        String    @map("family_id")
-  fullName        String    @map("full_name")
-  idNumber        String    @unique @map("id_number")
-  birthDate       DateTime  @map("birth_date")
-  gender          String
-  relationship    String
-  createdAt       DateTime  @default(now()) @map("created_at")
-  updatedAt       DateTime  @updatedAt @map("updated_at")
-  deletedAt       DateTime? @map("deleted_at")
+  id           String    @id @default(uuid())
+  familyId     String    @map("family_id")
+  fullName     String    @map("full_name")
+  idNumber     String    @unique @map("id_number")
+  birthDate    DateTime  @map("birth_date")
+  gender       String
+  relationship String
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  deletedAt    DateTime? @map("deleted_at")
 
-  family          Family    @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  family Family @relation(fields: [familyId], references: [id], onDelete: Cascade)
 
-  @@map("residents")
   @@index([familyId])
   @@index([idNumber])
+  @@map("residents")
 }
 
 // ============= Security & Audit =============
@@ -204,47 +213,47 @@ model LoginLog {
   failReason  String?  @map("fail_reason")
   createdAt   DateTime @default(now()) @map("created_at")
 
-  user        User?    @relation(fields: [userId], references: [id])
+  user User? @relation(fields: [userId], references: [id])
 
-  @@map("login_logs")
   @@index([userId])
   @@index([phoneNumber])
   @@index([createdAt])
+  @@map("login_logs")
 }
 
 model PhoneChangeLog {
-  id          String   @id @default(uuid())
-  userId      String   @map("user_id")
-  oldPhone    String   @map("old_phone")
-  newPhone    String   @map("new_phone")
+  id          String    @id @default(uuid())
+  userId      String    @map("user_id")
+  oldPhone    String    @map("old_phone")
+  newPhone    String    @map("new_phone")
   status      String
-  requestedAt DateTime @default(now()) @map("requested_at")
-  approvedBy  String?  @map("approved_by")
+  requestedAt DateTime  @default(now()) @map("requested_at")
+  approvedBy  String?   @map("approved_by")
   approvedAt  DateTime? @map("approved_at")
 
-  user        User     @relation(fields: [userId], references: [id])
+  user User @relation(fields: [userId], references: [id])
 
-  @@map("phone_change_logs")
   @@index([userId])
   @@index([status])
+  @@map("phone_change_logs")
 }
 
 model AuditLog {
-  id          String   @id @default(uuid())
-  userId      String?  @map("user_id")
-  action      String
-  resource    String?
-  details     Json?
-  ipAddress   String   @map("ip_address")
-  userAgent   String   @map("user_agent")
-  createdAt   DateTime @default(now()) @map("created_at")
+  id        String   @id @default(uuid())
+  userId    String?  @map("user_id")
+  action    String
+  resource  String?
+  details   Json?
+  ipAddress String   @map("ip_address")
+  userAgent String   @map("user_agent")
+  createdAt DateTime @default(now()) @map("created_at")
 
-  user        User?    @relation(fields: [userId], references: [id])
+  user User? @relation(fields: [userId], references: [id])
 
-  @@map("audit_logs")
   @@index([userId])
   @@index([action])
   @@index([createdAt])
+  @@map("audit_logs")
 }
 
 // ============= Iuran & Pembayaran =============
@@ -262,66 +271,66 @@ model BillType {
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
-  bills        Bill[]
+  bills Bill[]
 
   @@map("bill_types")
 }
 
 model Bill {
-  id          String    @id @default(uuid())
-  billTypeId  String    @map("bill_type_id")
-  familyId    String    @map("family_id")
-  amount      Float
-  dueDate     DateTime  @map("due_date")
-  status      String    @default("unpaid") // unpaid, paid, overdue
-  period      String    // "2025-01", "2025-02", dll
-  createdAt   DateTime  @default(now()) @map("created_at")
-  updatedAt   DateTime  @updatedAt @map("updated_at")
+  id         String   @id @default(uuid())
+  billTypeId String   @map("bill_type_id")
+  familyId   String   @map("family_id")
+  amount     Float
+  dueDate    DateTime @map("due_date")
+  status     String   @default("unpaid") // unpaid, paid, overdue
+  period     String // "2025-01", "2025-02", dll
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
 
-  billType    BillType  @relation(fields: [billTypeId], references: [id])
-  family      Family    @relation(fields: [familyId], references: [id])
-  payments    Payment[]
+  billType BillType  @relation(fields: [billTypeId], references: [id])
+  family   Family    @relation(fields: [familyId], references: [id])
+  payments Payment[]
 
   @@unique([billTypeId, familyId, period])
-  @@map("bills")
   @@index([familyId])
   @@index([billTypeId])
   @@index([status])
   @@index([period])
+  @@map("bills")
 }
 
 model Payment {
-  id              String   @id @default(uuid())
-  billId          String   @map("bill_id")
-  amount          Float
-  paidAt          DateTime @default(now()) @map("paid_at")
-  paidBy          String?  @map("paid_by") // nama pembayar
-  method          String   @default("cash") // cash, transfer, qris, bank_transfer, e_wallet
-  note            String?
-  receivedBy      String?  @map("received_by") // user id bendahara
+  id                String   @id @default(uuid())
+  billId            String   @map("bill_id")
+  amount            Float
+  paidAt            DateTime @default(now()) @map("paid_at")
+  paidBy            String?  @map("paid_by") // nama pembayar
+  method            String   @default("cash") // cash, transfer, qris, bank_transfer, e_wallet
+  note              String?
+  receivedBy        String?  @map("received_by") // user id bendahara
   // Bukti bayar (foto struk transfer / bukti manual) yang diunggah admin
-  proofUrl        String?  @map("proof_url")
-  proofName       String?  @map("proof_name")
+  proofUrl          String?  @map("proof_url")
+  proofName         String?  @map("proof_name")
   // Midtrans payment gateway fields
-  transactionId   String?  @map("transaction_id") // Midtrans transaction_id
-  orderId         String?  @unique @map("order_id") // order_id unik untuk Midtrans
-  snapToken       String?  @map("snap_token")
-  paymentType     String?  @map("payment_type") // qris, bank_transfer, gopay, shopeepay, dll
-  transactionStatus String? @map("transaction_status") // pending, settlement, cancel, expire
-  referenceNo     String?  @map("reference_no") // nomor referensi dari payment channel
+  transactionId     String?  @map("transaction_id") // Midtrans transaction_id
+  orderId           String?  @unique @map("order_id") // order_id unik untuk Midtrans
+  snapToken         String?  @map("snap_token")
+  paymentType       String?  @map("payment_type") // qris, bank_transfer, gopay, shopeepay, dll
+  transactionStatus String?  @map("transaction_status") // pending, settlement, cancel, expire
+  referenceNo       String?  @map("reference_no") // nomor referensi dari payment channel
   // Grup pembayaran: banyak tagihan dibayar dalam satu transaksi Midtrans
-  paymentGroupId  String?  @map("payment_group_id")
-  createdAt       DateTime @default(now()) @map("created_at")
+  paymentGroupId    String?  @map("payment_group_id")
+  createdAt         DateTime @default(now()) @map("created_at")
 
-  bill            Bill     @relation(fields: [billId], references: [id])
+  bill            Bill             @relation(fields: [billId], references: [id])
   cashTransaction CashTransaction?
-  paymentGroup    PaymentGroup? @relation(fields: [paymentGroupId], references: [id])
+  paymentGroup    PaymentGroup?    @relation(fields: [paymentGroupId], references: [id])
 
-  @@map("payments")
   @@index([billId])
   @@index([paidAt])
   @@index([orderId])
   @@index([paymentGroupId])
+  @@map("payments")
 }
 
 // Grup pembayaran online: satu transaksi Midtrans mencakup beberapa tagihan.
@@ -339,10 +348,10 @@ model PaymentGroup {
   createdAt         DateTime @default(now()) @map("created_at")
   updatedAt         DateTime @updatedAt @map("updated_at")
 
-  payments          Payment[]
+  payments Payment[]
 
-  @@map("payment_groups")
   @@index([orderId])
+  @@map("payment_groups")
 }
 
 // ============= Kas RT =============
@@ -350,7 +359,7 @@ model PaymentGroup {
 model CashCategory {
   id          String   @id @default(uuid())
   name        String
-  type        String   // income, expense
+  type        String // income, expense
   description String?
   createdAt   DateTime @default(now()) @map("created_at")
 
@@ -363,7 +372,7 @@ model CashCategory {
 model CashTransaction {
   id          String   @id @default(uuid())
   categoryId  String   @map("category_id")
-  type        String   // income, expense
+  type        String // income, expense
   amount      Float
   description String
   date        DateTime @default(now())
@@ -372,13 +381,13 @@ model CashTransaction {
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
-  category    CashCategory @relation(fields: [categoryId], references: [id])
-  payment     Payment?     @relation(fields: [paymentId], references: [id])
+  category CashCategory @relation(fields: [categoryId], references: [id])
+  payment  Payment?     @relation(fields: [paymentId], references: [id])
 
-  @@map("cash_transactions")
   @@index([categoryId])
   @@index([type])
   @@index([date])
+  @@map("cash_transactions")
 }
 
 // ============= Pengumuman =============
@@ -397,10 +406,246 @@ model Announcement {
   createdAt      DateTime  @default(now()) @map("created_at")
   updatedAt      DateTime  @updatedAt @map("updated_at")
 
-  @@map("announcements")
   @@index([isPublished])
   @@index([createdAt])
   @@index([priority])
+  @@map("announcements")
+}
+
+// ============= Suara Warga =============
+
+model Post {
+  id             String    @id @default(uuid())
+  authorId       String    @map("author_id")
+  type           String    @default("TEXT") // TEXT | IMAGE | POLL | ANNOUNCEMENT
+  content        String? // teks utama (disanitasi)
+  visibility     String    @default("RT") // RT (MVP) | RW | PERUMAHAN | PUBLIC
+  status         String    @default("published") // published | hidden | deleted
+  isPinned       Boolean   @default(false) @map("is_pinned")
+  pinnedAt       DateTime? @map("pinned_at")
+  pinOrder       Int       @default(0) @map("pin_order")
+  commentsLocked Boolean   @default(false) @map("comments_locked")
+  likeCount      Int       @default(0) @map("like_count")
+  commentCount   Int       @default(0) @map("comment_count")
+  shareCount     Int       @default(0) @map("share_count")
+  viewCount      Int       @default(0) @map("view_count")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+  deletedAt      DateTime? @map("deleted_at")
+
+  author    User           @relation(fields: [authorId], references: [id])
+  reactions PostReaction[]
+  comments  Comment[]
+  shares    PostShare[]
+  savedBy   SavedPost[]
+  media     PostMedia[]
+  hashtags  PostHashtag[]
+  mentions  Mention[]
+  reports   Report[]
+  poll      Poll?
+
+  @@index([visibility, status, createdAt])
+  @@index([status, isPinned, pinOrder])
+  @@index([authorId])
+  @@map("posts")
+}
+
+model PostMedia {
+  id        String   @id @default(uuid())
+  postId    String   @map("post_id")
+  url       String
+  mediaType String   @default("IMAGE") // IMAGE | VIDEO
+  width     Int?
+  height    Int?
+  size      Int?
+  order     Int      @default(0)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@index([postId])
+  @@map("post_media")
+}
+
+model Hashtag {
+  id         String   @id @default(uuid())
+  name       String   @unique // normalized lowercase
+  usageCount Int      @default(0)
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  posts PostHashtag[]
+
+  @@index([name])
+  @@map("hashtags")
+}
+
+model PostHashtag {
+  id        String @id @default(uuid())
+  postId    String @map("post_id")
+  hashtagId String @map("hashtag_id")
+
+  post    Post    @relation(fields: [postId], references: [id], onDelete: Cascade)
+  hashtag Hashtag @relation(fields: [hashtagId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, hashtagId])
+  @@index([hashtagId])
+  @@map("post_hashtags")
+}
+
+model Mention {
+  id              String   @id @default(uuid())
+  postId          String?  @map("post_id")
+  commentId       String?  @map("comment_id")
+  mentionedUserId String   @map("mentioned_user_id")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  post          Post? @relation(fields: [postId], references: [id], onDelete: Cascade)
+  mentionedUser User  @relation("mentions", fields: [mentionedUserId], references: [id])
+
+  @@index([mentionedUserId])
+  @@map("mentions")
+}
+
+model PostReaction {
+  id        String   @id @default(uuid())
+  postId    String   @map("post_id")
+  userId    String   @map("user_id")
+  type      String   @default("LIKE") // LIKE | LOVE | HAHA | SAD | ANGRY
+  createdAt DateTime @default(now()) @map("created_at")
+
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, userId])
+  @@index([postId])
+  @@index([userId])
+  @@map("post_reactions")
+}
+
+model Comment {
+  id        String    @id @default(uuid())
+  postId    String    @map("post_id")
+  authorId  String    @map("author_id")
+  parentId  String?   @map("parent_id") // reply, max depth 1
+  content   String // disanitasi
+  status    String    @default("visible") // visible | hidden | deleted
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  post    Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  author  User      @relation(fields: [authorId], references: [id])
+  parent  Comment?  @relation("commentReplies", fields: [parentId], references: [id])
+  replies Comment[] @relation("commentReplies")
+  reports Report[]
+
+  @@index([postId, createdAt])
+  @@index([parentId])
+  @@index([authorId])
+  @@map("comments")
+}
+
+model PostShare {
+  id         String   @id @default(uuid())
+  postId     String   @map("post_id")
+  sharedById String   @map("shared_by_id")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  post     Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  sharedBy User @relation(fields: [sharedById], references: [id], onDelete: Cascade)
+
+  @@unique([postId, sharedById])
+  @@index([postId])
+  @@map("post_shares")
+}
+
+model SavedPost {
+  id        String   @id @default(uuid())
+  postId    String   @map("post_id")
+  userId    String   @map("user_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, userId])
+  @@index([userId])
+  @@map("saved_posts")
+}
+
+model Report {
+  id           String    @id @default(uuid())
+  reporterId   String    @map("reporter_id")
+  postId       String?   @map("post_id")
+  commentId    String?   @map("comment_id")
+  targetType   String    @map("target_type") // POST | COMMENT
+  reason       String // SPAM | HARASSMENT | INAPPROPRIATE | MISINFORMATION | FRAUD | OTHER
+  description  String?
+  status       String    @default("PENDING") // PENDING | REVIEWING | RESOLVED | DISMISSED
+  resolvedById String?   @map("resolved_by_id")
+  resolvedAt   DateTime? @map("resolved_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  reporter   User     @relation("submittedReports", fields: [reporterId], references: [id], onDelete: Cascade)
+  resolvedBy User?    @relation("resolvedReports", fields: [resolvedById], references: [id], onDelete: SetNull)
+  post       Post?    @relation(fields: [postId], references: [id], onDelete: Cascade)
+  comment    Comment? @relation(fields: [commentId], references: [id], onDelete: Cascade)
+
+  @@unique([reporterId, postId])
+  @@unique([reporterId, commentId])
+  @@index([status, createdAt])
+  @@index([postId])
+  @@index([commentId])
+  @@map("post_reports")
+}
+
+model Poll {
+  id        String    @id @default(uuid())
+  postId    String    @unique @map("post_id")
+  question  String
+  expiresAt DateTime? @map("expires_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  post    Post         @relation(fields: [postId], references: [id], onDelete: Cascade)
+  options PollOption[]
+  votes   PollVote[]
+
+  @@map("polls")
+}
+
+model PollOption {
+  id        String   @id @default(uuid())
+  pollId    String   @map("poll_id")
+  text      String
+  voteCount Int      @default(0) @map("vote_count")
+  order     Int      @default(0)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  poll  Poll       @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  votes PollVote[]
+
+  @@index([pollId, order])
+  @@map("poll_options")
+}
+
+model PollVote {
+  id        String   @id @default(uuid())
+  pollId    String   @map("poll_id")
+  optionId  String   @map("option_id")
+  userId    String   @map("user_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  poll   Poll       @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  option PollOption @relation(fields: [optionId], references: [id], onDelete: Cascade)
+  user   User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([pollId, userId])
+  @@index([optionId])
+  @@index([userId])
+  @@map("poll_votes")
 }
 
 // ============= Surat-Menyurat =============
@@ -408,50 +653,50 @@ model Announcement {
 model LetterTemplate {
   id          String   @id @default(uuid())
   name        String   @unique
-  type        String   // domisili, pengantar, keterangan, custom
-  content     String   // template HTML dengan placeholder {{nama}}, {{alamat}}, dll
+  type        String // domisili, pengantar, keterangan, custom
+  content     String // template HTML dengan placeholder {{nama}}, {{alamat}}, dll
   description String?
   isActive    Boolean  @default(true) @map("is_active")
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
-  letters     Letter[]
+  letters Letter[]
 
   @@map("letter_templates")
 }
 
 model Letter {
-  id           String   @id @default(uuid())
-  templateId   String   @map("template_id")
-  letterNumber String   @unique @map("letter_number")
-  residentId   String?  @map("resident_id")
-  recipientName String  @map("recipient_name")
-  content      String   // rendered HTML
-  purpose      String?
-  status       String   @default("draft") // draft, signed, archived
-  issuedAt     DateTime? @map("issued_at")
-  createdBy    String?  @map("created_by")
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
+  id            String    @id @default(uuid())
+  templateId    String    @map("template_id")
+  letterNumber  String    @unique @map("letter_number")
+  residentId    String?   @map("resident_id")
+  recipientName String    @map("recipient_name")
+  content       String // rendered HTML
+  purpose       String?
+  status        String    @default("draft") // draft, signed, archived
+  issuedAt      DateTime? @map("issued_at")
+  createdBy     String?   @map("created_by")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
 
-  template     LetterTemplate @relation(fields: [templateId], references: [id])
+  template LetterTemplate @relation(fields: [templateId], references: [id])
 
-  @@map("letters")
   @@index([templateId])
   @@index([residentId])
   @@index([status])
   @@index([createdAt])
+  @@map("letters")
 }
 
 // ============= Pengaturan Sistem =============
 
 model SystemSetting {
-  id    String @id @default(uuid())
-  key   String @unique
+  id    String  @id @default(uuid())
+  key   String  @unique
   value String
   label String?
-  group String @default("general") // general, rt_info, letter, notification
+  group String  @default("general") // general, rt_info, letter, notification
 
-  @@map("system_settings")
   @@index([group])
+  @@map("system_settings")
 }

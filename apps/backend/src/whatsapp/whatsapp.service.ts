@@ -43,10 +43,7 @@ export class WhatsAppService {
   }
 
   // Send message dengan retry logic dan exponential backoff
-  private async sendMessageWithRetry(
-    phoneNumber: string,
-    message: string,
-  ): Promise<SendResult> {
+  private async sendMessageWithRetry(phoneNumber: string, message: string): Promise<SendResult> {
     let lastError: Error | null = null;
 
     for (let attempt = 1; attempt <= this.maxRetries; attempt++) {
@@ -66,10 +63,7 @@ export class WhatsAppService {
         lastError = new Error(result.error || 'Unknown error');
       } catch (error) {
         lastError = error as Error;
-        this.logger.warn(
-          `WhatsApp send attempt ${attempt} failed for ${phoneNumber}:`,
-          error,
-        );
+        this.logger.warn(`WhatsApp send attempt ${attempt} failed for ${phoneNumber}:`, error);
       }
 
       // Don't wait after last attempt

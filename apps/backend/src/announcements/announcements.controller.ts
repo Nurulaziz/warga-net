@@ -102,7 +102,12 @@ export class AnnouncementsController {
       fileFilter: (_req, file, cb) => {
         const allowed = /\.(jpg|jpeg|png|webp|pdf)$/i;
         if (!allowed.test(extname(file.originalname))) {
-          cb(new BadRequestException('Hanya file PDF atau gambar (JPG, PNG, WebP) yang diperbolehkan'), false);
+          cb(
+            new BadRequestException(
+              'Hanya file PDF atau gambar (JPG, PNG, WebP) yang diperbolehkan',
+            ),
+            false,
+          );
           return;
         }
         cb(null, true);

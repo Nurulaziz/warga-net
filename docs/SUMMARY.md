@@ -13,7 +13,8 @@ docs/
 │   ├── README.md                      # Overview setup
 │   ├── 01-monorepo-setup.md          # ✅ Task 1: Monorepo setup
 │   ├── 02-database-setup.md          # ✅ Task 2: Database & Prisma
-│   └── 03-testing-setup.md           # ✅ Task 2.4: Property-based testing
+│   ├── 03-testing-setup.md           # ✅ Task 2.4: Property-based testing
+│   └── 04-aws-s3-setup.md            # ✅ AWS S3 bucket/IAM/lifecycle setup
 │
 ├── architecture/                      # System Architecture
 │   ├── README.md                      # Overview arsitektur
@@ -26,6 +27,10 @@ docs/
 │   ├── coding-guidelines.md          # ✅ Coding standards
 │   ├── testing-strategy.md           # (TODO) Testing approach
 │   └── git-workflow.md               # (TODO) Git conventions
+│
+├── implementation/                    # Implementation Plans
+│   ├── aws-s3-storage.md            # ✅ AWS S3 file storage plan
+│   └── suara-warga.md               # ✅ Suara Warga social feature plan
 │
 ├── api/                               # API Documentation
 │   ├── README.md                      # (TODO) API overview
@@ -49,9 +54,14 @@ docs/
 - ✅ **Monorepo Setup** - Complete workspace configuration
 - ✅ **Database Setup** - PostgreSQL, Prisma, migrations, seeding
 - ✅ **Testing Setup** - Property-based testing dengan fast-check
+- ✅ **AWS S3 Setup** - Bucket, IAM, lifecycle, CORS
 
 ### Development
 - ✅ **Coding Guidelines** - Comprehensive coding standards
+
+### Implementation
+- ✅ **AWS S3 Storage** - Migrasi file storage ke S3 (design plan)
+- ✅ **Suara Warga** - Fitur sosial komunitas RT (design plan)
 
 ### Specifications
 - ✅ **Requirements** - 18 functional requirements

@@ -13,6 +13,11 @@ import { ReportsPage } from './ReportsPage';
 import { BillsPage } from './BillsPage';
 import { CashPage } from './CashPage';
 import { AnnouncementsPage } from './AnnouncementsPage';
+import { SuaraWargaPage } from './SuaraWargaPage';
+import { PostDetailPage } from './PostDetailPage';
+import { SavedPostsPage } from './SavedPostsPage';
+import { HashtagPostsPage } from './HashtagPostsPage';
+import { ModerationQueuePage } from './ModerationQueuePage';
 import { LettersPage } from './LettersPage';
 import { SettingsPage } from './SettingsPage';
 import { ProfilePage } from './ProfilePage';
@@ -94,6 +99,30 @@ const routes: RouteObject[] = [
       {
         path: 'announcements',
         element: <AnnouncementsPage />,
+      },
+      {
+        path: 'suara-warga',
+        element: <SuaraWargaPage />,
+      },
+      {
+        path: 'suara-warga/moderasi',
+        element: (
+          <ProtectedRoute requirePermission={{ feature: 'posts', action: 'moderate' }}>
+            <ModerationQueuePage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'suara-warga/:id',
+        element: <PostDetailPage />,
+      },
+      {
+        path: 'suara-warga/tersimpan',
+        element: <SavedPostsPage />,
+      },
+      {
+        path: 'suara-warga/hashtag/:tag',
+        element: <HashtagPostsPage />,
       },
       {
         path: 'letters',

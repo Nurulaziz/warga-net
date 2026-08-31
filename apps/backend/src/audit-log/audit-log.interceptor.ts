@@ -11,11 +11,7 @@ const METHOD_ACTION_MAP: Record<string, string> = {
 };
 
 // Routes yang tidak perlu di-log
-const EXCLUDED_PATHS = [
-  '/api/v1/health',
-  '/api/v1/auth',
-  '/api/v1/audit-logs',
-];
+const EXCLUDED_PATHS = ['/api/v1/health', '/api/v1/auth', '/api/v1/audit-logs'];
 
 @Injectable()
 export class AuditLogInterceptor implements NestInterceptor {

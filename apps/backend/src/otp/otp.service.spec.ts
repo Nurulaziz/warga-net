@@ -117,16 +117,8 @@ describe('OtpService', () => {
 
       await service.storeOtp(phoneNumber, hashedOtp);
 
-      expect(redisService.setex).toHaveBeenCalledWith(
-        `otp:${phoneNumber}`,
-        300,
-        hashedOtp,
-      );
-      expect(redisService.setex).toHaveBeenCalledWith(
-        `otp:attempts:${phoneNumber}`,
-        300,
-        '0',
-      );
+      expect(redisService.setex).toHaveBeenCalledWith(`otp:${phoneNumber}`, 300, hashedOtp);
+      expect(redisService.setex).toHaveBeenCalledWith(`otp:attempts:${phoneNumber}`, 300, '0');
     });
   });
 

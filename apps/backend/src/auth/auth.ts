@@ -46,7 +46,9 @@ export const auth: any = betterAuth({
         if (!result.success) {
           // Di development, jangan gagalkan request: OTP sudah tercetak di console
           if (process.env.NODE_ENV !== 'production') {
-            console.warn(`[DEV] WhatsApp gagal dikirim ke ${phone}: ${result.error} — gunakan OTP dari console.`);
+            console.warn(
+              `[DEV] WhatsApp gagal dikirim ke ${phone}: ${result.error} — gunakan OTP dari console.`,
+            );
             return;
           }
           // Di production, lempar error agar better-auth tahu pengiriman gagal

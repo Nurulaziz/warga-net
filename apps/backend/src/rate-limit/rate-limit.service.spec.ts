@@ -43,9 +43,7 @@ describe('RateLimitService', () => {
 
       expect(result.allowed).toBe(true);
       expect(result.remaining).toBe(2); // 3 - 0 - 1
-      expect(redisService.get).toHaveBeenCalledWith(
-        'rate_limit:otp:phone:+628123456789',
-      );
+      expect(redisService.get).toHaveBeenCalledWith('rate_limit:otp:phone:+628123456789');
     });
 
     it('harus allow request jika masih dalam limit', async () => {
@@ -65,9 +63,7 @@ describe('RateLimitService', () => {
 
       expect(result.allowed).toBe(false);
       expect(result.remaining).toBe(0);
-      expect(redisService.ttl).toHaveBeenCalledWith(
-        'rate_limit:otp:phone:+628123456789',
-      );
+      expect(redisService.ttl).toHaveBeenCalledWith('rate_limit:otp:phone:+628123456789');
     });
   });
 
@@ -141,9 +137,7 @@ describe('RateLimitService', () => {
       const count = await service.incrementRateLimit('phone', '+628123456789');
 
       expect(count).toBe(1);
-      expect(redisService.incr).toHaveBeenCalledWith(
-        'rate_limit:otp:phone:+628123456789',
-      );
+      expect(redisService.incr).toHaveBeenCalledWith('rate_limit:otp:phone:+628123456789');
       expect(redisService.expire).toHaveBeenCalledWith(
         'rate_limit:otp:phone:+628123456789',
         900, // 15 minutes
@@ -156,13 +150,8 @@ describe('RateLimitService', () => {
       const count = await service.incrementRateLimit('ip', '192.168.1.1');
 
       expect(count).toBe(1);
-      expect(redisService.incr).toHaveBeenCalledWith(
-        'rate_limit:otp:ip:192.168.1.1',
-      );
-      expect(redisService.expire).toHaveBeenCalledWith(
-        'rate_limit:otp:ip:192.168.1.1',
-        900,
-      );
+      expect(redisService.incr).toHaveBeenCalledWith('rate_limit:otp:ip:192.168.1.1');
+      expect(redisService.expire).toHaveBeenCalledWith('rate_limit:otp:ip:192.168.1.1', 900);
     });
 
     it('harus increment verify rate limit dan set TTL', async () => {
@@ -171,9 +160,7 @@ describe('RateLimitService', () => {
       const count = await service.incrementRateLimit('verify', '+628123456789');
 
       expect(count).toBe(1);
-      expect(redisService.incr).toHaveBeenCalledWith(
-        'rate_limit:otp:verify:+628123456789',
-      );
+      expect(redisService.incr).toHaveBeenCalledWith('rate_limit:otp:verify:+628123456789');
       expect(redisService.expire).toHaveBeenCalledWith(
         'rate_limit:otp:verify:+628123456789',
         300, // 5 minutes
@@ -208,9 +195,7 @@ describe('RateLimitService', () => {
       const result = await service.isIpBlocked('192.168.1.1');
 
       expect(result).toBe(true);
-      expect(redisService.get).toHaveBeenCalledWith(
-        'rate_limit:ip:blocked:192.168.1.1',
-      );
+      expect(redisService.get).toHaveBeenCalledWith('rate_limit:ip:blocked:192.168.1.1');
     });
 
     it('harus return false jika IP tidak blocked', async () => {

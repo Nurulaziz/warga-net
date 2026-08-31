@@ -88,9 +88,7 @@ describe('RedisService', () => {
 
   describe('expire', () => {
     it('harus throw error jika client tidak connected', async () => {
-      await expect(service.expire('test-key', 60)).rejects.toThrow(
-        'Redis client not connected',
-      );
+      await expect(service.expire('test-key', 60)).rejects.toThrow('Redis client not connected');
     });
   });
 

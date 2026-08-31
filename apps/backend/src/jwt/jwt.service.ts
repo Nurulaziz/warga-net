@@ -57,10 +57,7 @@ export class JwtService {
     this.publicKey = fs.readFileSync(path.resolve(publicKeyPath), 'utf8');
 
     this.accessTokenExpiry = this.configService.get<string>('JWT_ACCESS_TOKEN_EXPIRY', '15m');
-    this.refreshTokenExpiry = this.configService.get<string>(
-      'JWT_REFRESH_TOKEN_EXPIRY',
-      '30d',
-    );
+    this.refreshTokenExpiry = this.configService.get<string>('JWT_REFRESH_TOKEN_EXPIRY', '30d');
 
     // Convert refresh token expiry to seconds for Redis TTL
     this.refreshTokenTtl = this.parseExpiryToSeconds(this.refreshTokenExpiry);
@@ -160,7 +157,9 @@ export class JwtService {
 
       if (keys.length > 0) {
         await this.redisService.mdel(...keys);
-        this.logger.log(`All refresh tokens invalidated for user ${userId} (${keys.length} tokens)`);
+        this.logger.log(
+          `All refresh tokens invalidated for user ${userId} (${keys.length} tokens)`,
+        );
       } else {
         this.logger.log(`No refresh tokens found for user ${userId}`);
       }

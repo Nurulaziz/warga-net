@@ -10,6 +10,7 @@ Panduan instalasi dan konfigurasi awal project.
 - [Setup Monorepo](./setup/01-monorepo-setup.md) - Instalasi dan konfigurasi workspace
 - [Setup Database](./setup/02-database-setup.md) - PostgreSQL, Prisma, dan seeding
 - [Setup Testing](./setup/03-testing-setup.md) - Property-based testing dengan fast-check
+- [Setup AWS S3](./setup/04-aws-s3-setup.md) - Konfigurasi AWS S3 bucket, IAM, lifecycle
 
 ### 2. [Architecture](./architecture/README.md)
 Dokumentasi arsitektur sistem dan design decisions.
@@ -39,7 +40,13 @@ Panduan deployment dan operations.
 - [Environment Configuration](./deployment/environment.md) - Environment variables
 - [Database Migration](./deployment/migration.md) - Migration strategy
 
-### 6. [Specifications](./specs/README.md)
+### 6. [Implementation](./implementation/)
+Rencana implementasi fitur-fitur utama.
+
+- [AWS S3 Storage](./implementation/aws-s3-storage.md) - Migrasi file storage ke AWS S3
+- [Suara Warga](./implementation/suara-warga.md) - Fitur sosial komunitas RT
+
+### 7. [Specifications](./specs/README.md)
 Spesifikasi lengkap sistem (dari .kiro/specs).
 
 - [Requirements](./specs/requirements.md) - Functional dan non-functional requirements

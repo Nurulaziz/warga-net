@@ -22,6 +22,7 @@ import { AuditLogInterceptor } from './audit-log/audit-log.interceptor';
 import { BillsModule } from './bills/bills.module';
 import { CashModule } from './cash/cash.module';
 import { AnnouncementsModule } from './announcements/announcements.module';
+import { SuaraWargaModule } from './suara-warga/suara-warga.module';
 import { LettersModule } from './letters/letters.module';
 import { SettingsModule } from './settings/settings.module';
 import { ExportModule } from './export/export.module';
@@ -66,6 +67,7 @@ import { auth } from './auth/auth';
     BillsModule,
     CashModule,
     AnnouncementsModule,
+    SuaraWargaModule,
     LettersModule,
     SettingsModule,
     ExportModule,

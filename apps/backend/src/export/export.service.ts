@@ -12,7 +12,8 @@ export class ExportService {
       orderBy: [{ family: { headOfFamily: 'asc' } }, { fullName: 'asc' }],
     });
 
-    const header = 'No,Nama Lengkap,NIK,Tanggal Lahir,Jenis Kelamin,Hubungan,Kepala Keluarga,Alamat,RT,RW';
+    const header =
+      'No,Nama Lengkap,NIK,Tanggal Lahir,Jenis Kelamin,Hubungan,Kepala Keluarga,Alamat,RT,RW';
     const rows = residents.map((r, i) => {
       const dob = new Date(r.birthDate).toLocaleDateString('id-ID');
       return `${i + 1},"${r.fullName}","${r.idNumber}","${dob}","${r.gender}","${r.relationship}","${r.family.headOfFamily}","${r.family.address}","${r.family.rt}","${r.family.rw}"`;
@@ -46,11 +47,16 @@ export class ExportService {
       orderBy: [{ period: 'desc' }, { family: { headOfFamily: 'asc' } }],
     });
 
-    const header = 'No,Periode,Jenis Iuran,Kepala Keluarga,Nominal,Status,Total Dibayar,Tanggal Bayar';
+    const header =
+      'No,Periode,Jenis Iuran,Kepala Keluarga,Nominal,Status,Total Dibayar,Tanggal Bayar';
     const rows = bills.map((b, i) => {
       const totalPaid = b.payments.reduce((sum, p) => sum + p.amount, 0);
-      const lastPaid = b.payments.length > 0 ? new Date(b.payments[b.payments.length - 1].paidAt).toLocaleDateString('id-ID') : '-';
-      const status = b.status === 'paid' ? 'Lunas' : b.status === 'overdue' ? 'Jatuh Tempo' : 'Belum Bayar';
+      const lastPaid =
+        b.payments.length > 0
+          ? new Date(b.payments[b.payments.length - 1].paidAt).toLocaleDateString('id-ID')
+          : '-';
+      const status =
+        b.status === 'paid' ? 'Lunas' : b.status === 'overdue' ? 'Jatuh Tempo' : 'Belum Bayar';
       return `${i + 1},"${b.period}","${b.billType.name}","${b.family.headOfFamily}",${b.amount},"${status}",${totalPaid},"${lastPaid}"`;
     });
 

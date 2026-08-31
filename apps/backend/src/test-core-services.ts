@@ -129,7 +129,9 @@ async function testCoreServices() {
 
     await rateLimitService.incrementRateLimit('phone', testPhone);
     const phoneCheck4 = await rateLimitService.checkOtpRateLimitByPhone(testPhone);
-    console.log(`✓ Attempt 4: allowed=${phoneCheck4.allowed}, remaining=${phoneCheck4.remaining} (should be blocked)`);
+    console.log(
+      `✓ Attempt 4: allowed=${phoneCheck4.allowed}, remaining=${phoneCheck4.remaining} (should be blocked)`,
+    );
 
     // Test OTP rate limit by IP
     console.log('\n3.2: OTP Rate Limit by IP (max 10 per 15 min)');
@@ -141,7 +143,9 @@ async function testCoreServices() {
       await rateLimitService.incrementRateLimit('ip', testIp);
     }
     const ipCheck2 = await rateLimitService.checkOtpRateLimitByIp(testIp);
-    console.log(`✓ IP check after 5 requests: allowed=${ipCheck2.allowed}, remaining=${ipCheck2.remaining}`);
+    console.log(
+      `✓ IP check after 5 requests: allowed=${ipCheck2.allowed}, remaining=${ipCheck2.remaining}`,
+    );
 
     // Test IP blocking
     console.log('\n3.3: IP Blocking');
@@ -164,13 +168,17 @@ async function testCoreServices() {
     console.log('\n3.5: OTP Verification Limit (max 5 attempts)');
     const verifyPhone = '+628987654321';
     const verifyCheck1 = await rateLimitService.checkOtpVerificationLimit(verifyPhone);
-    console.log(`✓ Verify attempt 1: allowed=${verifyCheck1.allowed}, remaining=${verifyCheck1.remaining}`);
+    console.log(
+      `✓ Verify attempt 1: allowed=${verifyCheck1.allowed}, remaining=${verifyCheck1.remaining}`,
+    );
 
     for (let i = 0; i < 3; i++) {
       await rateLimitService.incrementRateLimit('verify', verifyPhone);
     }
     const verifyCheck2 = await rateLimitService.checkOtpVerificationLimit(verifyPhone);
-    console.log(`✓ Verify after 3 attempts: allowed=${verifyCheck2.allowed}, remaining=${verifyCheck2.remaining}`);
+    console.log(
+      `✓ Verify after 3 attempts: allowed=${verifyCheck2.allowed}, remaining=${verifyCheck2.remaining}`,
+    );
 
     console.log('\n');
 
@@ -224,7 +232,9 @@ async function testCoreServices() {
     console.log('=====================================');
     console.log('Summary:');
     console.log('  ✓ OTP generation and hashing working correctly');
-    console.log(`  ${isHealthy ? '✓' : '⚠️'} Redis connectivity ${isHealthy ? 'working' : 'not available'}`);
+    console.log(
+      `  ${isHealthy ? '✓' : '⚠️'} Redis connectivity ${isHealthy ? 'working' : 'not available'}`,
+    );
     console.log('  ✓ Rate limiting logic working correctly');
     console.log('  ✓ All unit tests passing (114 tests)');
 

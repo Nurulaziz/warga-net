@@ -9,12 +9,12 @@ interface PhoneStepProps {
   onSubmitted: (phoneNumber: string) => void;
 }
 
-// Format nomor: 812-3456-7890
+// Format nomor: 812 3456 7890
 function formatPhoneDisplay(raw: string): string {
   const digits = raw.replace(/\D/g, '');
   if (digits.length <= 3) return digits;
-  if (digits.length <= 7) return `${digits.slice(0, 3)}-${digits.slice(3)}`;
-  return `${digits.slice(0, 3)}-${digits.slice(3, 7)}-${digits.slice(7, 11)}`;
+  if (digits.length <= 7) return `${digits.slice(0, 3)} ${digits.slice(3)}`;
+  return `${digits.slice(0, 3)} ${digits.slice(3, 7)} ${digits.slice(7, 11)}`;
 }
 
 // Cek apakah nomor cukup panjang (minimal 9 digit setelah +62)
@@ -40,23 +40,26 @@ export function PhoneStep({ onSubmitted }: PhoneStepProps) {
 
   const phoneValid = isPhoneValid(rawDigits);
 
-  const handlePhoneChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    let digits = e.target.value.replace(/\D/g, '');
+  const handlePhoneChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      let digits = e.target.value.replace(/\D/g, '');
 
-    // Normalisasi: hilangkan prefix yang salah agar +62 tidak dobel
-    // "62812..." -> "812...", "0812..." -> "812..."
-    if (digits.startsWith('62')) {
-      digits = digits.slice(2);
-    } else if (digits.startsWith('0')) {
-      digits = digits.replace(/^0+/, '');
-    }
+      // Normalisasi: hilangkan prefix yang salah agar +62 tidak dobel
+      // "62812..." -> "812...", "0812..." -> "812..."
+      if (digits.startsWith('62')) {
+        digits = digits.slice(2);
+      } else if (digits.startsWith('0')) {
+        digits = digits.replace(/^0+/, '');
+      }
 
-    // Limit ke 13 digit (panjang wajar nomor Indonesia tanpa prefix)
-    digits = digits.slice(0, 13);
+      // Limit ke 13 digit (panjang wajar nomor Indonesia tanpa prefix)
+      digits = digits.slice(0, 13);
 
-    setRawDigits(digits);
-    setValue('phoneNumber', `+62${digits}`, { shouldValidate: digits.length >= 9 });
-  }, [setValue]);
+      setRawDigits(digits);
+      setValue('phoneNumber', `+62${digits}`, { shouldValidate: digits.length >= 9 });
+    },
+    [setValue],
+  );
 
   async function onSubmit(data: PhoneFormData) {
     setServerError('');
@@ -85,11 +88,12 @@ export function PhoneStep({ onSubmitted }: PhoneStepProps) {
       {/* Unified phone input field */}
       <div
         className={`
-          flex items-center w-full h-[52px] rounded-xl border bg-white dark:bg-gray-800 overflow-hidden transition-all duration-200
-          focus-within:ring-[3px] focus-within:border-[#0054A6]
-          ${hasError
-            ? 'border-red-400 focus-within:ring-red-500/15 focus-within:border-red-500'
-            : 'border-[#D1D5DB] dark:border-gray-600 focus-within:ring-[#0054A6]/12'
+          flex items-center w-full h-[52px] rounded-lg border bg-white dark:bg-gray-800 overflow-hidden transition-all duration-200
+          focus-within:ring-[3px] focus-within:border-brand-500
+          ${
+            hasError
+              ? 'border-red-400 focus-within:ring-red-500/15 focus-within:border-red-500'
+              : 'border-[#D1D5DB] dark:border-gray-600 focus-within:ring-brand-500/12'
           }
         `}
       >
@@ -108,8 +112,8 @@ export function PhoneStep({ onSubmitted }: PhoneStepProps) {
           inputMode="numeric"
           value={formatPhoneDisplay(rawDigits)}
           onChange={handlePhoneChange}
-          placeholder="812-3456-7890"
-          className="flex-1 h-full px-3 text-[1rem] tracking-wide bg-transparent text-[#0F172A] dark:text-gray-100 placeholder:text-[#94A3B8] dark:placeholder:text-gray-500 focus:outline-none"
+          placeholder="812 3456 7890"
+          className="flex-1 h-full px-3 text-[1rem] tracking-wide bg-transparent text-[#172033] dark:text-gray-100 placeholder:text-[#94A3B8] dark:placeholder:text-gray-500 focus:outline-none"
           aria-invalid={hasError ? 'true' : 'false'}
           aria-describedby={hasError ? 'phone-error' : 'phone-helper'}
           autoComplete="tel"
@@ -121,7 +125,11 @@ export function PhoneStep({ onSubmitted }: PhoneStepProps) {
 
       {/* Error / Helper text */}
       {hasError ? (
-        <p id="phone-error" className="mt-2 text-[0.8rem] text-red-600 dark:text-red-400" role="alert">
+        <p
+          id="phone-error"
+          className="mt-2 text-[0.8rem] text-red-600 dark:text-red-400"
+          role="alert"
+        >
           {errors.phoneNumber?.message || serverError}
         </p>
       ) : (
@@ -135,12 +143,13 @@ export function PhoneStep({ onSubmitted }: PhoneStepProps) {
         type="submit"
         disabled={isSubmitting || !phoneValid}
         className={`
-          mt-5 w-full h-[52px] px-6 font-semibold text-[0.95rem] rounded-xl transition-all duration-200
-          focus:outline-none focus:ring-[3px] focus:ring-[#0054A6]/25 focus:ring-offset-2
+          mt-5 w-full h-[52px] px-6 font-semibold text-[0.95rem] rounded-lg transition-all duration-200
+          focus:outline-none focus:ring-[3px] focus:ring-brand-500/25 focus:ring-offset-2
           flex items-center justify-center gap-2
-          ${phoneValid && !isSubmitting
-            ? 'bg-[#0054A6] hover:bg-[#003A77] active:bg-[#002D5E] text-white shadow-sm'
-            : 'bg-[#E2E8F0] dark:bg-gray-700 text-[#94A3B8] dark:text-gray-500 cursor-not-allowed'
+          ${
+            phoneValid && !isSubmitting
+              ? 'bg-brand-500 hover:bg-brand-600 active:bg-brand-700 text-white shadow-sm'
+              : 'border-2 border-brand-500/25 text-brand-500/40 dark:text-brand-400/40 bg-transparent cursor-not-allowed'
           }
         `}
       >
@@ -176,14 +185,14 @@ export function PhoneStep({ onSubmitted }: PhoneStepProps) {
         )}
       </button>
 
-      {/* Help link */}
-      <div className="mt-5 text-center">
-        <button
-          type="button"
-          className="text-[0.8rem] text-[#64748B] dark:text-gray-500 hover:text-[#0054A6] dark:hover:text-blue-400 transition-colors duration-200 min-h-[44px] inline-flex items-center"
-        >
-          Butuh bantuan?
-        </button>
+      {/* Help */}
+      <div className="mt-4 text-center">
+        <p className="text-[0.8rem] text-[#667085] dark:text-gray-500">
+          Butuh bantuan?{' '}
+          <span className="font-semibold text-[#475467] dark:text-gray-400 underline underline-offset-2 decoration-[#475467]/30 dark:decoration-gray-400/30">
+            Hubungi Admin RT
+          </span>
+        </p>
       </div>
     </form>
   );

@@ -98,7 +98,7 @@ export function OtpStep({ phoneNumber, onBack, redirectTo }: OtpStepProps) {
       <button
         type="button"
         onClick={onBack}
-        className="inline-flex items-center gap-1.5 text-[0.82rem] text-[#64748B] dark:text-gray-400 hover:text-[#0054A6] dark:hover:text-blue-400 transition-colors duration-200 mb-5 min-h-[44px]"
+        className="inline-flex items-center gap-1.5 text-[0.82rem] text-[#64748B] dark:text-gray-400 hover:text-brand-500 dark:hover:text-blue-400 transition-colors duration-200 mb-5 min-h-[44px]"
       >
         <ArrowLeftIcon className="w-4 h-4" />
         <span>Ganti nomor</span>
@@ -128,10 +128,10 @@ export function OtpStep({ phoneNumber, onBack, redirectTo }: OtpStepProps) {
           placeholder="000000"
           className={`
             w-full min-h-[52px] px-4 py-3.5 text-center text-2xl font-mono tracking-[0.5em]
-            border rounded-[10px]
+            border rounded-lg
             bg-white dark:bg-gray-800
             text-[#0F172A] dark:text-gray-100
-            focus:outline-none focus:ring-2 focus:ring-[#0054A6]/20 focus:border-[#0054A6]
+            focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500
             transition-all duration-200
             ${errors.otp ? 'border-red-500 focus:ring-red-500/20 focus:border-red-500' : 'border-[#E2E8F0] dark:border-gray-600'}
           `}
@@ -161,11 +161,11 @@ export function OtpStep({ phoneNumber, onBack, redirectTo }: OtpStepProps) {
         disabled={isSubmitting}
         className="
           mt-5 w-full min-h-[52px] px-6
-          bg-[#0054A6] hover:bg-[#003A77] active:bg-[#002D5E]
+          bg-brand-500 hover:bg-brand-600 active:bg-brand-700
           disabled:opacity-55 disabled:cursor-not-allowed
           text-white font-semibold text-[0.95rem]
-          rounded-[10px] transition-all duration-200
-          focus:outline-none focus:ring-2 focus:ring-[#0054A6]/30 focus:ring-offset-2
+          rounded-lg transition-all duration-200
+          focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:ring-offset-2
           flex items-center justify-center
         "
       >
@@ -204,7 +204,7 @@ export function OtpStep({ phoneNumber, onBack, redirectTo }: OtpStepProps) {
           type="button"
           onClick={handleResendOtp}
           disabled={cooldown > 0 || isResending}
-          className="inline-flex items-center gap-1.5 text-[0.82rem] text-[#0054A6] dark:text-blue-400 hover:text-[#003A77] dark:hover:text-blue-300 disabled:text-[#94A3B8] dark:disabled:text-gray-500 disabled:cursor-not-allowed transition-colors duration-200 min-h-[44px]"
+          className="inline-flex items-center gap-1.5 text-[0.82rem] text-brand-500 dark:text-blue-400 hover:text-brand-600 dark:hover:text-blue-300 disabled:text-[#94A3B8] dark:disabled:text-gray-500 disabled:cursor-not-allowed transition-colors duration-200 min-h-[44px]"
         >
           <ArrowPathIcon className={`w-4 h-4 ${isResending ? 'animate-spin' : ''}`} />
           <span>

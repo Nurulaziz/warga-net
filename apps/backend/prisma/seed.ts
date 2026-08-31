@@ -1,7 +1,9 @@
 import { PrismaClient } from '../src/generated/prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 
-const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }) });
+const prisma = new PrismaClient({
+  adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }),
+});
 
 // Data roles default
 const DEFAULT_ROLES = [
@@ -79,6 +81,14 @@ const DEFAULT_PERMISSIONS = [
   { feature: 'letters', action: 'read', description: 'Lihat surat' },
   { feature: 'letters', action: 'update', description: 'Update surat' },
   { feature: 'letters', action: 'delete', description: 'Hapus surat' },
+
+  // Suara Warga (posting) permissions
+  { feature: 'posts', action: 'create', description: 'Buat posting suara warga' },
+  { feature: 'posts', action: 'read', description: 'Lihat posting suara warga' },
+  { feature: 'posts', action: 'update', description: 'Update posting suara warga' },
+  { feature: 'posts', action: 'delete', description: 'Hapus posting suara warga' },
+  { feature: 'posts', action: 'pin', description: 'Sematkan posting suara warga' },
+  { feature: 'posts', action: 'moderate', description: 'Moderasi posting dan laporan warga' },
 ];
 
 // Matriks permission untuk setiap role
@@ -118,6 +128,12 @@ const ROLE_PERMISSIONS = {
     'letters:read',
     'letters:update',
     'letters:delete',
+    'posts:create',
+    'posts:read',
+    'posts:update',
+    'posts:delete',
+    'posts:pin',
+    'posts:moderate',
   ],
   ADMIN_RT: [
     // Manage users, families, residents + keuangan & komunikasi
@@ -151,6 +167,12 @@ const ROLE_PERMISSIONS = {
     'letters:read',
     'letters:update',
     'letters:delete',
+    'posts:create',
+    'posts:read',
+    'posts:update',
+    'posts:delete',
+    'posts:pin',
+    'posts:moderate',
   ],
   ADMIN_SEKRETARIS: [
     // Manage families, residents, pengumuman & surat
@@ -171,6 +193,9 @@ const ROLE_PERMISSIONS = {
     'letters:read',
     'letters:update',
     'letters:delete',
+    'posts:read',
+    'posts:delete',
+    'posts:moderate',
   ],
   ADMIN_BENDAHARA: [
     // Fokus keuangan: iuran & kas RT
@@ -188,6 +213,7 @@ const ROLE_PERMISSIONS = {
     'cash:delete',
     'announcements:read',
     'letters:read',
+    'posts:read',
   ],
   WARGA: [
     // Akses ke data sendiri + baca info + ajukan surat
@@ -197,6 +223,10 @@ const ROLE_PERMISSIONS = {
     'announcements:read',
     'letters:read',
     'letters:create',
+    'posts:create',
+    'posts:read',
+    'posts:update',
+    'posts:delete',
   ],
 };
 
@@ -389,9 +419,24 @@ async function main() {
   // Seed Bill Types
   console.log('📝 Seeding bill types...');
   const billTypes = [
-    { name: 'Iuran Bulanan', amount: 50000, period: 'monthly', description: 'Iuran wajib bulanan warga' },
-    { name: 'Iuran Kebersihan', amount: 25000, period: 'monthly', description: 'Iuran kebersihan lingkungan' },
-    { name: 'Iuran Keamanan', amount: 30000, period: 'monthly', description: 'Iuran keamanan (satpam)' },
+    {
+      name: 'Iuran Bulanan',
+      amount: 50000,
+      period: 'monthly',
+      description: 'Iuran wajib bulanan warga',
+    },
+    {
+      name: 'Iuran Kebersihan',
+      amount: 25000,
+      period: 'monthly',
+      description: 'Iuran kebersihan lingkungan',
+    },
+    {
+      name: 'Iuran Keamanan',
+      amount: 30000,
+      period: 'monthly',
+      description: 'Iuran keamanan (satpam)',
+    },
   ];
   for (const bt of billTypes) {
     await prisma.billType.upsert({ where: { name: bt.name }, update: {}, create: bt });
@@ -411,15 +456,31 @@ async function main() {
     { name: 'Lain-lain (Keluar)', type: 'expense', description: 'Pengeluaran lainnya' },
   ];
   for (const cc of cashCategories) {
-    await prisma.cashCategory.upsert({ where: { name_type: { name: cc.name, type: cc.type } }, update: {}, create: cc });
+    await prisma.cashCategory.upsert({
+      where: { name_type: { name: cc.name, type: cc.type } },
+      update: {},
+      create: cc,
+    });
   }
   console.log(`✅ ${cashCategories.length} cash categories berhasil di-seed`);
 
   // Seed Letter Templates
   console.log('📝 Seeding letter templates...');
   const letterTemplates = [
-    { name: 'Surat Pengantar', type: 'pengantar', description: 'Surat pengantar umum', content: 'Yang bertanda tangan di bawah ini menerangkan bahwa:\n\nNama: {{nama}}\nAlamat: {{alamat}}\n\nAdalah benar warga RT 04 / RW 010.\n\nSurat ini dibuat untuk keperluan: {{keperluan}}.\n\nDemikian surat ini dibuat dengan sebenarnya.' },
-    { name: 'Surat Keterangan Domisili', type: 'domisili', description: 'Surat keterangan tempat tinggal', content: 'Yang bertanda tangan di bawah ini menerangkan bahwa:\n\nNama: {{nama}}\nNIK: {{nik}}\nAlamat: {{alamat}}\n\nAdalah benar berdomisili di alamat tersebut.\n\nSurat ini dibuat untuk keperluan: {{keperluan}}.\n\nDemikian surat ini dibuat dengan sebenarnya.' },
+    {
+      name: 'Surat Pengantar',
+      type: 'pengantar',
+      description: 'Surat pengantar umum',
+      content:
+        'Yang bertanda tangan di bawah ini menerangkan bahwa:\n\nNama: {{nama}}\nAlamat: {{alamat}}\n\nAdalah benar warga RT 04 / RW 010.\n\nSurat ini dibuat untuk keperluan: {{keperluan}}.\n\nDemikian surat ini dibuat dengan sebenarnya.',
+    },
+    {
+      name: 'Surat Keterangan Domisili',
+      type: 'domisili',
+      description: 'Surat keterangan tempat tinggal',
+      content:
+        'Yang bertanda tangan di bawah ini menerangkan bahwa:\n\nNama: {{nama}}\nNIK: {{nik}}\nAlamat: {{alamat}}\n\nAdalah benar berdomisili di alamat tersebut.\n\nSurat ini dibuat untuk keperluan: {{keperluan}}.\n\nDemikian surat ini dibuat dengan sebenarnya.',
+    },
   ];
   for (const lt of letterTemplates) {
     const existing = await prisma.letterTemplate.findUnique({ where: { name: lt.name } });
@@ -436,7 +497,12 @@ async function main() {
     { key: 'kecamatan', value: 'Tambun Utara', label: 'Kecamatan', group: 'rt_info' },
     { key: 'kabupaten', value: 'Bekasi', label: 'Kabupaten/Kota', group: 'rt_info' },
     { key: 'provinsi', value: 'Jawa Barat', label: 'Provinsi', group: 'rt_info' },
-    { key: 'housing_complex', value: 'Satriamekar Raya Residence 2', label: 'Perumahan', group: 'rt_info' },
+    {
+      key: 'housing_complex',
+      value: 'Satriamekar Raya Residence 2',
+      label: 'Perumahan',
+      group: 'rt_info',
+    },
   ];
   for (const s of defaultSettings) {
     await prisma.systemSetting.upsert({ where: { key: s.key }, update: {}, create: s });

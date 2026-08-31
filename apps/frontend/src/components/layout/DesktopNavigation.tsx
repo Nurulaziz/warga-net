@@ -17,6 +17,7 @@ import {
   WalletIcon,
   MegaphoneIcon,
   EnvelopeIcon,
+  ChatBubbleLeftRightIcon,
   ChevronLeftIcon,
   UserCircleIcon,
 } from '@heroicons/react/24/outline';
@@ -59,6 +60,7 @@ const mainNavSections: NavSection[] = [
     group: 'KOMUNIKASI',
     items: [
       { path: '/announcements', label: 'Pengumuman', icon: MegaphoneIcon },
+      { path: '/suara-warga', label: 'Suara Warga', icon: ChatBubbleLeftRightIcon },
       { path: '/letters', label: 'Surat', icon: EnvelopeIcon },
     ],
   },

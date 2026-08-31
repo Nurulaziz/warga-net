@@ -21,19 +21,14 @@ export class RateLimitGuard implements CanActivate {
     // Extract phone number dari request body
     const phoneNumber = request.body?.phoneNumber || request.body?.phone;
     if (!phoneNumber) {
-      throw new HttpException(
-        'Phone number is required',
-        HttpStatus.BAD_REQUEST,
-      );
+      throw new HttpException('Phone number is required', HttpStatus.BAD_REQUEST);
     }
 
     // Extract IP address dari request
     const ipAddress = this.getClientIp(request);
 
     // Check phone rate limit
-    const phoneLimit = await this.rateLimitService.checkOtpRateLimitByPhone(
-      phoneNumber,
-    );
+    const phoneLimit = await this.rateLimitService.checkOtpRateLimitByPhone(phoneNumber);
     if (!phoneLimit.allowed) {
       this.logger.warn(
         `Rate limit exceeded for phone ${phoneNumber}. Reset at ${phoneLimit.resetAt}`,
@@ -49,13 +44,9 @@ export class RateLimitGuard implements CanActivate {
     }
 
     // Check IP rate limit
-    const ipLimit = await this.rateLimitService.checkOtpRateLimitByIp(
-      ipAddress,
-    );
+    const ipLimit = await this.rateLimitService.checkOtpRateLimitByIp(ipAddress);
     if (!ipLimit.allowed) {
-      this.logger.warn(
-        `Rate limit exceeded for IP ${ipAddress}. Reset at ${ipLimit.resetAt}`,
-      );
+      this.logger.warn(`Rate limit exceeded for IP ${ipAddress}. Reset at ${ipLimit.resetAt}`);
       throw new HttpException(
         {
           statusCode: HttpStatus.TOO_MANY_REQUESTS,
@@ -78,9 +69,7 @@ export class RateLimitGuard implements CanActivate {
     // Check X-Forwarded-For header (untuk proxy/load balancer)
     const forwardedFor = request.headers['x-forwarded-for'];
     if (forwardedFor) {
-      const ips = Array.isArray(forwardedFor)
-        ? forwardedFor[0]
-        : forwardedFor.split(',')[0];
+      const ips = Array.isArray(forwardedFor) ? forwardedFor[0] : forwardedFor.split(',')[0];
       return ips.trim();
     }
 

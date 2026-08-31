@@ -8,6 +8,8 @@ interface ModalProps {
   children: ReactNode;
   size?: 'sm' | 'md' | 'lg' | 'xl';
   headerExtra?: ReactNode;
+  panelClassName?: string;
+  contentClassName?: string;
 }
 
 export const Modal = ({
@@ -17,6 +19,8 @@ export const Modal = ({
   children,
   size = 'md',
   headerExtra,
+  panelClassName = '',
+  contentClassName = '',
 }: ModalProps) => {
   // Close on ESC key
   useEffect(() => {
@@ -46,14 +50,14 @@ export const Modal = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-[2px]"
       onClick={onClose}
       role="dialog"
       aria-modal="true"
       aria-labelledby={title ? 'modal-title' : undefined}
     >
       <div
-        className={`bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full ${sizeStyles[size]} max-h-[90vh] overflow-y-auto`}
+        className={`w-full ${sizeStyles[size]} max-h-[90vh] overflow-y-auto rounded-2xl bg-white shadow-2xl ring-1 ring-black/5 dark:bg-gray-800 dark:ring-white/10 ${panelClassName}`}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700">
@@ -76,7 +80,7 @@ export const Modal = ({
             </button>
           </div>
         </div>
-        <div className="px-6 py-4">{children}</div>
+        <div className={`px-6 py-4 ${contentClassName}`}>{children}</div>
       </div>
     </div>
   );

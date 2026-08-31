@@ -11,9 +11,11 @@ async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
   // Security headers (izinkan load images dari self)
-  app.use(helmet({
-    crossOriginResourcePolicy: { policy: 'cross-origin' },
-  }));
+  app.use(
+    helmet({
+      crossOriginResourcePolicy: { policy: 'cross-origin' },
+    }),
+  );
 
   // Serve static files (uploaded logos dll)
   app.useStaticAssets(join(process.cwd(), 'uploads'), { prefix: '/uploads/' });

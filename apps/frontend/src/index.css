@@ -72,3 +72,19 @@ body {
 .scrollbar-none::-webkit-scrollbar {
   display: none;
 }
+
+/* Login panel mesh gradient drift */
+@keyframes meshDrift {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.85;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .mesh-animate {
+    animation: meshDrift 8s ease-in-out infinite;
+  }
+}

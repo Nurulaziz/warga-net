@@ -11,6 +11,7 @@ import {
   UserGroupIcon,
   WalletIcon,
   EnvelopeIcon,
+  ChatBubbleLeftRightIcon,
   LockClosedIcon,
   DocumentTextIcon,
   Cog6ToothIcon,
@@ -40,6 +41,7 @@ const moreItems: MobileNavItem[] = [
   { path: '/families', label: 'Keluarga', icon: UserGroupIcon, adminOnly: true },
   { path: '/residents', label: 'Warga', icon: IdentificationIcon, adminOnly: true },
   // Komunikasi (Pengumuman ada di tab bawah)
+  { path: '/suara-warga', label: 'Suara Warga', icon: ChatBubbleLeftRightIcon },
   { path: '/letters', label: 'Surat', icon: EnvelopeIcon },
   // Pengguna & Akses
   { path: '/users', label: 'Pengguna', icon: UserIcon, adminOnly: true },

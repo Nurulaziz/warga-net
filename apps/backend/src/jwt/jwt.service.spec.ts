@@ -248,66 +248,50 @@ describe('JwtService', () => {
 
   describe('parseExpiryToSeconds', () => {
     it('harus parse seconds correctly', () => {
-      const service = new JwtService(
-        nestJwtService,
-        redisService,
-        {
-          get: (key: string) => {
-            if (key === 'JWT_ACCESS_TOKEN_EXPIRY') return '30s';
-            if (key === 'JWT_REFRESH_TOKEN_EXPIRY') return '30d';
-            return './keys/private.pem';
-          },
-        } as any,
-      );
+      const service = new JwtService(nestJwtService, redisService, {
+        get: (key: string) => {
+          if (key === 'JWT_ACCESS_TOKEN_EXPIRY') return '30s';
+          if (key === 'JWT_REFRESH_TOKEN_EXPIRY') return '30d';
+          return './keys/private.pem';
+        },
+      } as any);
 
       // Access via generateTokenPair to test parsing
       expect(service).toBeDefined();
     });
 
     it('harus parse minutes correctly', () => {
-      const service = new JwtService(
-        nestJwtService,
-        redisService,
-        {
-          get: (key: string) => {
-            if (key === 'JWT_ACCESS_TOKEN_EXPIRY') return '15m';
-            if (key === 'JWT_REFRESH_TOKEN_EXPIRY') return '30d';
-            return './keys/private.pem';
-          },
-        } as any,
-      );
+      const service = new JwtService(nestJwtService, redisService, {
+        get: (key: string) => {
+          if (key === 'JWT_ACCESS_TOKEN_EXPIRY') return '15m';
+          if (key === 'JWT_REFRESH_TOKEN_EXPIRY') return '30d';
+          return './keys/private.pem';
+        },
+      } as any);
 
       expect(service).toBeDefined();
     });
 
     it('harus parse hours correctly', () => {
-      const service = new JwtService(
-        nestJwtService,
-        redisService,
-        {
-          get: (key: string) => {
-            if (key === 'JWT_ACCESS_TOKEN_EXPIRY') return '2h';
-            if (key === 'JWT_REFRESH_TOKEN_EXPIRY') return '30d';
-            return './keys/private.pem';
-          },
-        } as any,
-      );
+      const service = new JwtService(nestJwtService, redisService, {
+        get: (key: string) => {
+          if (key === 'JWT_ACCESS_TOKEN_EXPIRY') return '2h';
+          if (key === 'JWT_REFRESH_TOKEN_EXPIRY') return '30d';
+          return './keys/private.pem';
+        },
+      } as any);
 
       expect(service).toBeDefined();
     });
 
     it('harus parse days correctly', () => {
-      const service = new JwtService(
-        nestJwtService,
-        redisService,
-        {
-          get: (key: string) => {
-            if (key === 'JWT_ACCESS_TOKEN_EXPIRY') return '15m';
-            if (key === 'JWT_REFRESH_TOKEN_EXPIRY') return '30d';
-            return './keys/private.pem';
-          },
-        } as any,
-      );
+      const service = new JwtService(nestJwtService, redisService, {
+        get: (key: string) => {
+          if (key === 'JWT_ACCESS_TOKEN_EXPIRY') return '15m';
+          if (key === 'JWT_REFRESH_TOKEN_EXPIRY') return '30d';
+          return './keys/private.pem';
+        },
+      } as any);
 
       expect(service).toBeDefined();
     });

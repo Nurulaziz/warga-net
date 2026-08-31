@@ -8,7 +8,10 @@ export class SettingsService {
   async findAll(group?: string) {
     const where: Record<string, unknown> = {};
     if (group) where.group = group;
-    return this.prisma.systemSetting.findMany({ where, orderBy: [{ group: 'asc' }, { key: 'asc' }] });
+    return this.prisma.systemSetting.findMany({
+      where,
+      orderBy: [{ group: 'asc' }, { key: 'asc' }],
+    });
   }
 
   async get(key: string): Promise<string | null> {
@@ -22,7 +25,12 @@ export class SettingsService {
       const result = await this.prisma.systemSetting.upsert({
         where: { key: setting.key },
         update: { value: setting.value, label: setting.label },
-        create: { key: setting.key, value: setting.value, label: setting.label, group: setting.group || 'general' },
+        create: {
+          key: setting.key,
+          value: setting.value,
+          label: setting.label,
+          group: setting.group || 'general',
+        },
       });
       results.push(result);
     }

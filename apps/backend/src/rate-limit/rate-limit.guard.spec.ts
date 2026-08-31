@@ -77,20 +77,10 @@ describe('RateLimitGuard', () => {
       const result = await guard.canActivate(context);
 
       expect(result).toBe(true);
-      expect(rateLimitService.checkOtpRateLimitByPhone).toHaveBeenCalledWith(
-        '+628123456789',
-      );
-      expect(rateLimitService.checkOtpRateLimitByIp).toHaveBeenCalledWith(
-        '192.168.1.1',
-      );
-      expect(rateLimitService.incrementRateLimit).toHaveBeenCalledWith(
-        'phone',
-        '+628123456789',
-      );
-      expect(rateLimitService.incrementRateLimit).toHaveBeenCalledWith(
-        'ip',
-        '192.168.1.1',
-      );
+      expect(rateLimitService.checkOtpRateLimitByPhone).toHaveBeenCalledWith('+628123456789');
+      expect(rateLimitService.checkOtpRateLimitByIp).toHaveBeenCalledWith('192.168.1.1');
+      expect(rateLimitService.incrementRateLimit).toHaveBeenCalledWith('phone', '+628123456789');
+      expect(rateLimitService.incrementRateLimit).toHaveBeenCalledWith('ip', '192.168.1.1');
     });
 
     it('harus throw 429 jika phone rate limit exceeded', async () => {
@@ -170,17 +160,13 @@ describe('RateLimitGuard', () => {
 
       await guard.canActivate(context);
 
-      expect(rateLimitService.checkOtpRateLimitByPhone).toHaveBeenCalledWith(
-        '+628123456789',
-      );
+      expect(rateLimitService.checkOtpRateLimitByPhone).toHaveBeenCalledWith('+628123456789');
     });
 
     it('harus extract IP dari X-Forwarded-For header', async () => {
-      const context = createMockExecutionContext(
-        { phoneNumber: '+628123456789' },
-        '127.0.0.1',
-        { 'x-forwarded-for': '203.0.113.1, 198.51.100.1' },
-      );
+      const context = createMockExecutionContext({ phoneNumber: '+628123456789' }, '127.0.0.1', {
+        'x-forwarded-for': '203.0.113.1, 198.51.100.1',
+      });
 
       rateLimitService.checkOtpRateLimitByPhone.mockResolvedValue({
         allowed: true,
@@ -196,17 +182,13 @@ describe('RateLimitGuard', () => {
 
       await guard.canActivate(context);
 
-      expect(rateLimitService.checkOtpRateLimitByIp).toHaveBeenCalledWith(
-        '203.0.113.1',
-      );
+      expect(rateLimitService.checkOtpRateLimitByIp).toHaveBeenCalledWith('203.0.113.1');
     });
 
     it('harus extract IP dari X-Real-IP header', async () => {
-      const context = createMockExecutionContext(
-        { phoneNumber: '+628123456789' },
-        '127.0.0.1',
-        { 'x-real-ip': '203.0.113.1' },
-      );
+      const context = createMockExecutionContext({ phoneNumber: '+628123456789' }, '127.0.0.1', {
+        'x-real-ip': '203.0.113.1',
+      });
 
       rateLimitService.checkOtpRateLimitByPhone.mockResolvedValue({
         allowed: true,
@@ -222,16 +204,11 @@ describe('RateLimitGuard', () => {
 
       await guard.canActivate(context);
 
-      expect(rateLimitService.checkOtpRateLimitByIp).toHaveBeenCalledWith(
-        '203.0.113.1',
-      );
+      expect(rateLimitService.checkOtpRateLimitByIp).toHaveBeenCalledWith('203.0.113.1');
     });
 
     it('harus fallback ke request.ip jika tidak ada headers', async () => {
-      const context = createMockExecutionContext(
-        { phoneNumber: '+628123456789' },
-        '192.168.1.100',
-      );
+      const context = createMockExecutionContext({ phoneNumber: '+628123456789' }, '192.168.1.100');
 
       rateLimitService.checkOtpRateLimitByPhone.mockResolvedValue({
         allowed: true,
@@ -247,9 +224,7 @@ describe('RateLimitGuard', () => {
 
       await guard.canActivate(context);
 
-      expect(rateLimitService.checkOtpRateLimitByIp).toHaveBeenCalledWith(
-        '192.168.1.100',
-      );
+      expect(rateLimitService.checkOtpRateLimitByIp).toHaveBeenCalledWith('192.168.1.100');
     });
   });
 });

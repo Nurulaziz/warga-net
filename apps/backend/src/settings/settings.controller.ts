@@ -1,4 +1,14 @@
-import { Controller, Get, Put, Post, Body, Query, UploadedFile, UseInterceptors, BadRequestException } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Put,
+  Post,
+  Body,
+  Query,
+  UploadedFile,
+  UseInterceptors,
+  BadRequestException,
+} from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiTags, ApiOperation, ApiConsumes } from '@nestjs/swagger';
 import { AllowAnonymous } from '@thallesp/nestjs-better-auth';
@@ -29,7 +39,9 @@ export class SettingsController {
 
   @Put()
   @ApiOperation({ summary: 'Update settings (batch)' })
-  update(@Body() body: { settings: { key: string; value: string; label?: string; group?: string }[] }) {
+  update(
+    @Body() body: { settings: { key: string; value: string; label?: string; group?: string }[] },
+  ) {
     return this.settingsService.updateBatch(body.settings);
   }
 
@@ -49,17 +61,17 @@ export class SettingsController {
       fileFilter: (_req, file, cb) => {
         const allowed = /\.(jpg|jpeg|png|svg|webp)$/i;
         if (!allowed.test(extname(file.originalname))) {
-          cb(new BadRequestException('Hanya file gambar (JPG, PNG, SVG, WebP) yang diperbolehkan'), false);
+          cb(
+            new BadRequestException('Hanya file gambar (JPG, PNG, SVG, WebP) yang diperbolehkan'),
+            false,
+          );
           return;
         }
         cb(null, true);
       },
     }),
   )
-  async uploadLogo(
-    @UploadedFile() file: Express.Multer.File,
-    @Body('type') type: string,
-  ) {
+  async uploadLogo(@UploadedFile() file: Express.Multer.File, @Body('type') type: string) {
     if (!file) {
       throw new BadRequestException('File wajib diupload');
     }
@@ -74,7 +86,12 @@ export class SettingsController {
 
     // Simpan URL ke settings
     await this.settingsService.updateBatch([
-      { key: settingKey, value: url, label: type === 'app_logo' ? 'Logo Aplikasi' : 'Logo Pemerintah', group: 'branding' },
+      {
+        key: settingKey,
+        value: url,
+        label: type === 'app_logo' ? 'Logo Aplikasi' : 'Logo Pemerintah',
+        group: 'branding',
+      },
     ]);
 
     return { url, filename: file.filename };
