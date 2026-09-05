@@ -16,6 +16,7 @@ export const auth: any = betterAuth({
     provider: 'postgresql',
   }),
   secret: process.env.BETTER_AUTH_SECRET,
+  baseURL: process.env.BETTER_AUTH_URL || process.env.FRONTEND_URL || 'http://localhost:3000',
   basePath: '/api/v1/auth',
   trustedOrigins: [process.env.FRONTEND_URL || 'http://localhost:5173'],
   user: {
@@ -32,11 +33,21 @@ export const auth: any = betterAuth({
       otpLength: 6,
       expiresIn: 300, // 5 menit
       sendOTP: async ({ phoneNumber: phone, code }, _ctx) => {
-        // Log OTP hanya di development untuk memudahkan testing
+        // Log OTP hanya di development untuk memudahkan testing.
+        // Tulis ke stdout + file agar mudah ditemukan walau terminal server tertukar.
         if (process.env.NODE_ENV !== 'production') {
-          console.log(`========================================`);
-          console.log(`  [DEV] OTP untuk ${phone}: ${code}`);
-          console.log(`========================================`);
+          const line = `[DEV] OTP untuk ${phone}: ${code}`;
+          process.stdout.write(`\n========================================\n  ${line}\n========================================\n`);
+          try {
+            const fs = await import('fs');
+            const path = await import('path');
+            fs.appendFileSync(
+              path.join(process.cwd(), 'dev-otp.log'),
+              `${new Date().toISOString()} ${line}\n`,
+            );
+          } catch {
+            // abaikan kegagalan tulis log
+          }
         }
 
         // Kirim OTP via WhatsApp (Fonnte)

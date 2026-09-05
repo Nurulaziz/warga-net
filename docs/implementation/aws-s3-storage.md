@@ -202,7 +202,7 @@ Untuk relasi yang benar, ubah kolom string menjadi fileId:
 | Upload gagal / user cancel | Frontend PUT error → `DELETE /files/:id` (hapus object + soft-delete record). Alternatif: biarkan `pending`, cleanup job bersihkan < 24 jam |
 | Presigned URL expired | PUT → 403 → frontend minta presign baru (re-trigger `POST /files/presign` dengan `fileId` yang sama → URL baru) |
 | S3 sukses, DB gagal | Object yatim (status pending tidak pernah active) → cleanup job **delete object** yang record-nya `pending` > 24 jam (§9) |
-| DB record ada, object hilang | **Reconciliation job**: `HeadObject` semua record active → 404 = mark `orphaned` + alert Telegram |
+| DB record ada, object hilang | **Reconciliation job**: `HeadObject` semua record active → 404 = mark `orphaned` + alert operasional |
 | File dihapus | Soft-delete DB (audit trail) → hapus object S3 di background (retry on failure) |
 | User tanpa permission | 401 / 403 `ForbiddenException`, tidak pernah menerima presigned URL |
 
@@ -279,7 +279,7 @@ Alternatif (jika frontend butuh URL eksplisit): respon `{ url }` tanpa redirect.
 
 ## 9. Orphan File Management
 
-Reuse `@nestjs/schedule` (sudah terpasang, `ScheduleModule.forRoot()` di `app.module.ts:36`) + Telegram bot (sudah ada `TELEGRAM_BOT_TOKEN`) untuk alert.
+Reuse `@nestjs/schedule` (sudah terpasang, `ScheduleModule.forRoot()` di `app.module.ts:36`) dan logging terstruktur untuk alert. Kanal alert eksternal dapat ditambahkan kemudian bila diperlukan.
 
 ### Cron harian
 
@@ -291,7 +291,7 @@ SchedulerService (CronExpression.EVERY_DAY_AT_3AM)
 │       → DeleteObject + mark status=failed
 ├── Job 2 — Reconciliation (DB ada, S3 hilang)
 │   StoredFile status=active
-│     → HeadObject → 404 → mark status=orphaned + notif Telegram
+│     → HeadObject → 404 → mark status=orphaned + alert operasional
 └── Job 3 — Hard delete
     StoredFile status=failed/orphaned && deletedAt < 30 hari
       → DeleteObject (idempotent) + hapus record
@@ -624,11 +624,11 @@ Tambah helper di `services/api.ts` (atau `services/storage.ts`) untuk presign/co
 | Data egress (GB/mo) | Cost Explorer / bucket usage | > 15 GB | Warning |
 | Upload 4xx/5xx | CloudWatch/S3 access logs | 4xx > 5%/5 menit | Warning |
 | Failed upload (complete gagal) | Backend log (structured) | > 10/jam | Warning |
-| Orphan object terdeteksi | Scheduler job | > 0 | Critical (Telegram) |
-| Record active tanpa object | Reconciliation job | > 0 | Critical (Telegram) |
+| Orphan object terdeteksi | Scheduler job | > 0 | Critical (log/monitoring) |
+| Record active tanpa object | Reconciliation job | > 0 | Critical (log/monitoring) |
 | Estimasi biaya bulanan | Cost Anomaly Detection | kenaikan > 2× rata-rata | Warning |
 
-Alarm dikirim via Telegram bot (sudah ada) + log ke `AuditLog`.
+Alarm dicatat melalui logging terstruktur dan `AuditLog`; kanal monitoring eksternal bersifat opsional.
 
 ## 22. Audit & Compliance
 
@@ -679,7 +679,7 @@ warganet-prod      # data produksi, SSE-S3, lifecycle aktif
 - [ ] Magic-bytes validation di complete
 - [ ] Client-side image compression (WebP)
 - [ ] Lifecycle policy (IA 90d, noncurrent 30d)
-- [ ] Cleanup + reconciliation job + alert Telegram
+- [ ] Cleanup + reconciliation job + alert operasional
 - [ ] CloudWatch metrics + alarms
 - [ ] CloudTrail data events (DeleteObject)
 - [ ] Backfill migrasi file `uploads/` lama ke S3 (CLI script)

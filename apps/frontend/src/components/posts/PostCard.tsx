@@ -9,6 +9,7 @@ import {
   MapPinIcon,
   EyeSlashIcon,
   PencilSquareIcon,
+  ArrowTopRightOnSquareIcon,
 } from '@heroicons/react/24/outline';
 import { HeartIcon as HeartSolid, BookmarkIcon as BookmarkSolid } from '@heroicons/react/24/solid';
 import { useToast } from '@/components/ui/Toast';
@@ -25,8 +26,9 @@ import {
   reportPost,
   moderatePost,
   updatePost,
+  fetchComments,
 } from '@/services/posts';
-import type { Post } from '@/types/posts';
+import type { Comment, Post } from '@/types/posts';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface PostCardProps {
@@ -83,6 +85,33 @@ export function PostCard({
   const [reportOpen, setReportOpen] = useState(false);
   const [editing, setEditing] = useState(false);
   const [editContent, setEditContent] = useState(post.content ?? '');
+  const [commentsOpen, setCommentsOpen] = useState(false);
+  const [commentsLoading, setCommentsLoading] = useState(false);
+  const [inlineComments, setInlineComments] = useState<Comment[]>([]);
+
+  async function toggleComments() {
+    if (commentsOpen) {
+      setCommentsOpen(false);
+      return;
+    }
+    setCommentsOpen(true);
+    if (inlineComments.length || post.commentCount === 0) return;
+    setCommentsLoading(true);
+    try {
+      const response = await fetchComments(post.id);
+      const items = Array.isArray(response)
+        ? response
+        : (response as { data: Comment[] }).data;
+      setInlineComments(
+        [...items].sort((a, b) => Date.parse(a.createdAt) - Date.parse(b.createdAt)),
+      );
+    } catch {
+      showToast('Gagal memuat komentar', 'error');
+      setCommentsOpen(false);
+    } finally {
+      setCommentsLoading(false);
+    }
+  }
 
   async function handleLike() {
     if (busy) return;
@@ -168,12 +197,12 @@ export function PostCard({
   }
 
   const actionBase =
-    'flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm transition hover:bg-gray-100 dark:hover:bg-gray-700';
+    'flex min-h-10 flex-1 items-center justify-center gap-1.5 px-2 py-1.5 text-sm font-semibold transition hover:bg-brand-50 dark:hover:bg-gray-700';
 
   return (
-    <article className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+    <article className="rounded-sm border-2 border-ink bg-white p-4 shadow-[3px_3px_0_#171717] dark:border-gray-500 dark:bg-gray-800">
       <header className="flex items-start gap-3">
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary dark:bg-primary/20 dark:text-primary-foreground">
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-sm border-2 border-ink bg-brand-500 font-mono text-xs font-bold text-white shadow-[2px_2px_0_#171717]">
           {authorInitials}
         </div>
         <div className="min-w-0 flex-1">
@@ -185,11 +214,12 @@ export function PostCard({
             {post.isPinned && <span className="ml-2 text-primary">📌 Disematkan</span>}
           </p>
         </div>
+        <div className="flex shrink-0 overflow-hidden rounded-sm border border-gray-300 bg-white dark:border-gray-600 dark:bg-gray-800">
         {post.authorId === currentUser?.id && (
           <button
             onClick={() => setEditing((value) => !value)}
             aria-label="Edit posting"
-            className="flex h-9 w-9 items-center justify-center rounded-full text-gray-400 hover:bg-gray-100 hover:text-primary dark:hover:bg-gray-700"
+            className="flex h-8 w-8 items-center justify-center border-r border-gray-300 text-gray-500 hover:bg-brand-50 hover:text-brand-600 dark:border-gray-600 dark:hover:bg-gray-700"
           >
             <PencilSquareIcon className="h-5 w-5" />
           </button>
@@ -197,7 +227,7 @@ export function PostCard({
         <button
           onClick={() => setReportOpen(true)}
           aria-label="Laporkan posting"
-          className="flex h-9 w-9 items-center justify-center rounded-full text-gray-400 hover:bg-gray-100 hover:text-red-500 dark:hover:bg-gray-700"
+          className="flex h-8 w-8 items-center justify-center border-r border-gray-300 text-gray-500 hover:bg-red-50 hover:text-red-600 dark:border-gray-600 dark:hover:bg-gray-700"
         >
           <FlagIcon className="h-5 w-5" />
         </button>
@@ -205,7 +235,7 @@ export function PostCard({
           <button
             onClick={() => onDelete?.(post)}
             aria-label="Hapus posting"
-            className="flex h-9 w-9 items-center justify-center rounded-full text-gray-400 hover:bg-gray-100 hover:text-red-500 dark:hover:bg-gray-700"
+            className="flex h-8 w-8 items-center justify-center text-gray-500 hover:bg-red-50 hover:text-red-600 dark:hover:bg-gray-700"
           >
             <svg
               className="h-5 w-5"
@@ -222,6 +252,7 @@ export function PostCard({
             </svg>
           </button>
         )}
+        </div>
       </header>
 
       <div onClick={() => !editing && onOpen?.(post.id)} className="mt-3 cursor-pointer">
@@ -257,21 +288,22 @@ export function PostCard({
         {post.poll && <PostPoll postId={post.id} poll={post.poll} />}
       </div>
 
-      <footer className="mt-3 flex items-center justify-between border-t border-gray-100 pt-2 dark:border-gray-700">
+      <footer className="mt-4 flex items-stretch divide-x divide-gray-300 border-y border-gray-300 dark:divide-gray-600 dark:border-gray-600">
         <button
           onClick={handleLike}
           disabled={busy}
           className={`${actionBase} ${liked ? 'text-primary' : 'text-gray-500 dark:text-gray-400'}`}
         >
           {liked ? <HeartSolid className="h-5 w-5" /> : <HeartOutline className="h-5 w-5" />}
-          <span>{likeCount}</span>
+          <span>Suka</span><span className="font-mono text-xs">{likeCount}</span>
         </button>
         <button
-          onClick={() => onOpen?.(post.id)}
+          onClick={() => void toggleComments()}
+          aria-expanded={commentsOpen}
           className={`${actionBase} text-gray-500 dark:text-gray-400`}
         >
           <ChatBubbleLeftIcon className="h-5 w-5" />
-          <span>{post.commentCount}</span>
+          <span>Komentar</span><span className="font-mono text-xs">{post.commentCount}</span>
         </button>
         <button
           onClick={handleShare}
@@ -279,17 +311,66 @@ export function PostCard({
           className={`${actionBase} text-gray-500 dark:text-gray-400`}
         >
           <ShareOutline className="h-5 w-5" />
-          <span>{post.shareCount}</span>
+          <span>Bagikan</span><span className="font-mono text-xs">{post.shareCount}</span>
         </button>
         <button
           onClick={handleSave}
           disabled={busy}
-          className={`${actionBase} ${saved ? 'text-primary' : 'text-gray-500 dark:text-gray-400'}`}
+          className={`flex min-h-10 w-12 items-center justify-center ${saved ? 'text-primary' : 'text-gray-500 dark:text-gray-400'} hover:bg-brand-50 dark:hover:bg-gray-700`}
           aria-label="Simpan"
         >
           {saved ? <BookmarkSolid className="h-5 w-5" /> : <BookmarkOutline className="h-5 w-5" />}
         </button>
+        <button
+          type="button"
+          onClick={() => onOpen?.(post.id)}
+          className={`${actionBase} text-gray-600 dark:text-gray-300`}
+          aria-label="Buka detail posting"
+        >
+          <ArrowTopRightOnSquareIcon className="h-5 w-5" />
+          <span>Detail</span>
+        </button>
       </footer>
+      {commentsOpen && (
+        <div className="border-b border-gray-300 bg-[#fffaf2] px-3 py-3 dark:border-gray-600 dark:bg-gray-700/40">
+          {commentsLoading ? (
+            <p className="py-2 text-center text-xs text-gray-500">Memuat komentar...</p>
+          ) : inlineComments.length === 0 ? (
+            <p className="py-2 text-center text-xs text-gray-500">Belum ada komentar.</p>
+          ) : (
+            <div className="space-y-3">
+              {inlineComments.slice(-3).map((comment) => (
+                <div key={comment.id} className="flex gap-2.5">
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-sm border border-ink bg-brand-500 font-mono text-[10px] font-bold text-white dark:border-gray-400">
+                    {initials(comment.author?.fullName || 'Warga')}
+                  </span>
+                  <div className="min-w-0 rounded-sm border border-gray-300 bg-white px-3 py-2 dark:border-gray-600 dark:bg-gray-800">
+                    <p className="text-xs font-bold text-ink dark:text-white">{comment.author?.fullName || 'Warga'}</p>
+                    <p className="mt-0.5 text-sm text-gray-700 dark:text-gray-200">{comment.content}</p>
+                    <p className="mt-1 text-[10px] text-gray-400">{timeAgo(comment.createdAt)}</p>
+                    <button
+                      type="button"
+                      onClick={() => onOpen?.(post.id)}
+                      className="mt-1 text-xs font-bold text-brand-600 hover:underline"
+                    >
+                      Komen →
+                    </button>
+                  </div>
+                </div>
+              ))}
+              {post.commentCount > 3 && (
+                <button
+                  type="button"
+                  onClick={() => onOpen?.(post.id)}
+                  className="text-xs font-bold text-brand-600 hover:underline"
+                >
+                  Lihat semua {post.commentCount} komentar →
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+      )}
       {canModerate && (
         <div className="mt-2 flex flex-wrap justify-end gap-2 border-t border-gray-100 pt-2 dark:border-gray-700">
           <button

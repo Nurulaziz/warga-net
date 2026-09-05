@@ -113,9 +113,9 @@ export function PostComposer({ currentUserName, onSubmit, disabled }: PostCompos
   }
 
   return (
-    <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+    <div className="rounded-sm border-2 border-ink bg-white p-4 shadow-[3px_3px_0_#171717] dark:border-gray-500 dark:bg-gray-800">
       <div className="flex items-start gap-3">
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary dark:bg-primary/20 dark:text-primary-foreground">
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-sm border-2 border-ink bg-brand-500 font-mono text-xs font-bold text-white shadow-[2px_2px_0_#171717]">
           {initials(currentUserName || 'Warga')}
         </div>
         <textarea
@@ -125,7 +125,7 @@ export function PostComposer({ currentUserName, onSubmit, disabled }: PostCompos
           maxLength={5000}
           disabled={disabled}
           placeholder="Apa yang ingin Anda sampaikan ke warga?"
-          className="min-h-[56px] flex-1 resize-none rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-[15px] text-gray-800 outline-none focus:border-primary focus:ring-1 focus:ring-primary dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+          className="min-h-[76px] flex-1 resize-none rounded-sm border-2 border-ink bg-[#fffaf2] px-4 py-3 text-[15px] text-gray-800 outline-none focus:ring-2 focus:ring-brand-500/25 dark:border-gray-500 dark:bg-gray-700 dark:text-gray-100"
         />
       </div>
 
@@ -211,7 +211,7 @@ export function PostComposer({ currentUserName, onSubmit, disabled }: PostCompos
       )}
 
       {error && <p className="mt-2 pl-14 text-xs text-red-500">{error}</p>}
-      <div className="mt-3 flex items-center justify-between border-t border-gray-100 pt-3 dark:border-gray-700">
+      <div className="mt-4 flex items-center gap-2 border-t-2 border-ink pt-3 dark:border-gray-500">
         <input
           ref={fileInputRef}
           type="file"
@@ -223,7 +223,7 @@ export function PostComposer({ currentUserName, onSubmit, disabled }: PostCompos
         <button
           onClick={() => fileInputRef.current?.click()}
           disabled={disabled || uploading || media.length >= 4}
-          className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm text-gray-500 transition hover:bg-gray-100 disabled:opacity-50 dark:text-gray-400 dark:hover:bg-gray-700"
+          className="flex min-h-9 items-center gap-1.5 rounded-sm border border-ink px-3 py-1.5 text-sm font-semibold text-gray-600 transition hover:bg-brand-50 disabled:opacity-50 dark:border-gray-500 dark:text-gray-300 dark:hover:bg-gray-700"
         >
           <PhotoIcon className="h-5 w-5" />
           {uploading ? 'Mengunggah...' : 'Foto'}
@@ -234,12 +234,13 @@ export function PostComposer({ currentUserName, onSubmit, disabled }: PostCompos
             if (!pollEnabled) setMedia([]);
           }}
           disabled={disabled}
-          className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm text-gray-500 transition hover:bg-gray-100 disabled:opacity-50 dark:text-gray-400 dark:hover:bg-gray-700"
+          className="flex min-h-9 items-center gap-1.5 rounded-sm border border-ink px-3 py-1.5 text-sm font-semibold text-gray-600 transition hover:bg-brand-50 disabled:opacity-50 dark:border-gray-500 dark:text-gray-300 dark:hover:bg-gray-700"
         >
           <ChartBarIcon className="h-5 w-5" />
           Polling
         </button>
         <Button
+          className="ml-auto"
           onClick={handleSubmit}
           disabled={
             disabled ||

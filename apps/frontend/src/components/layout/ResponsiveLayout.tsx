@@ -16,7 +16,7 @@ export function ResponsiveLayout() {
   useDocumentTitle();
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="app-paper min-h-screen font-body dark:bg-gray-900">
       {/* Banner impersonation — tampil di atas semua konten */}
       <ImpersonationBanner />
 

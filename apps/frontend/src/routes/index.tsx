@@ -1,8 +1,8 @@
 import { createBrowserRouter, Navigate, RouteObject } from 'react-router-dom';
 import { ResponsiveLayout } from '@/components/layout/ResponsiveLayout';
 import { ProtectedRoute } from '@/components/layout/ProtectedRoute';
+import { useAuth } from '@/contexts/AuthContext';
 import { Dashboard } from './Dashboard';
-import { LoginPage } from './LoginPage';
 import { UsersPage } from './UsersPage';
 import { FamiliesPage } from './FamiliesPage';
 import { FamilyDetailPage } from './FamilyDetailPage';
@@ -21,6 +21,28 @@ import { ModerationQueuePage } from './ModerationQueuePage';
 import { LettersPage } from './LettersPage';
 import { SettingsPage } from './SettingsPage';
 import { ProfilePage } from './ProfilePage';
+import { LandingPage } from './LandingPage';
+
+// Landing setelah login: admin ke Dashboard, warga langsung ke Iuran
+const RoleLandingRedirect = () => {
+  const { isAdmin } = useAuth();
+  return <Navigate to={isAdmin() ? '/dashboard' : '/bills'} replace />;
+};
+
+// Root publik-pintar: pengunjung anonim melihat landing page; pengguna yang sudah login
+// diarahkan ke dashboard sesuai perannya. Menunggu status auth siap agar tidak salah
+// menampilkan landing sekilas sebelum sesi termuat (mencegah flicker).
+const RootRoute = () => {
+  const { isAuthenticated, isLoading } = useAuth();
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#F7F9FC] dark:bg-gray-900">
+        <div className="animate-spin h-8 w-8 border-4 border-brand-500 border-t-transparent rounded-full" />
+      </div>
+    );
+  }
+  return isAuthenticated ? <RoleLandingRedirect /> : <LandingPage />;
+};
 
 const NotFoundPage = () => (
   <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
@@ -33,21 +55,19 @@ const NotFoundPage = () => (
 
 const routes: RouteObject[] = [
   {
-    path: '/login',
-    element: <LoginPage />,
+    // Root publik — landing page WargaNet (anonim) atau redirect by role (sudah login).
+    path: '/',
+    element: <RootRoute />,
   },
   {
-    path: '/',
+    // Layout aplikasi terproteksi — pathless supaya anak-anaknya tetap absolut (/dashboard,
+    // /bills, dst) sementara '/' kini ditangani RootRoute publik di atas.
     element: (
       <ProtectedRoute>
         <ResponsiveLayout />
       </ProtectedRoute>
     ),
     children: [
-      {
-        index: true,
-        element: <Navigate to="/dashboard" replace />,
-      },
       {
         path: 'dashboard',
         element: <Dashboard />,

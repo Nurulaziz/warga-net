@@ -24,20 +24,13 @@ export const ThemeToggle = ({ showLabel = false }: ThemeToggleProps) => {
         onClick={toggleTheme}
         title="Ubah Tema"
         aria-label={`Ubah ke mode ${isDark ? 'terang' : 'gelap'}`}
-        className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-[#0054A6] focus:ring-offset-2 dark:focus:ring-offset-gray-800 ${
-          isDark ? 'bg-[#0054A6]' : 'bg-gray-300'
-        }`}
+        className="inline-flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-sm border-2 border-ink bg-white text-ink shadow-[2px_2px_0_#171717] transition-transform hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-brand-500/30 dark:border-gray-300 dark:bg-gray-800 dark:text-white dark:shadow-[2px_2px_0_#d4d4d4]"
       >
-        {/* Knob dengan ikon kontekstual */}
-        <span
-          className={`inline-flex h-5 w-5 transform items-center justify-center rounded-full bg-white shadow-sm transition-transform duration-300 ${
-            isDark ? 'translate-x-[22px]' : 'translate-x-[2px]'
-          }`}
-        >
+        <span className="inline-flex items-center justify-center">
           {isDark ? (
-            <MoonIcon className="h-3 w-3 text-[#0054A6]" aria-hidden="true" />
+            <MoonIcon className="h-[18px] w-[18px] text-brand-500" aria-hidden="true" />
           ) : (
-            <SunIcon className="h-3 w-3 text-amber-500" aria-hidden="true" />
+            <SunIcon className="h-[18px] w-[18px] text-accent-orange" aria-hidden="true" />
           )}
         </span>
       </button>

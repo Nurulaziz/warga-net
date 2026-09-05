@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 :root {
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  font-family: 'Geist Variable', Geist, system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
   font-synthesis: none;
@@ -12,30 +12,47 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Light mode colors */
+/* Light mode colors — warm editorial palette */
 :root {
-  --color-bg-primary: #ffffff;
-  --color-bg-secondary: #f9fafb;
-  --color-text-primary: #111827;
-  --color-text-secondary: #6b7280;
-  --color-border: #e5e7eb;
+  --color-bg-primary: #ffe5bf;
+  --color-bg-secondary: #ffffff;
+  --color-text-primary: #151515;
+  --color-text-secondary: #626262;
+  --color-border: #171717;
+  --color-accent-blue: #2563eb;
+  --color-accent-green: #22c55e;
+  --color-accent-orange: #f59e0b;
 }
 
 /* Dark mode colors */
 .dark {
-  --color-bg-primary: #1f2937;
-  --color-bg-secondary: #111827;
-  --color-text-primary: #f9fafb;
-  --color-text-secondary: #d1d5db;
-  --color-border: #374151;
+  --color-bg-primary: #171717;
+  --color-bg-secondary: #1f2937;
+  --color-text-primary: #f7f6f1;
+  --color-text-secondary: #a3a3a3;
+  --color-border: #3f3f46;
 }
 
 body {
   margin: 0;
   min-height: 100vh;
-  background-color: var(--color-bg-secondary);
+  background-color: var(--color-bg-primary);
   color: var(--color-text-primary);
-  transition: background-color 0.2s ease, color 0.2s ease;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
+}
+
+/* Tekstur kertas/dot-grid yang menjadi identitas visual WargaNet. */
+.app-paper {
+  background-color: #fff1dd;
+  background-image: radial-gradient(rgba(23, 23, 23, 0.11) 0.75px, transparent 0.75px);
+  background-size: 20px 20px;
+}
+
+.dark .app-paper {
+  background-color: #171717;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.09) 0.75px, transparent 0.75px);
 }
 
 #root {
@@ -45,7 +62,10 @@ body {
 /* Transisi halus saat berganti tema gelap/terang */
 .dark *,
 :root:not(.dark) * {
-  transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+  transition:
+    background-color 0.3s ease,
+    border-color 0.3s ease,
+    color 0.3s ease;
 }
 
 /* Hormati preferensi pengguna yang mengurangi animasi */
@@ -75,7 +95,8 @@ body {
 
 /* Login panel mesh gradient drift */
 @keyframes meshDrift {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 1;
   }
   50% {
@@ -83,8 +104,147 @@ body {
   }
 }
 
+@keyframes wordReveal {
+  from {
+    opacity: 0;
+    transform: translateY(0.18em);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 @media (prefers-reduced-motion: no-preference) {
   .mesh-animate {
     animation: meshDrift 8s ease-in-out infinite;
+  }
+}
+
+/* ── Editorial utility classes ─────────────────────────────── */
+
+/* Editorial label: small, uppercase, wide tracking */
+@layer components {
+  .editorial-label {
+    font-size: 12px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #8a8a8a;
+  }
+
+  /* Soft neo-brutalist hard shadow — use sparingly (1-2 per viewport) */
+  .hard-shadow {
+    box-shadow: 4px 4px 0 0 #171717;
+  }
+  .hard-shadow-sm {
+    box-shadow: 3px 3px 0 0 #171717;
+  }
+
+  .surface-brutal {
+    border: 2px solid #171717;
+    border-radius: 2px;
+    background: #ffffff;
+    box-shadow: 4px 4px 0 0 #171717;
+  }
+
+  .section-rule {
+    border-color: #171717;
+    border-width: 2px;
+  }
+  .hard-shadow-green {
+    box-shadow: 3px 3px 0 0 #22c55e;
+  }
+
+  /* ── ATURAN DESAIN: Tombol neo-brutalism ──────────────────────
+     Ciri: border ink solid 2px + hard-shadow offset solid + radius kecil +
+     efek "ditekan" saat hover (geser ke arah bayangan, bayangan mengecil).
+     Dipakai di SELURUH tampilan agar konsisten. */
+  .btn-brutal {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border-radius: 0; /* kotak tegas seperti referensi (bukan sudut membulat) */
+    border: 2px solid #171717;
+    padding: 0.75rem 1.5rem;
+    font-weight: 700;
+    font-size: 0.875rem;
+    line-height: 1;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    box-shadow: 6px 6px 0 0 #171717; /* hard-shadow solid offset besar, tanpa blur */
+    transition:
+      transform 0.12s ease,
+      box-shadow 0.12s ease,
+      background-color 0.12s ease;
+  }
+  .btn-brutal:hover {
+    transform: translate(3px, 3px);
+    box-shadow: 3px 3px 0 0 #171717;
+  }
+  .btn-brutal:active {
+    transform: translate(6px, 6px);
+    box-shadow: 0 0 0 0 #171717;
+  }
+  .btn-brutal:disabled {
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: 3px 3px 0 0 rgba(23, 23, 23, 0.35);
+    border-color: rgba(23, 23, 23, 0.35);
+    opacity: 0.6;
+  }
+  /* Varian isi (brand) */
+  .btn-brutal-primary {
+    background-color: #2563eb; /* brand-500 */
+    color: #ffffff;
+  }
+  .btn-brutal-primary:hover {
+    background-color: #1d4ed8; /* brand-600 */
+  }
+  /* Varian outline (di atas bg terang) */
+  .btn-brutal-outline {
+    background-color: #ffffff;
+    color: #171717;
+  }
+  .btn-brutal-outline:hover {
+    background-color: #f7f6f1;
+  }
+  /* Varian di atas bg GELAP — edge & shadow putih agar tetap terlihat */
+  .btn-brutal-on-dark {
+    border-color: #ffffff;
+    background-color: #2563eb; /* brand-500 */
+    color: #ffffff;
+    box-shadow: 6px 6px 0 0 #ffffff;
+  }
+  .btn-brutal-on-dark:hover {
+    background-color: #1d4ed8; /* brand-600 */
+    box-shadow: 3px 3px 0 0 #ffffff;
+  }
+  .btn-brutal-on-dark:active {
+    box-shadow: 0 0 0 0 #ffffff;
+  }
+}
+
+/* ── Community ticker marquee ──────────────────────────────── */
+@keyframes tickerScroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .ticker-marquee {
+    animation: tickerScroll 40s linear infinite;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ticker-marquee {
+    animation: none;
+    transform: none;
   }
 }

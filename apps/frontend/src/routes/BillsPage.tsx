@@ -1011,7 +1011,7 @@ export function BillsPage() {
       {toast && <Toast toast={toast} onClose={() => setToast(null)} />}
 
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Iuran & Pembayaran</h1>
+        <h1 className="font-display text-2xl font-bold tracking-[-0.025em] text-gray-900 dark:text-gray-100">Iuran & Pembayaran</h1>
         {admin && (
           <div className="flex gap-2">
             <Button
@@ -1106,7 +1106,7 @@ export function BillsPage() {
               setPeriodFilter(e.target.value);
               setPage(1);
             }}
-            className="max-w-[180px]"
+            className="w-[220px] max-w-full pr-12"
           />
           {periodFilter && (
             <p className="absolute left-0 top-full mt-1 whitespace-nowrap text-xs text-gray-400 dark:text-gray-500">

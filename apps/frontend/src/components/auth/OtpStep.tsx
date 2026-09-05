@@ -32,7 +32,6 @@ export function OtpStep({ phoneNumber, onBack, redirectTo }: OtpStepProps) {
     resolver: zodResolver(otpSchema),
   });
 
-  // Countdown timer untuk resend OTP
   useEffect(() => {
     intervalRef.current = setInterval(() => {
       setCooldown((prev) => {
@@ -49,7 +48,6 @@ export function OtpStep({ phoneNumber, onBack, redirectTo }: OtpStepProps) {
     };
   }, []);
 
-  // Auto focus OTP input
   useEffect(() => {
     setFocus('otp');
   }, [setFocus]);
@@ -72,7 +70,6 @@ export function OtpStep({ phoneNumber, onBack, redirectTo }: OtpStepProps) {
     try {
       await requestOtp(phoneNumber);
       setCooldown(OTP_COOLDOWN_SECONDS);
-      // Restart countdown
       intervalRef.current = setInterval(() => {
         setCooldown((prev) => {
           if (prev <= 1) {
@@ -89,90 +86,69 @@ export function OtpStep({ phoneNumber, onBack, redirectTo }: OtpStepProps) {
     }
   }
 
-  // Mask nomor telepon untuk display
-  const maskedPhone = phoneNumber.slice(0, 6) + '****' + phoneNumber.slice(-3);
-
   return (
     <form onSubmit={handleSubmit(onSubmit)} noValidate>
       {/* Back button */}
       <button
         type="button"
         onClick={onBack}
-        className="inline-flex items-center gap-1.5 text-[0.82rem] text-[#64748B] dark:text-gray-400 hover:text-brand-500 dark:hover:text-blue-400 transition-colors duration-200 mb-5 min-h-[44px]"
+        className="inline-flex items-center gap-1.5 text-[12px] text-ink-muted dark:text-gray-400 hover:text-brand-500 dark:hover:text-blue-400 transition-colors duration-200 mb-5 min-h-[44px]"
       >
-        <ArrowLeftIcon className="w-4 h-4" />
+        <ArrowLeftIcon className="w-3.5 h-3.5" />
         <span>Ganti nomor</span>
       </button>
 
-      {/* Header */}
-      <h2 className="text-xl font-bold text-[#0F172A] dark:text-gray-100 mb-1.5">Verifikasi OTP</h2>
-      <p className="text-[0.875rem] text-[#64748B] dark:text-gray-400 mb-6 leading-relaxed">
-        Kode 6 digit telah dikirim ke{' '}
-        <span className="font-medium text-[#374151] dark:text-gray-300">{maskedPhone}</span>
-      </p>
+      {/* Label */}
+      <label
+        htmlFor="otp-input"
+        className="block text-[13px] font-semibold text-ink dark:text-gray-200 mb-2"
+      >
+        Kode OTP
+      </label>
 
       {/* OTP Input */}
-      <div className="w-full">
-        <label
-          htmlFor="otp-input"
-          className="block text-[0.875rem] font-medium text-[#374151] dark:text-gray-300 mb-2.5"
-        >
-          Kode OTP
-        </label>
-        <input
-          id="otp-input"
-          type="text"
-          inputMode="numeric"
-          autoComplete="one-time-code"
-          maxLength={6}
-          placeholder="000000"
-          className={`
-            w-full min-h-[52px] px-4 py-3.5 text-center text-2xl font-mono tracking-[0.5em]
-            border rounded-lg
-            bg-white dark:bg-gray-800
-            text-[#0F172A] dark:text-gray-100
-            focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500
-            transition-all duration-200
-            ${errors.otp ? 'border-red-500 focus:ring-red-500/20 focus:border-red-500' : 'border-[#E2E8F0] dark:border-gray-600'}
-          `}
-          aria-invalid={errors.otp ? 'true' : 'false'}
-          aria-describedby={errors.otp ? 'otp-error' : undefined}
-          {...register('otp')}
-        />
-        {errors.otp && (
-          <p id="otp-error" className="mt-2 text-sm text-red-600 dark:text-red-400" role="alert">
-            {errors.otp.message}
-          </p>
-        )}
-      </div>
+      <input
+        id="otp-input"
+        type="text"
+        inputMode="numeric"
+        autoComplete="one-time-code"
+        maxLength={6}
+        placeholder="000000"
+        className={`
+          w-full h-11 sm:h-12 px-4 text-center text-2xl font-mono tracking-[0.5em]
+          rounded-sm border-2 bg-white dark:bg-gray-800
+          text-ink dark:text-gray-100
+          focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/25
+          transition-shadow duration-150
+          ${errors.otp ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : 'border-edge-default dark:border-white/25'}
+        `}
+        aria-invalid={errors.otp ? 'true' : 'false'}
+        aria-describedby={errors.otp ? 'otp-error' : undefined}
+        {...register('otp')}
+      />
+      {errors.otp && (
+        <p id="otp-error" className="mt-2 text-[12px] text-red-600 dark:text-red-400" role="alert">
+          {errors.otp.message}
+        </p>
+      )}
 
-      {/* Server error */}
+      {/* Server error — small red text, no alert card */}
       {serverError && (
-        <div className="mt-3 p-3.5 bg-red-50 dark:bg-red-900/15 border border-red-200 dark:border-red-800/30 rounded-xl">
-          <p className="text-[0.82rem] text-red-700 dark:text-red-400 leading-relaxed" role="alert">
-            {serverError}
-          </p>
-        </div>
+        <p className="mt-2 text-[12px] text-red-600 dark:text-red-400" role="alert">
+          {serverError}
+        </p>
       )}
 
       {/* Submit button */}
       <button
         type="submit"
         disabled={isSubmitting}
-        className="
-          mt-5 w-full min-h-[52px] px-6
-          bg-brand-500 hover:bg-brand-600 active:bg-brand-700
-          disabled:opacity-55 disabled:cursor-not-allowed
-          text-white font-semibold text-[0.95rem]
-          rounded-lg transition-all duration-200
-          focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:ring-offset-2
-          flex items-center justify-center
-        "
+        className="btn-brutal btn-brutal-primary mt-5 w-full h-11 sm:h-12 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:ring-offset-2"
       >
         {isSubmitting ? (
           <>
             <svg
-              className="animate-spin -ml-1 mr-2.5 h-5 w-5"
+              className="animate-spin -ml-1 mr-2 h-4 w-4"
               xmlns="http://www.w3.org/2000/svg"
               fill="none"
               viewBox="0 0 24 24"
@@ -199,14 +175,14 @@ export function OtpStep({ phoneNumber, onBack, redirectTo }: OtpStepProps) {
       </button>
 
       {/* Resend OTP */}
-      <div className="mt-6 flex items-center justify-center">
+      <div className="mt-6 flex items-center justify-start">
         <button
           type="button"
           onClick={handleResendOtp}
           disabled={cooldown > 0 || isResending}
-          className="inline-flex items-center gap-1.5 text-[0.82rem] text-brand-500 dark:text-blue-400 hover:text-brand-600 dark:hover:text-blue-300 disabled:text-[#94A3B8] dark:disabled:text-gray-500 disabled:cursor-not-allowed transition-colors duration-200 min-h-[44px]"
+          className="inline-flex items-center gap-1.5 text-[12px] text-brand-500 dark:text-blue-400 hover:text-brand-600 dark:hover:text-blue-300 disabled:text-ink-muted dark:disabled:text-gray-500 disabled:cursor-not-allowed transition-colors duration-200 min-h-[44px]"
         >
-          <ArrowPathIcon className={`w-4 h-4 ${isResending ? 'animate-spin' : ''}`} />
+          <ArrowPathIcon className={`w-3.5 h-3.5 ${isResending ? 'animate-spin' : ''}`} />
           <span>
             {cooldown > 0
               ? `Kirim ulang dalam ${cooldown}s`

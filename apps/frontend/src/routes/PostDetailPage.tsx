@@ -7,6 +7,7 @@ import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { CommentSection } from '@/components/posts/CommentSection';
 import { PostContent } from '@/components/posts/PostContent';
 import { PostMedia } from '@/components/posts/PostMedia';
+import { PostPoll } from '@/components/posts/PostPoll';
 import { fetchPost, deletePost } from '@/services/posts';
 import type { Post } from '@/types/posts';
 
@@ -52,7 +53,7 @@ export function PostDetailPage() {
   const canAct = canDelete || (post && post.authorId === currentUser?.id);
 
   return (
-    <div className="mx-auto max-w-2xl space-y-4 p-4">
+    <div className="mx-auto max-w-3xl space-y-4 py-2">
       <button
         onClick={() => navigate('/suara-warga')}
         className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-primary"
@@ -71,9 +72,9 @@ export function PostDetailPage() {
       )}
 
       {post && (
-        <article className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+        <article className="rounded-sm border-2 border-ink bg-white p-5 shadow-[3px_3px_0_#171717] dark:border-gray-500 dark:bg-gray-800">
           <header className="flex items-start gap-3">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary dark:bg-primary/20">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-sm border-2 border-ink bg-brand-500 font-mono text-xs font-bold text-white shadow-[2px_2px_0_#171717]">
               {(post.author?.fullName || 'Warga')
                 .split(' ')
                 .filter(Boolean)
@@ -108,6 +109,7 @@ export function PostDetailPage() {
             className="mt-4 text-[15px] leading-relaxed text-gray-800 dark:text-gray-100"
           />
           <PostMedia urls={(post.media ?? []).map((m) => m.url)} />
+          {post.poll && <PostPoll postId={post.id} poll={post.poll} />}
         </article>
       )}
 

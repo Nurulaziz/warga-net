@@ -20,7 +20,7 @@ export function MobileCardItem({ children, className = '', onClick }: MobileCard
   return (
     <div
       onClick={onClick}
-      className={`bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 ${onClick ? 'cursor-pointer hover:border-primary-300 dark:hover:border-primary-700 transition-colors' : ''} ${className}`}
+      className={`bg-white dark:bg-gray-800 border-2 border-ink dark:border-gray-500 rounded-sm p-4 shadow-[3px_3px_0_#171717] dark:shadow-[3px_3px_0_#737373] ${onClick ? 'cursor-pointer hover:bg-warm-50 dark:hover:bg-gray-700 transition-colors' : ''} ${className}`}
     >
       {children}
     </div>

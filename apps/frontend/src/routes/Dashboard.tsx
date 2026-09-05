@@ -5,17 +5,17 @@ import {
   RecentAuditLog,
   RecentAnnouncements,
 } from '../components/dashboard';
+import { Navigate } from 'react-router-dom';
 import { useSettings } from '@/hooks/useSettings';
 import { useAuth } from '@/contexts/AuthContext';
-import { WargaDashboard } from './WargaDashboard';
 
 export function Dashboard() {
   const { settings } = useSettings();
   const { isAdmin } = useAuth();
 
-  // Warga melihat dashboard khusus (iuran & data keluarganya sendiri)
+  // Warga tidak punya dashboard; arahkan ke halaman Iuran sebagai halaman utama
   if (!isAdmin()) {
-    return <WargaDashboard />;
+    return <Navigate to="/bills" replace />;
   }
 
   return (

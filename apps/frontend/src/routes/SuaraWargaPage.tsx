@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { MegaphoneIcon } from '@heroicons/react/24/outline';
+import { BookmarkIcon, MegaphoneIcon, ShieldCheckIcon } from '@heroicons/react/24/outline';
 import { useAuth } from '@/contexts/AuthContext';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { Pagination } from '@/components/ui/Pagination';
@@ -19,8 +19,10 @@ const SORT_OPTIONS: { value: SortKey; label: string }[] = [
 
 export function SuaraWargaPage() {
   const navigate = useNavigate();
-  const { currentUser, hasPermission } = useAuth();
-  const canCreate = hasPermission('posts', 'create');
+  const { currentUser, isAuthenticated, hasPermission } = useAuth();
+  // Endpoint posting tersedia untuk setiap sesi login. Jangan sembunyikan composer hanya karena
+  // metadata role/permission dari /users/me masih dimuat atau berasal dari data lama.
+  const canCreate = isAuthenticated;
   const canDelete = hasPermission('posts', 'delete');
   const canModerate = hasPermission('posts', 'moderate');
 
@@ -95,36 +97,36 @@ export function SuaraWargaPage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl space-y-4 p-4">
-      <div className="flex items-center gap-2">
-        <MegaphoneIcon className="h-6 w-6 text-primary" />
-        <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">Suara Warga</h1>
-        <Link
-          to="/suara-warga/tersimpan"
-          className="ml-auto text-sm font-medium text-primary hover:underline"
-        >
-          Tersimpan
-        </Link>
-        {canModerate && (
-          <Link
-            to="/suara-warga/moderasi"
-            className="text-sm font-medium text-primary hover:underline"
-          >
-            Moderasi
+    <div className="mx-auto max-w-3xl space-y-5 py-2">
+      <div className="border-b-2 border-ink pb-5 dark:border-gray-500 sm:flex sm:items-end sm:justify-between">
+        <div>
+          <p className="mb-2 font-mono text-[11px] font-bold uppercase tracking-[0.16em] text-brand-600">Ruang komunitas</p>
+          <div className="flex items-center gap-3">
+            <span className="flex h-10 w-10 items-center justify-center rounded-sm border-2 border-ink bg-brand-500 text-white shadow-[2px_2px_0_#171717]">
+              <MegaphoneIcon className="h-5 w-5" />
+            </span>
+            <h1 className="font-display text-3xl font-extrabold tracking-[-0.04em] text-ink dark:text-white">Suara Warga</h1>
+          </div>
+          <p className="mt-3 max-w-lg text-sm text-gray-600 dark:text-gray-300">Berbagi kabar, ide, dan aspirasi dengan tetangga dalam satu ruang bersama.</p>
+        </div>
+        <div className="mt-4 flex gap-2 sm:mt-0">
+          <Link to="/suara-warga/tersimpan" className="inline-flex min-h-10 items-center gap-2 rounded-sm border-2 border-ink bg-white px-3 text-xs font-bold uppercase tracking-wide text-ink hover:bg-brand-50 dark:bg-gray-800 dark:text-white">
+            <BookmarkIcon className="h-4 w-4" /> Tersimpan
           </Link>
-        )}
+          {canModerate && <Link to="/suara-warga/moderasi" className="inline-flex min-h-10 items-center gap-2 rounded-sm border-2 border-ink bg-white px-3 text-xs font-bold uppercase tracking-wide text-ink hover:bg-brand-50 dark:bg-gray-800 dark:text-white"><ShieldCheckIcon className="h-4 w-4" /> Moderasi</Link>}
+        </div>
       </div>
 
-      <form onSubmit={handleSearchSubmit} className="flex gap-2">
+      <form onSubmit={handleSearchSubmit} className="grid w-full grid-cols-[minmax(0,1fr)_104px] gap-2">
         <input
           value={searchTag}
           onChange={(e) => setSearchTag(e.target.value)}
           placeholder="Cari berdasarkan #tag..."
-          className="min-h-[40px] flex-1 rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 outline-none focus:border-primary focus:ring-1 focus:ring-primary dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+          className="min-h-[44px] w-full rounded-sm border-2 border-ink bg-white px-4 py-2 text-sm text-gray-800 outline-none focus:ring-2 focus:ring-brand-500/25 dark:border-gray-500 dark:bg-gray-800 dark:text-gray-100"
         />
         <button
           type="submit"
-          className="rounded-xl bg-primary px-4 text-sm font-medium text-white transition hover:bg-primary/90 disabled:opacity-50"
+          className="rounded-sm border-2 border-ink bg-brand-500 px-4 text-xs font-bold uppercase tracking-wide text-white shadow-[2px_2px_0_#171717] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-40"
           disabled={!searchTag.trim()}
         >
           Cari
@@ -135,16 +137,16 @@ export function SuaraWargaPage() {
         <PostComposer currentUserName={currentUser?.fullName || 'Warga'} onSubmit={handleCreate} />
       )}
 
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between border-b-2 border-ink pb-3 dark:border-gray-500">
         <div className="flex flex-wrap gap-2">
           {SORT_OPTIONS.map((opt) => (
             <button
               key={opt.value}
               onClick={() => handleSortChange(opt.value)}
-              className={`rounded-full px-4 py-1.5 text-sm font-medium transition ${
+              className={`rounded-sm border-2 border-ink px-4 py-1.5 text-sm font-bold transition ${
                 sort === opt.value
-                  ? 'bg-primary text-white'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300'
+                  ? 'bg-brand-500 text-white shadow-[2px_2px_0_#171717]'
+                  : 'bg-white text-ink hover:bg-brand-50 dark:bg-gray-800 dark:text-gray-200'
               }`}
             >
               {opt.label}

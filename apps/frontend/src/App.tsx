@@ -6,7 +6,7 @@ import { ToastProvider } from '@/components/ui/Toast';
 import { useSettings } from '@/hooks/useSettings';
 import { router } from './routes';
 
-// Judul dasar (fallback) untuk halaman non-layout seperti /login.
+// Judul dasar (fallback) untuk halaman non-layout.
 // Halaman ber-layout menimpanya lewat useDocumentTitle (judul per-halaman).
 function DynamicTitle() {
   const { settings } = useSettings();

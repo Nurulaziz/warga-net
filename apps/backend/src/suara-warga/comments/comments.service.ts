@@ -26,13 +26,25 @@ export class CommentsService {
   private async assertCanAccessPost(postId: string, scope: AuthScope) {
     const post = await this.prisma.post.findFirst({
       where: { id: postId, deletedAt: null },
-      include: { author: { select: { family: { select: { rt: true } } } } },
+      include: {
+        author: {
+          select: {
+            family: { select: { rt: true } },
+            role: { select: { name: true } },
+          },
+        },
+      },
     });
     requirePostOrThrow(post, 'Posting tidak ditemukan');
     if (post!.status !== 'published') {
       throw new ForbiddenException('Posting tidak tersedia');
     }
-    if (!scope.isAdmin && scope.rt && post!.author.family?.rt !== scope.rt) {
+    if (
+      !scope.isAdmin &&
+      scope.rt &&
+      post!.author.family?.rt !== scope.rt &&
+      post!.author.role?.name !== 'SUPER_ADMIN'
+    ) {
       throw new ForbiddenException('Anda tidak dapat mengakses posting ini');
     }
     return post!;
@@ -106,8 +118,8 @@ export class CommentsService {
   async remove(id: string, scope: AuthScope) {
     const comment = await this.prisma.comment.findFirst({ where: { id, deletedAt: null } });
     if (!comment) throw new ForbiddenException('Komentar tidak ditemukan');
-    if (comment.authorId !== scope.userId && !scope.isAdmin) {
-      throw new ForbiddenException('Anda hanya dapat menghapus komentar milik Anda sendiri');
+    if (!scope.isAdmin) {
+      throw new ForbiddenException('Hanya admin yang dapat menghapus komentar');
     }
 
     const replyCount = comment.parentId

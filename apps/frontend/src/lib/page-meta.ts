@@ -16,6 +16,9 @@ export const PAGE_META: Record<string, PageMeta> = {
   '/cash': { title: 'Kas RT', group: 'Keuangan' },
   '/reports': { title: 'Laporan', group: 'Keuangan' },
   '/announcements': { title: 'Pengumuman', group: 'Komunikasi' },
+  '/suara-warga': { title: 'Suara Warga', group: 'Komunikasi' },
+  '/suara-warga/tersimpan': { title: 'Posting Tersimpan', group: 'Suara Warga' },
+  '/suara-warga/moderasi': { title: 'Moderasi', group: 'Suara Warga' },
   '/letters': { title: 'Surat', group: 'Komunikasi' },
   '/audit-log': { title: 'Audit Log', group: 'Sistem' },
   '/settings': { title: 'Pengaturan', group: 'Sistem' },
@@ -25,6 +28,8 @@ export const PAGE_META: Record<string, PageMeta> = {
 // Metadata untuk halaman detail dinamis (path dengan parameter, mis. /families/:id)
 const DYNAMIC_PAGE_META: { prefix: string; meta: PageMeta }[] = [
   { prefix: '/families/', meta: { title: 'Detail Keluarga', group: 'Data Warga' } },
+  { prefix: '/suara-warga/hashtag/', meta: { title: 'Hashtag', group: 'Suara Warga' } },
+  { prefix: '/suara-warga/', meta: { title: 'Detail Posting', group: 'Suara Warga' } },
 ];
 
 // Ambil metadata halaman dari pathname; fallback untuk path tak dikenal

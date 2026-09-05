@@ -40,7 +40,7 @@ export function ProfilePage() {
 
   async function handleLogout() {
     await logout();
-    window.location.href = '/login';
+    window.location.href = '/';
   }
 
   function handleCopyId() {

@@ -12,13 +12,11 @@ import {
   // UsersIcon dihapus: Warga kini pakai IdentificationIcon
   DocumentTextIcon,
   Cog6ToothIcon,
-  HomeModernIcon,
   BanknotesIcon,
   WalletIcon,
   MegaphoneIcon,
   EnvelopeIcon,
   ChatBubbleLeftRightIcon,
-  ChevronLeftIcon,
   UserCircleIcon,
 } from '@heroicons/react/24/outline';
 
@@ -113,7 +111,7 @@ export function DesktopNavigation({ collapsed, onToggle }: DesktopNavigationProp
 
   return (
     <aside
-      className={`fixed left-0 top-0 h-screen bg-white dark:bg-gray-800 border-r border-[#E2E8F0] dark:border-gray-700 z-40 flex flex-col transition-all duration-300 ${
+      className={`fixed left-0 top-0 h-screen bg-[#FFF9EF] dark:bg-gray-800 border-r-2 border-ink dark:border-gray-500 z-40 flex flex-col transition-all duration-300 ${
         collapsed ? 'w-[68px]' : 'w-[230px]'
       }`}
       role="navigation"
@@ -121,39 +119,39 @@ export function DesktopNavigation({ collapsed, onToggle }: DesktopNavigationProp
     >
       {/* Header */}
       <div
-        className={`h-14 flex items-center border-b border-[#E2E8F0] dark:border-gray-700 flex-shrink-0 ${
+        className={`h-14 flex items-center border-b-2 border-ink dark:border-gray-500 flex-shrink-0 ${
           collapsed ? 'justify-center px-2' : 'justify-between px-4'
         }`}
       >
-        <div className="flex items-center gap-2.5 overflow-hidden">
-          <div
-            className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${settings.app_logo_url ? '' : 'bg-[#0054A6]'}`}
-          >
-            {settings.app_logo_url ? (
-              <img
-                src={settings.app_logo_url}
-                alt={settings.app_name}
-                className="w-8 h-8 object-contain rounded-lg"
-              />
-            ) : (
-              <HomeModernIcon className="w-[18px] h-[18px] text-white" />
-            )}
-          </div>
-          {!collapsed && (
-            <span className="text-base font-bold text-[#0F172A] dark:text-white whitespace-nowrap">
-              {settings.app_name}
-            </span>
-          )}
-        </div>
+        {!collapsed && (
+          <span className="font-display text-[1.4rem] font-extrabold tracking-[-0.035em] text-ink dark:text-white whitespace-nowrap">
+            {settings.app_name}
+          </span>
+        )}
+        <button
+          type="button"
+          onClick={onToggle}
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-sm border-2 border-transparent text-ink transition-colors hover:border-ink hover:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/30 dark:text-white dark:hover:border-gray-400 dark:hover:bg-gray-700"
+          title={collapsed ? 'Perbesar sidebar' : 'Perkecil sidebar'}
+          aria-label={collapsed ? 'Perbesar sidebar' : 'Perkecil sidebar'}
+        >
+          <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+            <rect x="3" y="4" width="18" height="16" rx="2" />
+            <path d="M9 4v16" />
+            <path d={collapsed ? 'm6 10 2 2-2 2' : 'm7 10-2 2 2 2'} />
+          </svg>
+        </button>
       </div>
 
-      {/* Dashboard — always top, standalone */}
-      <div className={`px-2 pt-3 pb-1 ${collapsed ? 'px-2' : 'px-3'}`}>
-        <SidebarLink
-          item={{ path: '/dashboard', label: 'Dashboard', icon: ChartBarIcon }}
-          collapsed={collapsed}
-        />
-      </div>
+      {/* Dashboard — hanya untuk admin; warga tidak punya dashboard */}
+      {admin && (
+        <div className={`px-2 pt-3 pb-1 ${collapsed ? 'px-2' : 'px-3'}`}>
+          <SidebarLink
+            item={{ path: '/dashboard', label: 'Dashboard', icon: ChartBarIcon }}
+            collapsed={collapsed}
+          />
+        </div>
+      )}
 
       {/* Main navigation sections */}
       <nav
@@ -182,7 +180,7 @@ export function DesktopNavigation({ collapsed, onToggle }: DesktopNavigationProp
       </nav>
 
       {/* Bottom section: Pengaturan, lalu Profil + Theme Toggle dalam 1 row */}
-      <div className="flex-shrink-0 border-t border-[#E2E8F0] dark:border-gray-700 px-2 py-2">
+      <div className="flex-shrink-0 border-t-2 border-ink dark:border-gray-500 px-2 py-2">
         <div className="space-y-0.5">
           {visibleBottomItems.map((item) => (
             <SidebarLink key={item.path} item={item} collapsed={collapsed} />
@@ -199,22 +197,6 @@ export function DesktopNavigation({ collapsed, onToggle }: DesktopNavigationProp
         </div>
       </div>
 
-      {/* Toggle collapse — selalu aksesibel, tidak melayang di atas konten */}
-      <button
-        onClick={onToggle}
-        className={`w-full flex items-center gap-2.5 min-h-[40px] text-[13px] font-medium rounded-none border-t border-[#E2E8F0] dark:border-gray-700 px-3 text-[#64748B] dark:text-gray-400 hover:bg-[#F8FAFC] dark:hover:bg-gray-700/50 hover:text-[#0054A6] dark:hover:text-gray-200 transition-colors duration-150 flex-shrink-0 ${
-          collapsed ? 'justify-center px-0' : ''
-        }`}
-        title={collapsed ? 'Perbesar sidebar' : 'Perkecil sidebar'}
-      >
-        <ChevronLeftIcon
-          className={`w-[18px] h-[18px] shrink-0 transition-transform duration-300 ${
-            collapsed ? 'rotate-180' : ''
-          }`}
-          aria-hidden="true"
-        />
-        {!collapsed && <span className="truncate">Perkecil</span>}
-      </button>
     </aside>
   );
 }
@@ -228,28 +210,25 @@ function SidebarLink({ item, collapsed }: { item: NavItem; collapsed: boolean })
       title={collapsed ? item.label : undefined}
       aria-label={collapsed ? item.label : undefined}
       className={({ isActive }) =>
-        `group relative flex items-center gap-2.5 rounded-lg transition-colors duration-150 min-h-[40px] ${
+        `group relative flex items-center gap-2.5 rounded-sm border transition-colors duration-150 min-h-[40px] ${
           collapsed ? 'justify-center px-2' : 'px-3'
         } ${
           isActive
-            ? 'bg-[#E8F0FF] dark:bg-[#0054A6]/15 text-[#0054A6] dark:text-blue-400'
-            : 'text-[#64748B] dark:text-gray-400 hover:bg-[#F8FAFC] dark:hover:bg-gray-700/50 hover:text-[#0054A6] dark:hover:text-gray-200'
+            ? 'border-ink bg-brand-500 text-white shadow-[2px_2px_0_#171717] dark:border-gray-300 dark:text-white'
+            : 'border-transparent text-[#525252] dark:text-gray-400 hover:border-ink hover:bg-white dark:hover:border-gray-500 dark:hover:bg-gray-700/50 hover:text-ink dark:hover:text-gray-200'
         }`
       }
     >
       {({ isActive }) => (
         <>
           {/* Active indicator */}
-          {isActive && !collapsed && (
-            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 bg-[#0054A6] dark:bg-blue-400 rounded-r" />
-          )}
           <item.icon
             className={`w-[18px] h-[18px] flex-shrink-0 ${
-              isActive ? 'text-[#0054A6] dark:text-blue-400' : ''
+              isActive ? 'text-white' : ''
             }`}
             aria-hidden="true"
           />
-          {!collapsed && <span className="text-[13px] font-medium truncate">{item.label}</span>}
+          {!collapsed && <span className="text-[13px] font-semibold truncate">{item.label}</span>}
           {/* Tooltip for collapsed */}
           {collapsed && (
             <div className="absolute left-full ml-2 px-2.5 py-1.5 bg-[#0F172A] text-white text-xs rounded-md whitespace-nowrap opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150 pointer-events-none z-50 shadow-lg">

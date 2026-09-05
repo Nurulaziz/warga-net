@@ -57,12 +57,12 @@ export const Modal = ({
       aria-labelledby={title ? 'modal-title' : undefined}
     >
       <div
-        className={`w-full ${sizeStyles[size]} max-h-[90vh] overflow-y-auto rounded-2xl bg-white shadow-2xl ring-1 ring-black/5 dark:bg-gray-800 dark:ring-white/10 ${panelClassName}`}
+        className={`w-full ${sizeStyles[size]} max-h-[90vh] overflow-y-auto rounded-sm border-2 border-ink bg-white shadow-[7px_7px_0_#171717] dark:border-gray-400 dark:bg-gray-800 dark:shadow-[7px_7px_0_#a3a3a3] ${panelClassName}`}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+        <div className="flex items-center justify-between px-6 py-4 border-b-2 border-ink dark:border-gray-500">
           {title ? (
-            <h2 id="modal-title" className="text-xl font-semibold text-gray-900 dark:text-gray-100">
+            <h2 id="modal-title" className="font-display text-xl font-bold text-gray-900 dark:text-gray-100">
               {title}
             </h2>
           ) : (
@@ -92,7 +92,7 @@ interface ModalFooterProps {
 
 export const ModalFooter = ({ children }: ModalFooterProps) => {
   return (
-    <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex justify-end gap-3">
+    <div className="px-6 py-4 border-t-2 border-ink dark:border-gray-500 flex justify-end gap-3">
       {children}
     </div>
   );

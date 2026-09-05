@@ -124,7 +124,10 @@ describe('PostsService', () => {
           where: {
             status: 'published',
             deletedAt: null,
-            author: { family: { rt: '04' } },
+            OR: [
+              { author: { family: { rt: '04' } } },
+              { author: { role: { name: 'SUPER_ADMIN' } } },
+            ],
           },
         }),
       );

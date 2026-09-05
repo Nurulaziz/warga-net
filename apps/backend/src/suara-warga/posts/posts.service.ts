@@ -74,7 +74,11 @@ export class PostsService {
 
     // Warga hanya melihat posting dari RT yang sama. Admin melihat semua.
     if (!scope.isAdmin && scope.rt) {
-      where.author = { family: { rt: scope.rt } };
+      where.OR = [
+        { author: { family: { rt: scope.rt } } },
+        // Informasi resmi Super Admin berlaku lintas RT meski akun tidak terikat keluarga.
+        { author: { role: { name: 'SUPER_ADMIN' } } },
+      ];
     }
 
     let orderBy: Record<string, unknown> | Array<Record<string, unknown>> | undefined = {
@@ -131,13 +135,18 @@ export class PostsService {
       }),
       this.prisma.post.findFirst({
         where: { id, deletedAt: null },
-        select: { author: { select: { family: { select: { rt: true } } } } },
+        select: { author: { select: { family: { select: { rt: true } }, role: { select: { name: true } } } } },
       }),
     ]);
     const found = requirePostOrThrow(post, 'Posting tidak ditemukan');
 
     // Privasi: warga hanya boleh melihat posting dari RT yang sama.
-    if (!scope.isAdmin && scope.rt && authorRt?.author?.family?.rt !== scope.rt) {
+    if (
+      !scope.isAdmin &&
+      scope.rt &&
+      authorRt?.author?.family?.rt !== scope.rt &&
+      authorRt?.author?.role?.name !== 'SUPER_ADMIN'
+    ) {
       throw new ForbiddenException('Anda tidak dapat mengakses posting ini');
     }
     return this.withViewerState(found);

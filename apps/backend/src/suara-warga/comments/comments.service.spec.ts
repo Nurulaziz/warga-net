@@ -127,6 +127,15 @@ describe('CommentsService', () => {
       await expect(service.remove('c-1', scope)).rejects.toThrow(ForbiddenException);
     });
 
+    it('pemilik komentar tetap tidak dapat menghapus tanpa role admin', async () => {
+      prisma.comment.findFirst.mockResolvedValue({
+        id: 'c-1',
+        authorId: 'user-1',
+        postId: 'post-1',
+      });
+      await expect(service.remove('c-1', scope)).rejects.toThrow(ForbiddenException);
+    });
+
     it('admin dapat menghapus komentar orang lain', async () => {
       prisma.comment.findFirst.mockResolvedValue({
         id: 'c-1',

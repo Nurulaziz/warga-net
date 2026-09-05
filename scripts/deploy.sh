@@ -39,12 +39,11 @@ echo "==> Prisma migrate deploy"
 pnpm --filter @warganet/backend exec prisma migrate deploy
 
 echo "==> Reload backend (PM2)"
-if pm2 describe "$PM2_APP" > /dev/null 2>&1; then
-  pm2 reload "$PM2_APP" --update-env
-else
-  # Pertama kali: start dari hasil build
-  pm2 start "$APP_DIR/apps/backend/dist/main.js" --name "$PM2_APP"
-fi
+# Ecosystem menetapkan cwd ke apps/backend. Dengan demikian .env, keys,
+# assets, dan uploads selalu di-resolve dari lokasi yang sama seperti lokal.
+export WARGANET_APP_DIR="$APP_DIR"
+export WARGANET_PM2_APP="$PM2_APP"
+pm2 startOrReload "$APP_DIR/ecosystem.config.cjs" --env production --update-env
 pm2 save
 
 echo "==> Verifikasi backend health"

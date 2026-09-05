@@ -70,7 +70,7 @@ export function ProtectedRoute({
 
   if (!isAuthenticated) {
     // Simpan intended URL untuk redirect setelah login
-    return <Navigate to="/login" state={{ from: location }} replace />;
+    return <Navigate to="/" state={{ from: location }} replace />;
   }
 
   // Cek role jika route membutuhkan admin
