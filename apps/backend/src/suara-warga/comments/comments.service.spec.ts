@@ -79,6 +79,7 @@ describe('CommentsService', () => {
     it('membuat komentar & increment commentCount (tanpa parent)', async () => {
       prisma.post.findFirst.mockResolvedValue(post);
       prisma.comment.create.mockResolvedValue({ id: 'c-1' });
+      prisma.comment.findMany.mockResolvedValue([]);
       prisma.post.findFirst.mockResolvedValueOnce(post);
 
       await service.create('post-1', scope, { content: 'Halo warga' });
@@ -89,7 +90,7 @@ describe('CommentsService', () => {
       expect(prisma.$transaction).toHaveBeenCalled();
     });
 
-    it('menolak parent yang bukan komentar akar (max depth 1)', async () => {
+    it('menolak parent yang tidak ditemukan', async () => {
       prisma.post.findFirst.mockResolvedValueOnce(post).mockResolvedValueOnce(post); // query parent
       prisma.comment.findFirst.mockResolvedValue(null);
       await expect(

@@ -39,9 +39,9 @@ export function RichTextEditor({ content, onChange, minHeight = '350px' }: RichT
   if (!editor) return null;
 
   return (
-    <div className="border border-[#E2E8F0] dark:border-gray-600 rounded-lg overflow-hidden bg-white dark:bg-gray-800">
+    <div className="overflow-hidden rounded-sm border-2 border-ink bg-white dark:border-gray-500 dark:bg-gray-800">
       {/* Toolbar */}
-      <div className="flex flex-wrap items-center gap-0.5 px-2 py-1.5 border-b border-[#E2E8F0] dark:border-gray-700 bg-[#F8FAFC] dark:bg-gray-900">
+      <div className="flex flex-wrap items-center gap-0.5 border-b-2 border-ink bg-[#f1dfc4] px-2 py-1.5 dark:border-gray-500 dark:bg-gray-900">
         <ToolbarButton
           active={editor.isActive('bold')}
           onClick={() => editor.chain().focus().toggleBold().run()}
@@ -64,7 +64,7 @@ export function RichTextEditor({ content, onChange, minHeight = '350px' }: RichT
           <span className="underline text-xs">U</span>
         </ToolbarButton>
 
-        <div className="w-px h-5 bg-[#E2E8F0] dark:bg-gray-700 mx-1" />
+        <div className="mx-1 h-5 w-px bg-ink/40 dark:bg-gray-500" />
 
         <ToolbarButton
           active={editor.isActive({ textAlign: 'left' })}
@@ -88,7 +88,7 @@ export function RichTextEditor({ content, onChange, minHeight = '350px' }: RichT
           <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 16 16"><path d="M2 3h12v1H2zm4 4h8v1H6zm-4 4h12v1H2z"/></svg>
         </ToolbarButton>
 
-        <div className="w-px h-5 bg-[#E2E8F0] dark:bg-gray-700 mx-1" />
+        <div className="mx-1 h-5 w-px bg-ink/40 dark:bg-gray-500" />
 
         <ToolbarButton
           active={editor.isActive('bulletList')}
@@ -120,10 +120,10 @@ function ToolbarButton({ children, active, onClick, title }: { children: React.R
       type="button"
       onClick={onClick}
       title={title}
-      className={`w-7 h-7 flex items-center justify-center rounded transition-colors ${
+      className={`flex h-7 w-7 items-center justify-center rounded-sm border transition-colors ${
         active
-          ? 'bg-[#0054A6]/10 text-[#0054A6] dark:text-blue-400'
-          : 'text-[#64748B] hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-[#0F172A] dark:hover:text-gray-200'
+          ? 'border-ink bg-white text-ink shadow-[1px_1px_0_#171717] dark:border-gray-400 dark:bg-gray-700 dark:text-white'
+          : 'border-transparent text-ink/70 hover:border-ink hover:bg-[#fff8ec] hover:text-ink dark:text-gray-300 dark:hover:bg-gray-700'
       }`}
     >
       {children}

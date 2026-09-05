@@ -72,15 +72,22 @@ export class AuditLogInterceptor implements NestInterceptor {
 
     // Jangan log body yang sensitif atau terlalu besar
     if (body && typeof body === 'object') {
-      const sanitized = { ...body } as Record<string, unknown>;
-      // Hapus field sensitif
-      delete sanitized.password;
-      delete sanitized.otp;
-      delete sanitized.token;
-      details.body = sanitized;
+      details.body = this.sanitize(body);
     }
 
     return details;
+  }
+
+  private sanitize(value: unknown): unknown {
+    if (Array.isArray(value)) return value.map((item) => this.sanitize(item));
+    if (!value || typeof value !== 'object') return value;
+    const result: Record<string, unknown> = {};
+    for (const [key, nested] of Object.entries(value as Record<string, unknown>)) {
+      result[key] = /(password|otp|token|secret|serverkey|clientkey)/i.test(key)
+        ? '[REDACTED]'
+        : this.sanitize(nested);
+    }
+    return result;
   }
 
   private async writeLog(data: {

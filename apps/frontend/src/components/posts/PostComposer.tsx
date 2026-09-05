@@ -223,7 +223,7 @@ export function PostComposer({ currentUserName, onSubmit, disabled }: PostCompos
         <button
           onClick={() => fileInputRef.current?.click()}
           disabled={disabled || uploading || media.length >= 4}
-          className="flex min-h-9 items-center gap-1.5 rounded-sm border border-ink px-3 py-1.5 text-sm font-semibold text-gray-600 transition hover:bg-brand-50 disabled:opacity-50 dark:border-gray-500 dark:text-gray-300 dark:hover:bg-gray-700"
+          className="flex min-h-9 items-center gap-1.5 rounded-sm border border-ink px-3 py-1.5 text-sm font-semibold text-gray-600 transition hover:bg-[#f5efe4] hover:text-ink disabled:opacity-50 dark:border-gray-500 dark:text-gray-300 dark:hover:bg-gray-700"
         >
           <PhotoIcon className="h-5 w-5" />
           {uploading ? 'Mengunggah...' : 'Foto'}
@@ -234,7 +234,7 @@ export function PostComposer({ currentUserName, onSubmit, disabled }: PostCompos
             if (!pollEnabled) setMedia([]);
           }}
           disabled={disabled}
-          className="flex min-h-9 items-center gap-1.5 rounded-sm border border-ink px-3 py-1.5 text-sm font-semibold text-gray-600 transition hover:bg-brand-50 disabled:opacity-50 dark:border-gray-500 dark:text-gray-300 dark:hover:bg-gray-700"
+          className="flex min-h-9 items-center gap-1.5 rounded-sm border border-ink px-3 py-1.5 text-sm font-semibold text-gray-600 transition hover:bg-[#f5efe4] hover:text-ink disabled:opacity-50 dark:border-gray-500 dark:text-gray-300 dark:hover:bg-gray-700"
         >
           <ChartBarIcon className="h-5 w-5" />
           Polling

@@ -37,6 +37,7 @@ const DEFAULTS: SystemSettings = {
 let cachedSettings: SystemSettings | null = null;
 let cacheTimestamp = 0;
 const CACHE_TTL = 60_000; // 1 menit
+const SETTINGS_UPDATED_EVENT = 'warganet:settings-updated';
 
 export function useSettings() {
   const [settings, setSettings] = useState<SystemSettings>(cachedSettings || DEFAULTS);
@@ -88,10 +89,17 @@ export function useSettings() {
     fetchSettings();
   }, [fetchSettings]);
 
+  useEffect(() => {
+    const refresh = () => void fetchSettings();
+    window.addEventListener(SETTINGS_UPDATED_EVENT, refresh);
+    return () => window.removeEventListener(SETTINGS_UPDATED_EVENT, refresh);
+  }, [fetchSettings]);
+
   // Invalidate cache (misal setelah save settings)
   const invalidateCache = useCallback(() => {
     cachedSettings = null;
     cacheTimestamp = 0;
+    window.dispatchEvent(new Event(SETTINGS_UPDATED_EVENT));
   }, []);
 
   return { settings, loading, refetch: fetchSettings, invalidateCache };

@@ -29,7 +29,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             border-2 rounded-sm
             bg-white dark:bg-gray-800
             text-gray-900 dark:text-gray-100
-            focus:outline-none focus:ring-2 focus:ring-brand-500/25 focus:border-brand-500
+            focus:outline-none focus:ring-2 focus:ring-ink/20 focus:border-ink
             disabled:bg-gray-100 dark:disabled:bg-gray-900 disabled:cursor-not-allowed
             ${error ? 'border-red-600' : 'border-ink dark:border-gray-500'}
             ${hasNativePicker ? 'pr-11' : ''}
@@ -53,7 +53,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         )}
       </div>
     );
-  }
+  },
 );
 
 Input.displayName = 'Input';

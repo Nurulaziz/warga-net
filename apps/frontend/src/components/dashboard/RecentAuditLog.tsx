@@ -47,14 +47,14 @@ export function RecentAuditLog() {
     <Card className="p-6">
       <div className="flex items-center justify-between mb-5">
         <div>
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+          <h3 className="font-display text-lg font-bold text-ink dark:text-gray-100">
             Aktivitas Terbaru
           </h3>
-          <p className="text-sm text-gray-500 dark:text-gray-400">5 log sistem terakhir</p>
+          <p className="text-sm font-medium text-gray-700 dark:text-gray-300">5 log sistem terakhir</p>
         </div>
         <Link
           to="/audit-log"
-          className="text-sm text-primary-600 hover:text-primary-700 dark:text-primary-400"
+          className="text-sm font-bold text-ink underline-offset-4 hover:underline dark:text-gray-200"
         >
           Lihat semua
         </Link>
@@ -68,15 +68,15 @@ export function RecentAuditLog() {
         </div>
       ) : logs.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-8 text-center">
-          <ClockIcon className="w-10 h-10 text-gray-300 dark:text-gray-600 mb-2" />
-          <p className="text-sm text-gray-500 dark:text-gray-400">Belum ada aktivitas</p>
+          <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-sm border-2 border-ink bg-[#f1dfc4] dark:border-gray-500 dark:bg-gray-700"><ClockIcon className="h-7 w-7 text-ink dark:text-white" /></div>
+          <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">Belum ada aktivitas</p>
         </div>
       ) : (
         <ul className="space-y-1">
           {logs.map((log) => (
             <li
               key={log.id}
-              className="flex items-start gap-3 py-2 border-b border-gray-100 dark:border-gray-800 last:border-0"
+              className="flex items-start gap-3 border-b-2 border-ink/20 py-2 last:border-0 dark:border-gray-600"
             >
               <div className="w-2 h-2 rounded-full bg-primary-500 mt-1.5 shrink-0" />
               <div className="flex-1 min-w-0">

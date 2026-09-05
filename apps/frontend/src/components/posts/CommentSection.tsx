@@ -40,6 +40,7 @@ function CommentItem({
   canDelete,
   onReport,
   onEdited,
+  depth = 0,
 }: {
   comment: Comment;
   onReply: (id: string, name: string) => void;
@@ -48,6 +49,7 @@ function CommentItem({
   canDelete: boolean;
   onReport: (comment: Comment) => void;
   onEdited: () => Promise<void>;
+  depth?: number;
 }) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editText, setEditText] = useState('');
@@ -66,7 +68,7 @@ function CommentItem({
   }
 
   return (
-    <div className="flex gap-3">
+    <div className={`relative flex gap-3 ${depth > 0 ? 'ml-2 border-l-2 border-gray-400 pl-4 dark:border-gray-500' : ''}`}>
       <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary dark:bg-primary/20">
         {initials(comment.author?.fullName || 'Warga')}
       </div>
@@ -93,13 +95,13 @@ function CommentItem({
             <p className="text-sm text-gray-800 dark:text-gray-100">{comment.content}</p>
           )}
         </div>
-        <div className="mt-0.5 flex items-center gap-3 pl-1 text-xs text-gray-500 dark:text-gray-400">
+        <div className="mt-1 flex flex-wrap items-center gap-3 pl-1 text-xs font-medium text-gray-700 dark:text-gray-300">
           <span>{timeAgo(comment.createdAt)}</span>
           <button onClick={() => onReply(comment.id, comment.author?.fullName || 'Warga')}>
             Komen
           </button>
-          <button onClick={() => onReport(comment)} aria-label="Laporkan komentar">
-            <FlagIcon className="h-3.5 w-3.5" />
+          <button className="inline-flex items-center gap-1" onClick={() => onReport(comment)} aria-label="Laporkan komentar">
+            <FlagIcon className="h-3.5 w-3.5" /> Laporkan
           </button>
           {canEdit(comment) && (
             <button onClick={() => edit(comment)} className="text-primary">
@@ -114,53 +116,19 @@ function CommentItem({
         </div>
 
         {comment.replies && comment.replies.length > 0 && (
-          <div className="mt-2 space-y-2">
+          <div className="mt-3 space-y-3">
             {comment.replies.map((reply) => (
-              <div key={reply.id} className="flex gap-2">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gray-200 text-xs font-semibold text-gray-600 dark:bg-gray-600 dark:text-gray-200">
-                  {initials(reply.author?.fullName || 'Warga')}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="inline-block rounded-2xl rounded-tl-sm bg-gray-50 px-3 py-2 dark:bg-gray-600/50">
-                    <p className="text-xs font-semibold text-gray-800 dark:text-gray-100">
-                      {reply.author?.fullName || 'Warga'}
-                    </p>
-                    {editingId === reply.id ? (
-                      <div className="mt-1 flex gap-1">
-                        <input
-                          value={editText}
-                          onChange={(e) => setEditText(e.target.value)}
-                          className="rounded border px-2 py-1 text-sm dark:bg-gray-600"
-                        />
-                        <button
-                          onClick={() => void saveEdit(reply.id)}
-                          className="text-xs font-medium text-primary"
-                        >
-                          Simpan
-                        </button>
-                      </div>
-                    ) : (
-                      <p className="text-sm text-gray-800 dark:text-gray-100">{reply.content}</p>
-                    )}
-                  </div>
-                  <div className="mt-0.5 flex items-center gap-3 pl-1 text-xs text-gray-500 dark:text-gray-400">
-                    <span>{timeAgo(reply.createdAt)}</span>
-                    <button onClick={() => onReport(reply)} aria-label="Laporkan balasan">
-                      <FlagIcon className="h-3.5 w-3.5" />
-                    </button>
-                    {canEdit(reply) && (
-                      <button onClick={() => edit(reply)} className="text-primary">
-                        Edit
-                      </button>
-                    )}
-                    {canDelete && (
-                        <button onClick={() => onDelete(reply.id)} className="text-red-500">
-                          Hapus
-                        </button>
-                    )}
-                  </div>
-                </div>
-              </div>
+              <CommentItem
+                key={reply.id}
+                comment={reply}
+                onReply={onReply}
+                onDelete={onDelete}
+                canEdit={canEdit}
+                canDelete={canDelete}
+                onReport={onReport}
+                onEdited={onEdited}
+                depth={depth + 1}
+              />
             ))}
           </div>
         )}
@@ -169,7 +137,7 @@ function CommentItem({
   );
 }
 
-export function CommentSection({ postId }: { postId: string }) {
+export function CommentSection({ postId, embedded = false }: { postId: string; embedded?: boolean }) {
   const { showToast } = useToast();
   const { currentUser, isAdmin } = useAuth();
   const admin = isAdmin();
@@ -180,6 +148,9 @@ export function CommentSection({ postId }: { postId: string }) {
   const [composerOpen, setComposerOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [reportTarget, setReportTarget] = useState<Comment | null>(null);
+  const commentCount = comments.reduce(function count(total, comment): number {
+    return total + 1 + (comment.replies?.reduce(count, 0) ?? 0);
+  }, 0);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -238,16 +209,16 @@ export function CommentSection({ postId }: { postId: string }) {
   }
 
   return (
-    <div className="flex flex-col rounded-sm border-2 border-ink bg-white p-5 shadow-[3px_3px_0_#171717] dark:border-gray-500 dark:bg-gray-800">
+    <div className={`flex flex-col rounded-sm border-2 border-ink bg-white p-5 dark:border-gray-500 dark:bg-gray-800 ${embedded ? 'border-t-4' : ''} shadow-[3px_3px_0_#171717]`}>
       <h3 className="order-1 mb-4 font-display text-base font-bold text-gray-900 dark:text-gray-100">
-        Komentar ({comments.length})
+        Komentar ({commentCount})
       </h3>
 
       {!composerOpen && comments.length === 0 && (
         <button
           type="button"
           onClick={() => setComposerOpen(true)}
-          className="order-3 mt-5 inline-flex min-h-11 items-center justify-center gap-2 rounded-sm border-2 border-ink bg-white px-4 text-sm font-bold text-ink shadow-[2px_2px_0_#171717] transition hover:-translate-y-0.5 hover:bg-brand-50 dark:border-gray-500 dark:bg-gray-800 dark:text-white"
+          className="order-3 mt-5 inline-flex min-h-11 items-center justify-center gap-2 rounded-sm border-2 border-ink bg-white px-4 text-sm font-bold text-ink shadow-[2px_2px_0_#171717] transition hover:-translate-y-0.5 hover:bg-[#f5efe4] dark:border-gray-500 dark:bg-gray-800 dark:text-white"
         >
           <ChatBubbleLeftIcon className="h-5 w-5" /> Komen postingan
         </button>

@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { PencilIcon, TrashIcon, PlusIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
+import { PlusIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/Table';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Modal, ModalFooter } from '@/components/ui/Modal';
 import { FilterBar, SearchInput } from '@/components/ui/FilterBar';
 import { Pagination } from '@/components/ui/Pagination';
+import { TableActionButton } from '@/components/ui/TableActionButton';
 import { usePaginatedApi, apiPost, apiPut, apiDelete } from '@/hooks/useApi';
 import { useSettings } from '@/hooks/useSettings';
 
@@ -124,25 +125,33 @@ export function FamiliesPage() {
             </TableHeader>
             <TableBody>
               {families.length === 0 ? (
-                <TableRow><TableCell className="text-center py-8 text-gray-500" colSpan={5}>Belum ada data keluarga</TableCell></TableRow>
+                <TableRow><TableCell className="py-10 text-center font-semibold text-ink dark:text-gray-200" colSpan={5}>Belum ada data keluarga</TableCell></TableRow>
               ) : (
                 families.map((f) => (
-                  <TableRow key={f.id}>
-                    <TableCell className="font-medium">
-                      <button
-                        onClick={() => navigate(`/families/${f.id}`)}
-                        className="text-primary-600 hover:text-primary-800 hover:underline text-left dark:text-primary-400"
-                      >
-                        {f.headOfFamily}
-                      </button>
+                  <TableRow
+                    key={f.id}
+                    role="link"
+                    tabIndex={0}
+                    aria-label={`Lihat detail keluarga ${f.headOfFamily}`}
+                    onClick={() => navigate(`/families/${f.id}`)}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        navigate(`/families/${f.id}`);
+                      }
+                    }}
+                    className="cursor-pointer focus:bg-[#f1dfc4] focus:outline-none focus:ring-2 focus:ring-inset focus:ring-ink dark:focus:bg-gray-700"
+                  >
+                    <TableCell className="font-semibold text-ink dark:text-gray-100">
+                      {f.headOfFamily}
                     </TableCell>
                     <TableCell>{f.address}</TableCell>
                     <TableCell>{f.housingComplex || '-'}</TableCell>
                     <TableCell>{f._count?.residents || 0} orang</TableCell>
                     <TableCell>
                       <div className="flex gap-2">
-                        <button onClick={() => openEdit(f)} className="text-blue-600 hover:text-blue-800 min-h-[44px] min-w-[44px] flex items-center justify-center"><PencilIcon className="w-4 h-4" /></button>
-                        <button onClick={() => setDeleteModal(f)} className="text-red-600 hover:text-red-800 min-h-[44px] min-w-[44px] flex items-center justify-center"><TrashIcon className="w-4 h-4" /></button>
+                        <TableActionButton action="edit" label={`Edit keluarga ${f.headOfFamily}`} onClick={() => openEdit(f)} />
+                        <TableActionButton action="delete" label={`Hapus keluarga ${f.headOfFamily}`} onClick={() => setDeleteModal(f)} />
                       </div>
                     </TableCell>
                   </TableRow>

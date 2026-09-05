@@ -1,6 +1,6 @@
 import { Injectable, Logger, ServiceUnavailableException } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { sendWhatsAppViaFonnte } from './fonnte.sender';
+import { SettingsService } from '../settings/settings.service';
 
 export interface SendResult {
   success: boolean;
@@ -11,15 +11,7 @@ export interface SendResult {
 @Injectable()
 export class WhatsAppService {
   private readonly logger = new Logger(WhatsAppService.name);
-  private readonly fonnteToken: string;
-  private readonly maxRetries: number;
-  private readonly retryDelay: number;
-
-  constructor(private readonly configService: ConfigService) {
-    this.fonnteToken = this.configService.get<string>('FONNTE_TOKEN', '');
-    this.maxRetries = this.configService.get<number>('WHATSAPP_MAX_RETRIES', 3);
-    this.retryDelay = this.configService.get<number>('WHATSAPP_RETRY_DELAY_MS', 1000);
-  }
+  constructor(private readonly settingsService: SettingsService) {}
 
   // Kirim OTP via WhatsApp dengan template standar
   async sendOtp(phoneNumber: string, otp: string): Promise<SendResult> {
@@ -35,7 +27,8 @@ export class WhatsAppService {
 
   // Cek apakah Fonnte sudah dikonfigurasi
   async checkHealth(): Promise<boolean> {
-    if (!this.fonnteToken) {
+    const config = await this.settingsService.getRuntimeIntegrations();
+    if (config.whatsappProvider !== 'fonnte' || !config.fonnteToken) {
       this.logger.warn('Fonnte token belum dikonfigurasi');
       return false;
     }
@@ -44,15 +37,19 @@ export class WhatsAppService {
 
   // Send message dengan retry logic dan exponential backoff
   private async sendMessageWithRetry(phoneNumber: string, message: string): Promise<SendResult> {
+    const config = await this.settingsService.getRuntimeIntegrations();
+    if (config.whatsappProvider !== 'fonnte') {
+      throw new ServiceUnavailableException('Provider WhatsApp sedang tidak aktif');
+    }
     let lastError: Error | null = null;
 
-    for (let attempt = 1; attempt <= this.maxRetries; attempt++) {
+    for (let attempt = 1; attempt <= config.whatsappMaxRetries; attempt++) {
       try {
         this.logger.log(
-          `Sending WhatsApp message to ${phoneNumber} (attempt ${attempt}/${this.maxRetries})`,
+          `Sending WhatsApp message to ${phoneNumber} (attempt ${attempt}/${config.whatsappMaxRetries})`,
         );
 
-        const result = await this.sendMessage(phoneNumber, message);
+        const result = await this.sendMessage(phoneNumber, message, config.fonnteToken);
 
         if (result.success) {
           this.logger.log(`WhatsApp message sent successfully to ${phoneNumber}`);
@@ -67,15 +64,15 @@ export class WhatsAppService {
       }
 
       // Don't wait after last attempt
-      if (attempt < this.maxRetries) {
-        const delay = this.calculateBackoffDelay(attempt);
+      if (attempt < config.whatsappMaxRetries) {
+        const delay = this.calculateBackoffDelay(attempt, config.whatsappRetryDelayMs);
         this.logger.log(`Retrying in ${delay}ms...`);
         await this.sleep(delay);
       }
     }
 
     // All retries failed
-    const errorMessage = `Failed to send WhatsApp message after ${this.maxRetries} attempts: ${lastError?.message}`;
+    const errorMessage = `Failed to send WhatsApp message after ${config.whatsappMaxRetries} attempts: ${lastError?.message}`;
     this.logger.error(errorMessage);
 
     return {
@@ -85,21 +82,21 @@ export class WhatsAppService {
   }
 
   // Kirim pesan lewat Fonnte
-  private async sendMessage(phoneNumber: string, message: string): Promise<SendResult> {
-    if (!this.fonnteToken) {
+  private async sendMessage(phoneNumber: string, message: string, token: string): Promise<SendResult> {
+    if (!token) {
       throw new ServiceUnavailableException('Fonnte token belum dikonfigurasi');
     }
 
-    return sendWhatsAppViaFonnte(phoneNumber, message);
+    return sendWhatsAppViaFonnte(phoneNumber, message, token);
   }
 
   // Calculate exponential backoff delay
-  private calculateBackoffDelay(attempt: number): number {
+  private calculateBackoffDelay(attempt: number, retryDelay: number): number {
     // Exponential backoff: baseDelay * 2^(attempt-1)
     // attempt 1: 1000ms
     // attempt 2: 2000ms
     // attempt 3: 4000ms
-    const delay = this.retryDelay * Math.pow(2, attempt - 1);
+    const delay = retryDelay * Math.pow(2, attempt - 1);
     return Math.min(delay, 10000); // Max 10 seconds
   }
 

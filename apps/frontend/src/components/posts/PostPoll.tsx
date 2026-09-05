@@ -39,7 +39,7 @@ export function PostPoll({ postId, poll }: { postId: string; poll: Poll }) {
   }
 
   return (
-    <div className="mt-3 rounded-xl border border-gray-200 p-3 dark:border-gray-600">
+    <div className="mt-4 rounded-sm border-2 border-ink p-4 dark:border-gray-500">
       <p className="mb-3 font-semibold text-gray-900 dark:text-gray-100">{poll.question}</p>
       <div className="space-y-2">
         {options.map((option) => {
@@ -52,10 +52,10 @@ export function PostPoll({ postId, poll }: { postId: string; poll: Poll }) {
                 event.stopPropagation();
                 void choose(option.id);
               }}
-              className={`relative w-full overflow-hidden rounded-lg border px-3 py-2 text-left text-sm ${selected === option.id ? 'border-primary text-primary' : 'border-gray-200 dark:border-gray-600'}`}
+              className={`relative w-full overflow-hidden rounded-sm border-2 border-ink px-3 py-2 text-left text-sm text-ink transition-colors hover:bg-[#f5efe4] dark:border-gray-400 dark:text-gray-100 dark:hover:bg-gray-700 ${selected === option.id ? 'bg-[#fff8ec]' : 'bg-white dark:bg-gray-800'}`}
             >
               <span
-                className="absolute inset-y-0 left-0 bg-primary/10"
+                className="absolute inset-y-0 left-0 bg-[#e6d2b5] transition-[width] duration-300 dark:bg-gray-600"
                 style={{ width: `${percent}%` }}
               />
               <span className="relative flex justify-between gap-2">

@@ -8,14 +8,17 @@ import {
   UploadedFile,
   UseInterceptors,
   BadRequestException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiTags, ApiOperation, ApiConsumes } from '@nestjs/swagger';
-import { AllowAnonymous } from '@thallesp/nestjs-better-auth';
+import { AllowAnonymous, Session, UserSession } from '@thallesp/nestjs-better-auth';
 import { diskStorage } from 'multer';
 import { extname, join } from 'path';
 import { existsSync, mkdirSync } from 'fs';
 import { SettingsService } from './settings.service';
+import { UsersService } from '../users/users.service';
+import { getSessionPhoneNumber } from '../common/session.util';
 
 // Folder upload logos
 const LOGO_UPLOAD_DIR = join(process.cwd(), 'uploads', 'logos');
@@ -28,7 +31,17 @@ if (!existsSync(LOGO_UPLOAD_DIR)) {
 @ApiTags('Settings')
 @Controller('settings')
 export class SettingsController {
-  constructor(private readonly settingsService: SettingsService) {}
+  constructor(
+    private readonly settingsService: SettingsService,
+    private readonly usersService: UsersService,
+  ) {}
+
+  private async assertSuperAdmin(session: UserSession) {
+    const scope = await this.usersService.resolveAuthContext(getSessionPhoneNumber(session));
+    if (scope.roleName.toUpperCase() !== 'SUPER_ADMIN') {
+      throw new ForbiddenException('Hanya Super Admin yang dapat mengelola integrasi');
+    }
+  }
 
   @Get()
   @AllowAnonymous()
@@ -39,10 +52,24 @@ export class SettingsController {
 
   @Put()
   @ApiOperation({ summary: 'Update settings (batch)' })
-  update(
+  async update(
     @Body() body: { settings: { key: string; value: string; label?: string; group?: string }[] },
+    @Session() session: UserSession,
   ) {
+    await this.assertSuperAdmin(session);
     return this.settingsService.updateBatch(body.settings);
+  }
+
+  @Get('integrations')
+  async getIntegrations(@Session() session: UserSession) {
+    await this.assertSuperAdmin(session);
+    return this.settingsService.getIntegrationSummary();
+  }
+
+  @Put('integrations')
+  async updateIntegrations(@Body() body: Parameters<SettingsService['updateIntegrations']>[0], @Session() session: UserSession) {
+    await this.assertSuperAdmin(session);
+    return this.settingsService.updateIntegrations(body);
   }
 
   @Post('logo')
@@ -71,7 +98,8 @@ export class SettingsController {
       },
     }),
   )
-  async uploadLogo(@UploadedFile() file: Express.Multer.File, @Body('type') type: string) {
+  async uploadLogo(@UploadedFile() file: Express.Multer.File, @Body('type') type: string, @Session() session: UserSession) {
+    await this.assertSuperAdmin(session);
     if (!file) {
       throw new BadRequestException('File wajib diupload');
     }

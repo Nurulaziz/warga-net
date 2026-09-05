@@ -1,7 +1,7 @@
 import { ButtonHTMLAttributes, forwardRef } from 'react';
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'danger' | 'ghost';
+  variant?: 'primary' | 'secondary' | 'danger' | 'ghost' | 'utility';
   size?: 'sm' | 'md' | 'lg';
   fullWidth?: boolean;
   loading?: boolean;
@@ -19,11 +19,14 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       children,
       ...props
     },
-    ref
+    ref,
   ) => {
+    const isUtility = variant === 'utility';
+
     // Base styles - minimum 44x44px touch target
-    const baseStyles =
-      'inline-flex items-center justify-center font-bold uppercase tracking-[0.04em] rounded-sm border-2 border-ink dark:border-gray-300 shadow-[3px_3px_0_#171717] dark:shadow-[3px_3px_0_#d4d4d4] transition-[transform,box-shadow,background-color] duration-150 hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-[2px_2px_0_#171717] active:translate-x-[3px] active:translate-y-[3px] active:shadow-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none';
+    const baseStyles = isUtility
+      ? 'inline-flex items-center justify-center font-medium tracking-normal rounded-sm border border-edge-subtle dark:border-gray-600 shadow-none transition-[background-color,border-color] duration-150 hover:bg-warm-100 hover:border-ink focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-45 disabled:cursor-not-allowed'
+      : 'inline-flex items-center justify-center font-bold uppercase tracking-[0.04em] rounded-sm border-2 border-ink dark:border-gray-300 shadow-[3px_3px_0_#171717] dark:shadow-[3px_3px_0_#d4d4d4] transition-[transform,box-shadow,background-color] duration-150 hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-[2px_2px_0_#171717] active:translate-x-[3px] active:translate-y-[3px] active:shadow-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none';
 
     // Variant styles dengan high contrast dan dark mode support
     const variantStyles = {
@@ -35,14 +38,22 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500 dark:bg-red-500 dark:hover:bg-red-600',
       ghost:
         'bg-transparent text-gray-700 shadow-none border-transparent hover:border-ink hover:bg-white focus:ring-gray-500 dark:text-gray-200 dark:hover:bg-gray-800',
+      utility:
+        'bg-transparent text-ink-secondary hover:text-ink focus:ring-gray-500 dark:text-gray-400 dark:hover:text-gray-200',
     };
 
-    // Size styles - minimum 44x44px untuk mobile
-    const sizeStyles = {
-      sm: 'min-h-[44px] px-4 py-2 text-sm',
-      md: 'min-h-[44px] px-6 py-3 text-base',
-      lg: 'min-h-[48px] px-8 py-4 text-lg',
-    };
+    // Size styles - minimum 44x44px untuk mobile (utility uses compact sizes)
+    const sizeStyles = isUtility
+      ? {
+          sm: 'h-8 px-3 text-xs',
+          md: 'h-9 px-4 text-sm',
+          lg: 'h-10 px-5 text-sm',
+        }
+      : {
+          sm: 'min-h-[44px] px-4 py-2 text-sm',
+          md: 'min-h-[44px] px-6 py-3 text-base',
+          lg: 'min-h-[48px] px-8 py-4 text-lg',
+        };
 
     const widthStyle = fullWidth ? 'w-full' : '';
 
@@ -82,7 +93,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         )}
       </button>
     );
-  }
+  },
 );
 
 Button.displayName = 'Button';

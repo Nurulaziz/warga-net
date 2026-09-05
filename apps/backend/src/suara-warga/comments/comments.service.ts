@@ -6,16 +6,7 @@ import { CreateCommentDto } from './dto/create-comment.dto';
 import { UpdateCommentDto } from './dto/update-comment.dto';
 
 const COMMENT_INCLUDE = {
-  author: {
-    select: { id: true, fullName: true, phoneNumber: true },
-  },
-  replies: {
-    where: { deletedAt: null },
-    include: {
-      author: { select: { id: true, fullName: true, phoneNumber: true } },
-    },
-    orderBy: { createdAt: 'asc' as const },
-  },
+  author: { select: { id: true, fullName: true, phoneNumber: true } },
 };
 
 @Injectable()
@@ -53,11 +44,22 @@ export class CommentsService {
   async findByPost(postId: string, scope: AuthScope) {
     await this.assertCanAccessPost(postId, scope);
     const comments = await this.prisma.comment.findMany({
-      where: { postId, parentId: null, deletedAt: null, status: 'visible' },
+      where: { postId, deletedAt: null, status: 'visible' },
       include: COMMENT_INCLUDE,
       orderBy: { createdAt: 'asc' },
     });
-    return { data: comments };
+    type CommentNode = (typeof comments)[number] & { replies: CommentNode[] };
+    const nodes = new Map<string, CommentNode>(
+      comments.map((comment) => [comment.id, { ...comment, replies: [] }]),
+    );
+    const roots: CommentNode[] = [];
+    for (const comment of comments) {
+      const node = nodes.get(comment.id)!;
+      const parent = comment.parentId ? nodes.get(comment.parentId) : undefined;
+      if (parent) parent.replies.push(node);
+      else roots.push(node);
+    }
+    return { data: roots };
   }
 
   async create(postId: string, scope: AuthScope, dto: CreateCommentDto) {
@@ -71,11 +73,11 @@ export class CommentsService {
       throw new ForbiddenException('Isi komentar tidak boleh kosong');
     }
 
-    // Validasi parent (maks 1 level: parent harus komentar akar, bukan balasan)
+    // Parent boleh berupa komentar atau balasan agar percakapan dapat bersarang.
     let parentId: string | undefined;
     if (dto.parentId) {
       const parent = await this.prisma.comment.findFirst({
-        where: { id: dto.parentId, postId, parentId: null, deletedAt: null },
+        where: { id: dto.parentId, postId, deletedAt: null, status: 'visible' },
       });
       if (!parent) {
         throw new ForbiddenException('Komentar yang dibalas tidak ditemukan');

@@ -6,11 +6,8 @@ interface TableProps extends HTMLAttributes<HTMLTableElement> {
 
 export const Table = ({ children, className = '', ...props }: TableProps) => {
   return (
-    <div className="w-full overflow-x-auto border-2 border-ink dark:border-gray-500 rounded-sm">
-      <table
-        className={`w-full border-collapse text-left text-base ${className}`}
-        {...props}
-      >
+    <div className={`w-full overflow-x-auto ${className}`}>
+      <table className="w-full border-collapse text-left text-sm" {...props}>
         {children}
       </table>
     </div>
@@ -23,7 +20,7 @@ interface TableHeaderProps extends HTMLAttributes<HTMLTableSectionElement> {
 
 export const TableHeader = ({ children, className = '', ...props }: TableHeaderProps) => {
   return (
-    <thead className={`bg-warm-50 dark:bg-gray-900 border-b-2 border-ink dark:border-gray-500 ${className}`} {...props}>
+    <thead className={`bg-[#f3e8d0] dark:bg-[#2a241b] ${className}`} {...props}>
       {children}
     </thead>
   );
@@ -47,7 +44,10 @@ interface TableRowProps extends HTMLAttributes<HTMLTableRowElement> {
 
 export const TableRow = ({ children, className = '', ...props }: TableRowProps) => {
   return (
-    <tr className={`border-b border-ink/40 dark:border-gray-600 last:border-b-0 hover:bg-warm-50/70 dark:hover:bg-gray-800 ${className}`} {...props}>
+    <tr
+      className={`border-b border-ink/8 dark:border-gray-700 last:border-b-0 hover:bg-warm-50/50 dark:hover:bg-gray-800/50 transition-colors ${className}`}
+      {...props}
+    >
       {children}
     </tr>
   );
@@ -60,7 +60,7 @@ interface TableHeadProps extends HTMLAttributes<HTMLTableCellElement> {
 export const TableHead = ({ children, className = '', ...props }: TableHeadProps) => {
   return (
     <th
-      className={`px-4 py-3 font-bold uppercase tracking-[0.05em] text-xs text-ink dark:text-gray-100 text-left ${className}`}
+      className={`px-4 py-2.5 font-bold text-[11px] uppercase tracking-[0.07em] text-ink/80 dark:text-gray-300 text-left border-b-2 border-ink/30 dark:border-gray-600 ${className}`}
       {...props}
     >
       {children}
@@ -75,7 +75,11 @@ interface TableCellProps extends HTMLAttributes<HTMLTableCellElement> {
 
 export const TableCell = ({ children, className = '', colSpan, ...props }: TableCellProps) => {
   return (
-    <td className={`px-4 py-3 text-gray-700 dark:text-gray-300 ${className}`} colSpan={colSpan} {...props}>
+    <td
+      className={`px-4 py-3 text-sm text-ink dark:text-gray-300 ${className}`}
+      colSpan={colSpan}
+      {...props}
+    >
       {children}
     </td>
   );

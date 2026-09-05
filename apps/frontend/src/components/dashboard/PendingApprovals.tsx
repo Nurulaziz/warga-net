@@ -51,8 +51,8 @@ export function PendingApprovals() {
 
   return (
     <Card className="p-6">
-      <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-1">Menunggu Persetujuan</h3>
-      <p className="text-sm text-gray-500 dark:text-gray-400 mb-5">Item yang butuh tindakan Anda</p>
+      <h3 className="mb-1 font-display text-lg font-bold text-ink dark:text-gray-100">Menunggu Persetujuan</h3>
+      <p className="mb-5 text-sm font-medium text-gray-700 dark:text-gray-300">Item yang butuh tindakan Anda</p>
 
       {loading ? (
         <div className="space-y-3">
@@ -68,15 +68,13 @@ export function PendingApprovals() {
         <div className="space-y-3">
           <PendingItem
             to="/bills"
-            icon={<BanknotesIcon className="w-5 h-5 text-yellow-600" />}
-            iconBg="bg-yellow-100 dark:bg-yellow-900/30"
+            icon={<BanknotesIcon className="h-5 w-5" />}
             title={`${data.unpaidBills} Iuran Belum Lunas`}
             subtitle={`Nilai: ${formatCurrency(data.unpaidAmount)} (bulan ini)`}
           />
           <PendingItem
             to="/letters"
-            icon={<DocumentTextIcon className="w-5 h-5 text-blue-600" />}
-            iconBg="bg-blue-100 dark:bg-blue-900/30"
+            icon={<DocumentTextIcon className="h-5 w-5" />}
             title={`${data.pendingLetters} Pengajuan Surat`}
             subtitle="Menunggu diterbitkan / ditandatangani"
           />
@@ -89,25 +87,23 @@ export function PendingApprovals() {
 function PendingItem({
   to,
   icon,
-  iconBg,
   title,
   subtitle,
 }: {
   to: string;
   icon: React.ReactNode;
-  iconBg: string;
   title: string;
   subtitle: string;
 }) {
   return (
     <Link
       to={to}
-      className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors min-h-[44px]"
+      className="flex min-h-[44px] items-center gap-3 rounded-sm border-2 border-ink p-3 transition-colors hover:bg-[#f5efe4] dark:border-gray-500 dark:hover:bg-gray-700"
     >
-      <div className={`p-2 rounded-lg ${iconBg}`}>{icon}</div>
+      <div className="rounded-sm border-2 border-ink bg-[#f1dfc4] p-2 text-ink dark:border-gray-500 dark:bg-gray-700 dark:text-white">{icon}</div>
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{title}</p>
-        <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{subtitle}</p>
+        <p className="truncate text-xs font-medium text-gray-700 dark:text-gray-300">{subtitle}</p>
       </div>
       <ChevronRightIcon className="w-5 h-5 text-gray-400 shrink-0" />
     </Link>

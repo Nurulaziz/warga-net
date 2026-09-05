@@ -174,12 +174,18 @@ describe('PostsService', () => {
       );
     });
 
-    it('owner dapat soft-delete posting', async () => {
+    it('owner warga tidak dapat menghapus posting', async () => {
       prisma.post.findFirst
         .mockResolvedValueOnce(post)
         .mockResolvedValueOnce({ author: { family: { rt: '04' } } });
+      await expect(service.remove('post-1', scope)).rejects.toThrow(ForbiddenException);
+      expect(prisma.post.update).not.toHaveBeenCalled();
+    });
+
+    it('admin dapat soft-delete posting', async () => {
+      prisma.post.findFirst.mockResolvedValueOnce(post);
       prisma.post.update.mockResolvedValue(post);
-      await service.remove('post-1', scope);
+      await service.remove('post-1', { ...scope, isAdmin: true });
       expect(prisma.post.update).toHaveBeenCalledWith(
         expect.objectContaining({ data: expect.objectContaining({ deletedAt: expect.any(Date) }) }),
       );

@@ -237,9 +237,19 @@ export function AnnouncementsPage() {
           <div className="animate-spin h-8 w-8 border-4 border-primary-600 border-t-transparent rounded-full" />
         </div>
       ) : announcements.length === 0 ? (
-        <Card className="p-12 text-center">
-          <MegaphoneIcon className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-          <p className="text-gray-500">Belum ada pengumuman</p>
+        <Card className="flex min-h-48 flex-col items-center justify-center p-12 text-center">
+          <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-sm border-2 border-ink bg-[#f1dfc4] shadow-[2px_2px_0_#171717] dark:border-gray-500 dark:bg-gray-700">
+            <MegaphoneIcon className="h-8 w-8 text-ink dark:text-white" />
+          </div>
+          <p className="font-display text-lg font-bold text-ink dark:text-gray-100">Belum ada pengumuman</p>
+          <p className="mt-1 max-w-sm text-sm font-medium text-gray-700 dark:text-gray-300">
+            Pengumuman yang diterbitkan akan tampil di sini.
+          </p>
+          {admin && (
+            <Button variant="secondary" size="sm" className="mt-5" onClick={openCreate}>
+              <PlusIcon className="mr-1 h-4 w-4" /> Buat pengumuman pertama
+            </Button>
+          )}
         </Card>
       ) : (
         <div className="space-y-4">
@@ -342,7 +352,7 @@ export function AnnouncementsPage() {
             placeholder="Judul pengumuman"
           />
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+            <label className="mb-1.5 block text-sm font-bold text-ink dark:text-gray-200">
               Isi Pengumuman
             </label>
             <RichTextEditor
@@ -352,7 +362,7 @@ export function AnnouncementsPage() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+            <label className="mb-1.5 block text-sm font-bold text-ink dark:text-gray-200">
               Prioritas
             </label>
             <div className="flex flex-wrap items-center gap-2">
@@ -363,10 +373,10 @@ export function AnnouncementsPage() {
                     key={opt.value}
                     type="button"
                     onClick={() => setForm({ ...form, priority: opt.value })}
-                    className={`inline-flex items-center gap-1.5 px-3 min-h-[36px] rounded-lg border text-sm transition-colors ${
+                    className={`inline-flex min-h-[36px] items-center gap-1.5 rounded-sm border-2 border-ink px-3 text-sm font-semibold shadow-[1px_1px_0_#171717] transition-colors ${
                       active
-                        ? `${opt.badge} border-transparent font-medium`
-                        : 'border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'
+                        ? `${opt.badge}`
+                        : 'bg-white text-ink hover:bg-[#f5efe4] dark:border-gray-500 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700'
                     }`}
                     aria-pressed={active}
                   >
@@ -380,13 +390,13 @@ export function AnnouncementsPage() {
 
           {/* Target penerima */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+            <label className="mb-1.5 block text-sm font-bold text-ink dark:text-gray-200">
               Target Penerima
             </label>
             <select
               value={form.targetScope}
               onChange={(e) => setForm({ ...form, targetScope: e.target.value })}
-              className="w-full min-h-[44px] px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="min-h-[44px] w-full rounded-sm border-2 border-ink bg-white px-4 py-2 font-semibold text-ink focus:outline-none focus:ring-2 focus:ring-ink/20 dark:border-gray-500 dark:bg-gray-800 dark:text-gray-100"
             >
               {SCOPE_OPTIONS.map((opt) => (
                 <option key={opt.value} value={opt.value}>
@@ -398,8 +408,8 @@ export function AnnouncementsPage() {
 
           {/* Lampiran */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-              Lampiran <span className="font-normal text-gray-400">(PDF/gambar, maks 5MB)</span>
+            <label className="mb-1.5 block text-sm font-bold text-ink dark:text-gray-200">
+              Lampiran <span className="font-medium text-gray-700 dark:text-gray-300">(PDF/gambar, maks 5MB)</span>
             </label>
             <input
               ref={fileInputRef}
@@ -412,7 +422,7 @@ export function AnnouncementsPage() {
               }}
             />
             {form.attachmentUrl ? (
-              <div className="flex items-center justify-between gap-3 px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-900">
+              <div className="flex items-center justify-between gap-3 rounded-sm border-2 border-ink bg-[#fff8ec] px-4 py-3 dark:border-gray-500 dark:bg-gray-900">
                 <a
                   href={form.attachmentUrl}
                   target="_blank"
@@ -436,7 +446,7 @@ export function AnnouncementsPage() {
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={uploading}
-                className="flex w-full items-center justify-center gap-2 px-4 py-6 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-500 dark:text-gray-400 hover:border-primary-400 hover:text-primary-600 transition-colors disabled:opacity-60"
+                className="flex w-full items-center justify-center gap-2 rounded-sm border-2 border-dashed border-ink bg-[#fff8ec] px-4 py-6 text-sm font-semibold text-ink transition-colors hover:bg-[#f1dfc4] dark:border-gray-500 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700 disabled:opacity-60"
               >
                 <PaperClipIcon className="w-5 h-5" />
                 {uploading ? 'Mengunggah...' : 'Pilih file lampiran'}

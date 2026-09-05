@@ -1,36 +1,31 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { ConfigService } from '@nestjs/config';
 import { ServiceUnavailableException } from '@nestjs/common';
 import { WhatsAppService } from './whatsapp.service';
+import { SettingsService } from '../settings/settings.service';
 
 describe('WhatsAppService', () => {
   let service: WhatsAppService;
-  let configService: ConfigService;
+  const runtimeConfig = {
+    whatsappProvider: 'fonnte',
+    fonnteToken: 'test-api-key',
+    whatsappMaxRetries: 3,
+    whatsappRetryDelayMs: 100,
+  };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         WhatsAppService,
         {
-          provide: ConfigService,
+          provide: SettingsService,
           useValue: {
-            get: jest.fn((key: string, defaultValue?: any) => {
-              const config: Record<string, any> = {
-                WHATSAPP_GATEWAY_URL: 'https://api.whatsapp.example.com',
-                WHATSAPP_API_KEY: 'test-api-key',
-                WHATSAPP_PHONE_NUMBER_ID: 'test-phone-id',
-                WHATSAPP_MAX_RETRIES: 3,
-                WHATSAPP_RETRY_DELAY_MS: 100, // Shorter delay for tests
-              };
-              return config[key] ?? defaultValue;
-            }),
+            getRuntimeIntegrations: jest.fn().mockResolvedValue(runtimeConfig),
           },
         },
       ],
     }).compile();
 
     service = module.get<WhatsAppService>(WhatsAppService);
-    configService = module.get<ConfigService>(ConfigService);
   });
 
   it('harus terdefinisi', () => {
@@ -41,6 +36,7 @@ describe('WhatsAppService', () => {
     it('harus send OTP dengan template message standar', async () => {
       const phoneNumber = '+6281234567890';
       const otp = '123456';
+      jest.spyOn(service as any, 'sendMessage').mockResolvedValue({ success: true, messageId: 'msg_otp' });
 
       const result = await service.sendOtp(phoneNumber, otp);
 
@@ -69,6 +65,7 @@ describe('WhatsAppService', () => {
     it('harus send notification message', async () => {
       const phoneNumber = '+6281234567890';
       const message = 'Test notification';
+      jest.spyOn(service as any, 'sendMessage').mockResolvedValue({ success: true, messageId: 'msg_notification' });
 
       const result = await service.sendNotification(phoneNumber, message);
 
@@ -86,16 +83,16 @@ describe('WhatsAppService', () => {
 
     it('harus return false jika gateway tidak configured', async () => {
       // Create service with empty config
-      const emptyConfigService = {
-        get: jest.fn(() => ''),
+      const emptySettingsService = {
+        getRuntimeIntegrations: jest.fn().mockResolvedValue({ ...runtimeConfig, fonnteToken: '' }),
       };
 
       const module = await Test.createTestingModule({
         providers: [
           WhatsAppService,
           {
-            provide: ConfigService,
-            useValue: emptyConfigService,
+            provide: SettingsService,
+            useValue: emptySettingsService,
           },
         ],
       }).compile();

@@ -51,7 +51,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isAdmin,
     isWarga,
     loading: roleLoading,
-  } = useCurrentUser(isAuthenticated);
+  } = useCurrentUser(isAuthenticated, session?.user.id);
 
   // Request OTP ke nomor telepon via Better Auth
   const requestOtp = useCallback(async (phoneNumber: string) => {

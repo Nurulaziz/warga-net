@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/Input';
 import { Card } from '@/components/ui/Card';
 import { api } from '@/services/api';
 import { useSettings } from '@/hooks/useSettings';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface Setting {
   id: string;
@@ -11,6 +12,25 @@ interface Setting {
   value: string;
   label: string | null;
   group: string;
+}
+
+interface IntegrationSummary {
+  providers: {
+    payment: { id: string; name: string; description: string }[];
+    whatsapp: { id: string; name: string; description: string }[];
+  };
+  active: { payment: string; whatsapp: string };
+  midtrans: {
+    serverKey: { configured: boolean; masked: string };
+    clientKey: { configured: boolean; masked: string };
+    merchantId: string;
+    isProduction: boolean;
+  };
+  whatsapp: {
+    fonnteToken: { configured: boolean; masked: string };
+    maxRetries: number;
+    retryDelayMs: number;
+  };
 }
 
 // RT/RW hanya angka — dipisah agar bisa diberi input & validasi khusus
@@ -52,6 +72,8 @@ const FINANCE_SETTINGS = [
 const ALL_SETTINGS = [...RT_INFO_SETTINGS, ...BRANDING_SETTINGS, ...FINANCE_SETTINGS];
 
 export function SettingsPage() {
+  const { currentUser } = useAuth();
+  const isSuperAdmin = currentUser?.role.name.toUpperCase() === 'SUPER_ADMIN';
   const { invalidateCache } = useSettings();
   const [settings, setSettings] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
@@ -59,6 +81,15 @@ export function SettingsPage() {
   const [saved, setSaved] = useState(false);
   const [uploadingApp, setUploadingApp] = useState(false);
   const [uploadingGov, setUploadingGov] = useState(false);
+  const [integration, setIntegration] = useState<IntegrationSummary | null>(null);
+  const [integrationForm, setIntegrationForm] = useState({
+    paymentProvider: 'midtrans', whatsappProvider: 'fonnte',
+    midtransServerKey: '', midtransClientKey: '', midtransMerchantId: '',
+    midtransIsProduction: false, fonnteToken: '', whatsappMaxRetries: 3,
+    whatsappRetryDelayMs: 1000,
+  });
+  const [savingIntegration, setSavingIntegration] = useState(false);
+  const [integrationMessage, setIntegrationMessage] = useState('');
   const appLogoRef = useRef<HTMLInputElement>(null);
   const govLogoRef = useRef<HTMLInputElement>(null);
 
@@ -87,6 +118,38 @@ export function SettingsPage() {
     }
     fetchSettings();
   }, []);
+
+  useEffect(() => {
+    if (!isSuperAdmin) return;
+    api.get<IntegrationSummary>('/settings/integrations').then(({ data }) => {
+      setIntegration(data);
+      setIntegrationForm((form) => ({
+        ...form,
+        paymentProvider: data.active.payment,
+        whatsappProvider: data.active.whatsapp,
+        midtransMerchantId: data.midtrans.merchantId,
+        midtransIsProduction: data.midtrans.isProduction,
+        whatsappMaxRetries: data.whatsapp.maxRetries,
+        whatsappRetryDelayMs: data.whatsapp.retryDelayMs,
+      }));
+    }).catch(() => setIntegrationMessage('Konfigurasi integrasi gagal dimuat.'));
+  }, [isSuperAdmin]);
+
+  async function handleIntegrationSave() {
+    setSavingIntegration(true);
+    setIntegrationMessage('');
+    try {
+      const payload = { ...integrationForm };
+      const { data } = await api.put<IntegrationSummary>('/settings/integrations', payload);
+      setIntegration(data);
+      setIntegrationForm((form) => ({ ...form, midtransServerKey: '', midtransClientKey: '', fonnteToken: '' }));
+      setIntegrationMessage('Konfigurasi integrasi tersimpan dan langsung aktif.');
+    } catch {
+      setIntegrationMessage('Gagal menyimpan. Periksa nilai dan kunci enkripsi server.');
+    } finally {
+      setSavingIntegration(false);
+    }
+  }
 
   async function handleSave() {
     setSaving(true);
@@ -175,10 +238,10 @@ export function SettingsPage() {
                 <img
                   src={settings['app_logo_url']}
                   alt="Logo Aplikasi"
-                  className="w-16 h-16 object-contain rounded-lg border border-gray-200 dark:border-gray-700 bg-white"
+                  className="h-16 w-16 rounded-sm border-2 border-ink bg-white object-contain dark:border-gray-500"
                 />
               ) : (
-                <div className="w-16 h-16 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 flex items-center justify-center text-gray-400 text-xs">
+                <div className="flex h-16 w-16 items-center justify-center rounded-sm border-2 border-dashed border-ink text-xs font-semibold text-gray-700 dark:border-gray-500 dark:text-gray-300">
                   Kosong
                 </div>
               )}
@@ -198,7 +261,7 @@ export function SettingsPage() {
                 >
                   {settings['app_logo_url'] ? 'Ganti Logo' : 'Upload Logo'}
                 </Button>
-                <p className="text-xs text-gray-500 mt-1">PNG, JPG, SVG. Maks 2MB.</p>
+                <p className="mt-1 text-xs font-medium text-gray-700 dark:text-gray-300">PNG, JPG, SVG. Maks 2MB.</p>
               </div>
             </div>
           </div>
@@ -213,10 +276,10 @@ export function SettingsPage() {
                 <img
                   src={settings['gov_logo_url']}
                   alt="Logo Pemerintah"
-                  className="w-16 h-16 object-contain rounded-lg border border-gray-200 dark:border-gray-700 bg-white"
+                  className="h-16 w-16 rounded-sm border-2 border-ink bg-white object-contain dark:border-gray-500"
                 />
               ) : (
-                <div className="w-16 h-16 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 flex items-center justify-center text-gray-400 text-xs">
+                <div className="flex h-16 w-16 items-center justify-center rounded-sm border-2 border-dashed border-ink text-xs font-semibold text-gray-700 dark:border-gray-500 dark:text-gray-300">
                   Kosong
                 </div>
               )}
@@ -236,7 +299,7 @@ export function SettingsPage() {
                 >
                   {settings['gov_logo_url'] ? 'Ganti Logo' : 'Upload Logo'}
                 </Button>
-                <p className="text-xs text-gray-500 mt-1">PNG, JPG, SVG. Maks 2MB.</p>
+                <p className="mt-1 text-xs font-medium text-gray-700 dark:text-gray-300">PNG, JPG, SVG. Maks 2MB.</p>
               </div>
             </div>
           </div>
@@ -260,7 +323,7 @@ export function SettingsPage() {
                 {d.label}
               </label>
               <div className="flex items-stretch">
-                <span className="inline-flex items-center px-3 rounded-l-lg border border-r-0 border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 text-sm font-medium text-gray-600 dark:text-gray-300">
+                <span className="inline-flex items-center rounded-l-sm border-2 border-r-0 border-ink bg-[#f1dfc4] px-3 text-sm font-bold text-ink dark:border-gray-500 dark:bg-gray-700 dark:text-gray-200">
                   {d.prefix}
                 </span>
                 <input
@@ -271,7 +334,7 @@ export function SettingsPage() {
                     setSettings({ ...settings, [d.key]: e.target.value.replace(/\D/g, '') })
                   }
                   placeholder={d.default}
-                  className="w-full min-h-[44px] px-4 py-2 text-base border rounded-r-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="min-h-[44px] w-full rounded-r-sm border-2 border-ink bg-white px-4 py-2 text-base text-ink focus:outline-none focus:ring-2 focus:ring-ink/20 dark:border-gray-500 dark:bg-gray-800 dark:text-gray-100"
                 />
               </div>
             </div>
@@ -306,6 +369,51 @@ export function SettingsPage() {
           />
         </div>
       </Card>
+
+      {isSuperAdmin && (
+        <Card className="p-6 mb-6">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-1">Integrasi Layanan</h2>
+          <p className="mb-5 text-sm font-medium text-gray-700 dark:text-gray-300">
+            Nilai rahasia dienkripsi di server dan tidak pernah ditampilkan kembali. Kosongkan kolom rahasia untuk mempertahankan nilai saat ini.
+          </p>
+
+          <h3 className="mb-3 font-bold text-ink dark:text-gray-100">Payment Gateway</h3>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <label className="text-sm font-semibold text-ink dark:text-gray-100">Provider aktif
+              <select className="mt-1 min-h-[44px] w-full border-2 border-ink bg-white px-3 text-base font-semibold dark:border-gray-500 dark:bg-gray-800" value={integrationForm.paymentProvider} onChange={(e) => setIntegrationForm({ ...integrationForm, paymentProvider: e.target.value })}>
+                {integration?.providers.payment.map((provider) => <option key={provider.id} value={provider.id}>{provider.name}</option>)}
+              </select>
+            </label>
+            {integrationForm.paymentProvider === 'midtrans' && <>
+              <Input label="Server Key" type="password" value={integrationForm.midtransServerKey} onChange={(e) => setIntegrationForm({ ...integrationForm, midtransServerKey: e.target.value })} placeholder={integration?.midtrans.serverKey.masked || 'Belum dikonfigurasi'} autoComplete="new-password" />
+              <Input label="Client Key" type="password" value={integrationForm.midtransClientKey} onChange={(e) => setIntegrationForm({ ...integrationForm, midtransClientKey: e.target.value })} placeholder={integration?.midtrans.clientKey.masked || 'Belum dikonfigurasi'} autoComplete="new-password" />
+              <Input label="Merchant ID" value={integrationForm.midtransMerchantId} onChange={(e) => setIntegrationForm({ ...integrationForm, midtransMerchantId: e.target.value })} />
+              <label className="flex min-h-[44px] items-center gap-3 self-end border-2 border-ink bg-white px-4 py-2 font-semibold text-ink dark:border-gray-500 dark:bg-gray-800 dark:text-gray-100">
+                <input type="checkbox" checked={integrationForm.midtransIsProduction} onChange={(e) => setIntegrationForm({ ...integrationForm, midtransIsProduction: e.target.checked })} /> Mode produksi
+              </label>
+            </>}
+          </div>
+
+          <div className="my-6 border-t-2 border-ink dark:border-gray-500" />
+          <h3 className="mb-3 font-bold text-ink dark:text-gray-100">WhatsApp Gateway</h3>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <label className="text-sm font-semibold text-ink dark:text-gray-100">Provider aktif
+              <select className="mt-1 min-h-[44px] w-full border-2 border-ink bg-white px-3 text-base font-semibold dark:border-gray-500 dark:bg-gray-800" value={integrationForm.whatsappProvider} onChange={(e) => setIntegrationForm({ ...integrationForm, whatsappProvider: e.target.value })}>
+                {integration?.providers.whatsapp.map((provider) => <option key={provider.id} value={provider.id}>{provider.name}</option>)}
+              </select>
+            </label>
+            {integrationForm.whatsappProvider === 'fonnte' && <>
+              <Input label="Token Fonnte" type="password" value={integrationForm.fonnteToken} onChange={(e) => setIntegrationForm({ ...integrationForm, fonnteToken: e.target.value })} placeholder={integration?.whatsapp.fonnteToken.masked || 'Belum dikonfigurasi'} autoComplete="new-password" />
+              <Input label="Maksimal Percobaan (1–5)" type="number" min={1} max={5} value={integrationForm.whatsappMaxRetries} onChange={(e) => setIntegrationForm({ ...integrationForm, whatsappMaxRetries: Number(e.target.value) })} />
+              <Input label="Jeda Percobaan (ms)" type="number" min={100} max={10000} value={integrationForm.whatsappRetryDelayMs} onChange={(e) => setIntegrationForm({ ...integrationForm, whatsappRetryDelayMs: Number(e.target.value) })} />
+            </>}
+          </div>
+          <div className="mt-5 flex flex-wrap items-center gap-3">
+            <Button variant="primary" size="md" loading={savingIntegration} onClick={handleIntegrationSave}>Simpan Integrasi</Button>
+            {integrationMessage && <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">{integrationMessage}</span>}
+          </div>
+        </Card>
+      )}
 
       <div className="flex items-center gap-3">
         <Button variant="primary" size="md" loading={saving} onClick={handleSave}>

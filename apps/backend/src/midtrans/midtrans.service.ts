@@ -1,6 +1,6 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import { Injectable, Logger, ServiceUnavailableException } from '@nestjs/common';
 import * as crypto from 'crypto';
+import { SettingsService } from '../settings/settings.service';
 
 // Midtrans Snap API interface
 interface SnapItem {
@@ -45,38 +45,32 @@ export interface MidtransNotification {
 @Injectable()
 export class MidtransService {
   private readonly logger = new Logger(MidtransService.name);
-  private readonly serverKey: string;
-  private readonly clientKey: string;
-  private readonly isProduction: boolean;
-  private readonly baseUrl: string;
+  constructor(private readonly settingsService: SettingsService) {}
 
-  private readonly apiUrl: string;
-
-  constructor(private readonly configService: ConfigService) {
-    this.serverKey = this.configService.get<string>('MIDTRANS_SERVER_KEY', '');
-    this.clientKey = this.configService.get<string>('MIDTRANS_CLIENT_KEY', '');
-    this.isProduction =
-      this.configService.get<string>('MIDTRANS_IS_PRODUCTION', 'false') === 'true';
-    this.baseUrl = this.isProduction
-      ? 'https://app.midtrans.com/snap/v1'
-      : 'https://app.sandbox.midtrans.com/snap/v1';
-    // Core API — untuk cek status transaksi (host berbeda dari Snap)
-    this.apiUrl = this.isProduction
-      ? 'https://api.midtrans.com/v2'
-      : 'https://api.sandbox.midtrans.com/v2';
+  private async config() {
+    const value = await this.settingsService.getRuntimeIntegrations();
+    if (value.paymentProvider !== 'midtrans') {
+      throw new ServiceUnavailableException('Provider pembayaran online sedang tidak aktif');
+    }
+    return {
+      ...value,
+      baseUrl: value.midtransIsProduction ? 'https://app.midtrans.com/snap/v1' : 'https://app.sandbox.midtrans.com/snap/v1',
+      apiUrl: value.midtransIsProduction ? 'https://api.midtrans.com/v2' : 'https://api.sandbox.midtrans.com/v2',
+    };
   }
 
   // Getter untuk client key (dipakai frontend)
-  getClientKey(): string {
-    return this.clientKey;
+  async getClientKey(): Promise<string> {
+    return (await this.config()).midtransClientKey;
   }
 
-  getIsProduction(): boolean {
-    return this.isProduction;
+  async getIsProduction(): Promise<boolean> {
+    return (await this.config()).midtransIsProduction;
   }
 
   // Buat Snap transaction token
   async createTransaction(params: SnapTransactionParams): Promise<SnapResponse> {
+    const config = await this.config();
     // Susun item_details: dari daftar items (bulk) atau item tunggal (single)
     const itemDetails =
       params.items && params.items.length > 0
@@ -111,10 +105,10 @@ export class MidtransService {
       },
     };
 
-    const authString = Buffer.from(`${this.serverKey}:`).toString('base64');
+    const authString = Buffer.from(`${config.midtransServerKey}:`).toString('base64');
 
     try {
-      const response = await fetch(`${this.baseUrl}/transactions`, {
+      const response = await fetch(`${config.baseUrl}/transactions`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -141,9 +135,10 @@ export class MidtransService {
   // Cek status transaksi langsung ke Midtrans (fallback tanpa webhook).
   // Berguna di dev lokal di mana webhook Midtrans tidak bisa menjangkau localhost.
   async getTransactionStatus(orderId: string): Promise<MidtransNotification | null> {
-    const authString = Buffer.from(`${this.serverKey}:`).toString('base64');
+    const config = await this.config();
+    const authString = Buffer.from(`${config.midtransServerKey}:`).toString('base64');
     try {
-      const response = await fetch(`${this.apiUrl}/${orderId}/status`, {
+      const response = await fetch(`${config.apiUrl}/${orderId}/status`, {
         method: 'GET',
         headers: {
           Accept: 'application/json',
@@ -168,11 +163,12 @@ export class MidtransService {
   }
 
   // Verifikasi signature notification dari Midtrans
-  verifyNotificationSignature(notification: MidtransNotification): boolean {
+  async verifyNotificationSignature(notification: MidtransNotification): Promise<boolean> {
+    const config = await this.config();
     const { order_id, status_code, gross_amount, signature_key } = notification;
     const expectedSignature = crypto
       .createHash('sha512')
-      .update(`${order_id}${status_code}${gross_amount}${this.serverKey}`)
+      .update(`${order_id}${status_code}${gross_amount}${config.midtransServerKey}`)
       .digest('hex');
 
     return expectedSignature === signature_key;

@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
 import { WhatsAppService } from './whatsapp.service';
+import { SettingsModule } from '../settings/settings.module';
 
 @Module({
-  imports: [ConfigModule],
+  imports: [SettingsModule],
   providers: [WhatsAppService],
   exports: [WhatsAppService],
 })

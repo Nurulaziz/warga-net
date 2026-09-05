@@ -100,14 +100,14 @@ export function CashFlowChart() {
     <Card className="p-6">
       <div className="flex items-start justify-between mb-1">
         <div>
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Arus Kas RT</h3>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+          <h3 className="font-display text-lg font-bold text-ink dark:text-gray-100">Arus Kas RT</h3>
+          <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
             Pemasukan vs Pengeluaran ({MONTHS_TO_SHOW} bulan terakhir)
           </p>
         </div>
         <Link
           to="/cash"
-          className="text-sm text-primary-600 hover:text-primary-700 dark:text-primary-400 shrink-0"
+          className="shrink-0 text-sm font-bold text-ink underline-offset-4 hover:underline dark:text-gray-200"
         >
           Kas RT
         </Link>
@@ -117,11 +117,11 @@ export function CashFlowChart() {
       <div className="flex items-center gap-4 mb-2">
         <div className="flex items-center gap-1.5">
           <span className="w-3 h-3 rounded-sm bg-emerald-500" />
-          <span className="text-xs text-gray-600 dark:text-gray-400">Pemasukan</span>
+          <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">Pemasukan</span>
         </div>
         <div className="flex items-center gap-1.5">
           <span className="w-3 h-3 rounded-sm bg-red-500" />
-          <span className="text-xs text-gray-600 dark:text-gray-400">Pengeluaran</span>
+          <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">Pengeluaran</span>
         </div>
       </div>
 
@@ -138,7 +138,7 @@ export function CashFlowChart() {
         </div>
       ) : isEmpty ? (
         <div className="h-48 flex flex-col items-center justify-center text-center">
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+          <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
             Belum ada transaksi kas pada {MONTHS_TO_SHOW} bulan terakhir
           </p>
         </div>
@@ -165,9 +165,9 @@ export function CashFlowChart() {
                 cursor={{ fill: isDark ? 'rgba(148,163,184,0.08)' : 'rgba(100,116,139,0.08)' }}
                 contentStyle={{
                   backgroundColor: tooltipBg,
-                  border: `1px solid ${tooltipBorder}`,
-                  borderRadius: '10px',
-                  boxShadow: '0 4px 16px rgba(15,23,42,0.12)',
+                  border: `2px solid ${isDark ? tooltipBorder : '#171717'}`,
+                  borderRadius: '2px',
+                  boxShadow: '3px 3px 0 rgba(23,23,23,0.8)',
                   fontSize: '13px',
                 }}
                 labelStyle={{ color: axisColor, fontWeight: 600, marginBottom: 4 }}

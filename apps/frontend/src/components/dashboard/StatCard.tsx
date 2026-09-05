@@ -15,7 +15,6 @@ export function StatCard({
   icon,
   value,
   label,
-  iconBgColor = 'bg-primary-500',
   valueClassName = '',
   badge,
   to,
@@ -23,13 +22,13 @@ export function StatCard({
   const content = (
     <>
       {/* Icon container */}
-      <div className={`${iconBgColor} p-3 rounded-lg flex items-center justify-center w-fit mb-3`}>
-        <div className="w-6 h-6 text-white">{icon}</div>
+      <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-sm border-2 border-ink bg-[#f1dfc4] dark:border-gray-500 dark:bg-gray-700">
+        <div className="h-6 w-6 text-ink dark:text-white">{icon}</div>
       </div>
 
       {/* Content */}
       <div className="flex flex-col gap-1">
-        <p className={`text-2xl font-bold text-gray-900 dark:text-gray-100 ${valueClassName}`}>
+        <p className={`font-display text-2xl font-bold text-ink dark:text-gray-100 ${valueClassName}`}>
           {value}
           {badge && (
             <span
@@ -39,19 +38,19 @@ export function StatCard({
             </span>
           )}
         </p>
-        <p className="text-sm text-gray-500 dark:text-gray-400">{label}</p>
+        <p className="text-sm font-medium text-gray-700 dark:text-gray-300">{label}</p>
       </div>
     </>
   );
 
   const baseClass =
-    'bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-800 p-5 transition-all duration-200';
+    'rounded-sm border-2 border-ink bg-white p-5 shadow-[4px_4px_0_#171717] transition-transform duration-150 dark:border-gray-500 dark:bg-gray-800 dark:shadow-[4px_4px_0_#737373]';
 
   if (to) {
     return (
       <Link
         to={to}
-        className={`${baseClass} hover:shadow-md hover:border-gray-300 dark:hover:border-slate-700 cursor-pointer`}
+        className={`${baseClass} cursor-pointer hover:-translate-y-0.5 hover:bg-[#fff8ec] dark:hover:bg-gray-700`}
       >
         {content}
       </Link>
@@ -59,6 +58,6 @@ export function StatCard({
   }
 
   return (
-    <div className={`${baseClass} hover:shadow-md transition-all duration-200`}>{content}</div>
+    <div className={baseClass}>{content}</div>
   );
 }

@@ -19,11 +19,11 @@ const SORT_OPTIONS: { value: SortKey; label: string }[] = [
 
 export function SuaraWargaPage() {
   const navigate = useNavigate();
-  const { currentUser, isAuthenticated, hasPermission } = useAuth();
+  const { currentUser, isAuthenticated, hasPermission, isAdmin } = useAuth();
   // Endpoint posting tersedia untuk setiap sesi login. Jangan sembunyikan composer hanya karena
   // metadata role/permission dari /users/me masih dimuat atau berasal dari data lama.
   const canCreate = isAuthenticated;
-  const canDelete = hasPermission('posts', 'delete');
+  const canDelete = isAdmin();
   const canModerate = hasPermission('posts', 'moderate');
 
   const [posts, setPosts] = useState<Post[]>([]);
@@ -110,10 +110,10 @@ export function SuaraWargaPage() {
           <p className="mt-3 max-w-lg text-sm text-gray-600 dark:text-gray-300">Berbagi kabar, ide, dan aspirasi dengan tetangga dalam satu ruang bersama.</p>
         </div>
         <div className="mt-4 flex gap-2 sm:mt-0">
-          <Link to="/suara-warga/tersimpan" className="inline-flex min-h-10 items-center gap-2 rounded-sm border-2 border-ink bg-white px-3 text-xs font-bold uppercase tracking-wide text-ink hover:bg-brand-50 dark:bg-gray-800 dark:text-white">
+          <Link to="/suara-warga/tersimpan" className="inline-flex min-h-10 items-center gap-2 rounded-sm border-2 border-ink bg-white px-3 text-xs font-bold uppercase tracking-wide text-ink hover:bg-[#f5efe4] dark:bg-gray-800 dark:text-white">
             <BookmarkIcon className="h-4 w-4" /> Tersimpan
           </Link>
-          {canModerate && <Link to="/suara-warga/moderasi" className="inline-flex min-h-10 items-center gap-2 rounded-sm border-2 border-ink bg-white px-3 text-xs font-bold uppercase tracking-wide text-ink hover:bg-brand-50 dark:bg-gray-800 dark:text-white"><ShieldCheckIcon className="h-4 w-4" /> Moderasi</Link>}
+          {canModerate && <Link to="/suara-warga/moderasi" className="inline-flex min-h-10 items-center gap-2 rounded-sm border-2 border-ink bg-white px-3 text-xs font-bold uppercase tracking-wide text-ink hover:bg-[#f5efe4] dark:bg-gray-800 dark:text-white"><ShieldCheckIcon className="h-4 w-4" /> Moderasi</Link>}
         </div>
       </div>
 
@@ -146,7 +146,7 @@ export function SuaraWargaPage() {
               className={`rounded-sm border-2 border-ink px-4 py-1.5 text-sm font-bold transition ${
                 sort === opt.value
                   ? 'bg-brand-500 text-white shadow-[2px_2px_0_#171717]'
-                  : 'bg-white text-ink hover:bg-brand-50 dark:bg-gray-800 dark:text-gray-200'
+                  : 'bg-white text-ink hover:bg-[#f5efe4] dark:bg-gray-800 dark:text-gray-200'
               }`}
             >
               {opt.label}
@@ -174,7 +174,7 @@ export function SuaraWargaPage() {
               post={post}
               onOpen={(id) => navigate(`/suara-warga/${id}`)}
               onDelete={(p) => setDeleteTarget(p)}
-              canDelete={canDelete || post.authorId === currentUser?.id}
+              canDelete={canDelete}
               canModerate={canModerate}
               onChanged={load}
             />

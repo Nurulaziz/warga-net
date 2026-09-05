@@ -50,17 +50,17 @@ export const Modal = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-[2px]"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-ink/65 p-4"
       onClick={onClose}
       role="dialog"
       aria-modal="true"
       aria-labelledby={title ? 'modal-title' : undefined}
     >
       <div
-        className={`w-full ${sizeStyles[size]} max-h-[90vh] overflow-y-auto rounded-sm border-2 border-ink bg-white shadow-[7px_7px_0_#171717] dark:border-gray-400 dark:bg-gray-800 dark:shadow-[7px_7px_0_#a3a3a3] ${panelClassName}`}
+        className={`w-full ${sizeStyles[size]} max-h-[90vh] overflow-y-auto rounded-sm border-2 border-ink bg-[#fffdf8] shadow-[7px_7px_0_#171717] dark:border-gray-300 dark:bg-gray-800 dark:shadow-[7px_7px_0_#a3a3a3] ${panelClassName}`}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between px-6 py-4 border-b-2 border-ink dark:border-gray-500">
+        <div className="flex items-center justify-between border-b-2 border-ink bg-[#fff8ec] px-6 py-4 dark:border-gray-500 dark:bg-gray-900">
           {title ? (
             <h2 id="modal-title" className="font-display text-xl font-bold text-gray-900 dark:text-gray-100">
               {title}
@@ -74,13 +74,13 @@ export const Modal = ({
               type="button"
               onClick={onClose}
               aria-label="Tutup"
-              className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-200 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="flex h-9 w-9 items-center justify-center rounded-sm border-2 border-ink bg-white text-ink shadow-[2px_2px_0_#171717] transition-transform hover:translate-x-px hover:translate-y-px hover:bg-[#f1dfc4] hover:shadow-none focus:outline-none focus:ring-2 focus:ring-ink dark:border-gray-300 dark:bg-gray-800 dark:text-gray-100 dark:shadow-[2px_2px_0_#d4d4d4] dark:hover:bg-gray-700"
             >
               <XMarkIcon className="h-5 w-5" aria-hidden="true" />
             </button>
           </div>
         </div>
-        <div className={`px-6 py-4 ${contentClassName}`}>{children}</div>
+        <div className={`px-6 py-4 text-ink dark:text-gray-100 ${contentClassName}`}>{children}</div>
       </div>
     </div>
   );
@@ -92,7 +92,7 @@ interface ModalFooterProps {
 
 export const ModalFooter = ({ children }: ModalFooterProps) => {
   return (
-    <div className="px-6 py-4 border-t-2 border-ink dark:border-gray-500 flex justify-end gap-3">
+    <div className="-mx-6 -mb-4 mt-6 flex justify-end gap-3 border-t-2 border-ink bg-[#fff8ec] px-6 py-4 dark:border-gray-500 dark:bg-gray-900">
       {children}
     </div>
   );

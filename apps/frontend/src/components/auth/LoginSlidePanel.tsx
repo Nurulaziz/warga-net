@@ -127,7 +127,7 @@ export function LoginSlidePanel({ open, onClose, redirectTo = '/' }: LoginSlideP
         ref={panelRef}
         role="dialog"
         aria-modal="true"
-        aria-label="Masuk ke WargaNet"
+        aria-label={`Masuk ke ${settings.app_name}`}
         aria-hidden={!open}
         className={`fixed inset-y-0 right-0 z-50 flex w-[clamp(410px,28vw,460px)] max-w-full flex-col border-l-2 border-ink bg-warm-50 dark:border-gray-500 dark:bg-gray-900 ${
           open

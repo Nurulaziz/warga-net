@@ -123,6 +123,9 @@ export function LandingPage() {
           >
             {/* Left: wordmark */}
             <a href="#top" className="flex shrink-0 items-center gap-2.5">
+              {settings.app_logo_url && (
+                <img src={settings.app_logo_url} alt="" className="h-9 w-9 object-contain" />
+              )}
               <p className="font-display text-[1.4rem] font-extrabold tracking-[-0.035em] text-ink dark:text-gray-100 sm:text-[1.5rem]">
                 {settings.app_name}
               </p>
@@ -251,7 +254,7 @@ export function LandingPage() {
                   <div className="flex items-center gap-3">
                     <span className="font-mono text-[13px] font-semibold text-brand-500">01</span>
                     <span className="text-[12px] uppercase tracking-[0.12em] text-ink-muted">
-                      / Kenapa WargaNet
+                      / Kenapa {settings.app_name}
                     </span>
                   </div>
                   <h2 className="mt-5 font-display font-bold leading-[1.05] tracking-[-0.02em] text-ink dark:text-gray-50 text-[32px] sm:text-[40px] lg:text-[48px]">

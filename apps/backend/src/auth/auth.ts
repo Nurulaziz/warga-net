@@ -5,6 +5,7 @@ import { phoneNumber, admin } from 'better-auth/plugins';
 import { PrismaClient } from '../generated/prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { sendWhatsAppViaFonnte } from '../whatsapp/fonnte.sender';
+import { decryptIntegrationValue } from '../settings/integration-crypto';
 
 const prisma = new PrismaClient({
   adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }),
@@ -51,8 +52,20 @@ export const auth: any = betterAuth({
         }
 
         // Kirim OTP via WhatsApp (Fonnte)
-        const message = `*WargaNet* - Kode Verifikasi\n\nKode OTP Anda: *${code}*\n\nBerlaku 5 menit. Jangan bagikan kode ini kepada siapa pun.`;
-        const result = await sendWhatsAppViaFonnte(phone, message);
+        const [tokenSetting, nameSetting, providerSetting] = await Promise.all([
+          prisma.systemSetting.findUnique({ where: { key: 'fonnte_token' } }),
+          prisma.systemSetting.findUnique({ where: { key: 'app_name' } }),
+          prisma.systemSetting.findUnique({ where: { key: 'whatsapp_provider' } }),
+        ]);
+        const provider = providerSetting?.value || 'fonnte';
+        const token = provider === 'fonnte' && tokenSetting?.value
+          ? decryptIntegrationValue(tokenSetting.value)
+          : provider === 'fonnte' ? process.env.FONNTE_TOKEN : undefined;
+        const appName = nameSetting?.value || 'WargaNet';
+        const message = `*${appName}* - Kode Verifikasi\n\nKode OTP Anda: *${code}*\n\nBerlaku 5 menit. Jangan bagikan kode ini kepada siapa pun.`;
+        const result = provider === 'fonnte'
+          ? await sendWhatsAppViaFonnte(phone, message, token)
+          : { success: false, error: 'Provider WhatsApp sedang tidak aktif' };
 
         if (!result.success) {
           // Di development, jangan gagalkan request: OTP sudah tercetak di console

@@ -481,8 +481,8 @@ export class BillsService {
       redirectUrl: snap.redirect_url,
       orderId,
       amount: remaining,
-      clientKey: this.midtransService.getClientKey(),
-      isProduction: this.midtransService.getIsProduction(),
+      clientKey: await this.midtransService.getClientKey(),
+      isProduction: await this.midtransService.getIsProduction(),
     };
   }
 
@@ -579,8 +579,8 @@ export class BillsService {
       orderId,
       amount: grossAmount,
       billCount: items.length,
-      clientKey: this.midtransService.getClientKey(),
-      isProduction: this.midtransService.getIsProduction(),
+      clientKey: await this.midtransService.getClientKey(),
+      isProduction: await this.midtransService.getIsProduction(),
     };
   }
 
@@ -609,7 +609,7 @@ export class BillsService {
   // Handle notification dari Midtrans (webhook)
   async handleMidtransNotification(notification: MidtransNotification) {
     // Verifikasi signature
-    const isValid = this.midtransService.verifyNotificationSignature(notification);
+    const isValid = await this.midtransService.verifyNotificationSignature(notification);
     if (!isValid) {
       this.logger.warn(`Invalid Midtrans signature for order ${notification.order_id}`);
       throw new BadRequestException('Invalid notification signature');
@@ -755,10 +755,10 @@ export class BillsService {
   }
 
   // Get Midtrans config (untuk frontend)
-  getMidtransConfig() {
+  async getMidtransConfig() {
     return {
-      clientKey: this.midtransService.getClientKey(),
-      isProduction: this.midtransService.getIsProduction(),
+      clientKey: await this.midtransService.getClientKey(),
+      isProduction: await this.midtransService.getIsProduction(),
     };
   }
 }

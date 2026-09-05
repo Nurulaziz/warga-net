@@ -155,16 +155,16 @@ export function CashPage() {
       {summary && (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
           <Card className="p-4 flex items-center gap-4">
-            <div className="w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center"><ArrowUpIcon className="w-5 h-5 text-green-600" /></div>
-            <div><p className="text-xs text-gray-500">Total Pemasukan</p><p className="text-lg font-bold text-green-600">{formatCurrency(summary.totalIncome)}</p></div>
+            <div className="flex h-10 w-10 items-center justify-center rounded-sm border-2 border-ink bg-[#f1dfc4] dark:border-gray-500 dark:bg-gray-700"><ArrowUpIcon className="h-5 w-5 text-ink dark:text-white" /></div>
+            <div><p className="text-xs font-semibold text-gray-700 dark:text-gray-300">Total Pemasukan</p><p className="text-lg font-bold text-ink dark:text-white">{formatCurrency(summary.totalIncome)}</p></div>
           </Card>
           <Card className="p-4 flex items-center gap-4">
-            <div className="w-10 h-10 rounded-lg bg-red-50 flex items-center justify-center"><ArrowDownIcon className="w-5 h-5 text-red-600" /></div>
-            <div><p className="text-xs text-gray-500">Total Pengeluaran</p><p className="text-lg font-bold text-red-600">{formatCurrency(summary.totalExpense)}</p></div>
+            <div className="flex h-10 w-10 items-center justify-center rounded-sm border-2 border-ink bg-[#f1dfc4] dark:border-gray-500 dark:bg-gray-700"><ArrowDownIcon className="h-5 w-5 text-ink dark:text-white" /></div>
+            <div><p className="text-xs font-semibold text-gray-700 dark:text-gray-300">Total Pengeluaran</p><p className="text-lg font-bold text-ink dark:text-white">{formatCurrency(summary.totalExpense)}</p></div>
           </Card>
           <Card className="p-4 flex items-center gap-4">
-            <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center"><WalletIcon className="w-5 h-5 text-blue-600" /></div>
-            <div><p className="text-xs text-gray-500">Saldo</p><p className="text-lg font-bold text-blue-600">{formatCurrency(summary.balance)}</p></div>
+            <div className="flex h-10 w-10 items-center justify-center rounded-sm border-2 border-ink bg-[#f1dfc4] dark:border-gray-500 dark:bg-gray-700"><WalletIcon className="h-5 w-5 text-ink dark:text-white" /></div>
+            <div><p className="text-xs font-semibold text-gray-700 dark:text-gray-300">Saldo</p><p className="text-lg font-bold text-ink dark:text-white">{formatCurrency(summary.balance)}</p></div>
           </Card>
         </div>
       )}
@@ -196,15 +196,15 @@ export function CashPage() {
           value={startDate}
           onChange={(e) => { setStartDate(e.target.value); setPage(1); }}
           aria-label="Dari tanggal"
-          className="h-11 px-3 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-500"
+          className="h-11 rounded-sm border-2 border-ink bg-white px-3 text-sm font-semibold text-ink focus:outline-none focus:ring-2 focus:ring-ink/20 dark:border-gray-500 dark:bg-gray-800 dark:text-gray-200"
         />
-        <span className="text-gray-400 text-sm">s/d</span>
+        <span className="text-sm font-bold text-ink/70 dark:text-gray-300">s/d</span>
         <input
           type="date"
           value={endDate}
           onChange={(e) => { setEndDate(e.target.value); setPage(1); }}
           aria-label="Sampai tanggal"
-          className="h-11 px-3 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-500"
+          className="h-11 rounded-sm border-2 border-ink bg-white px-3 text-sm font-semibold text-ink focus:outline-none focus:ring-2 focus:ring-ink/20 dark:border-gray-500 dark:bg-gray-800 dark:text-gray-200"
         />
         {(typeFilter || categoryFilter || startDate || endDate) && (
           <Button variant="ghost" size="sm" onClick={() => { setTypeFilter(''); setCategoryFilter(''); setStartDate(''); setEndDate(''); setPage(1); }} className="h-11">
@@ -218,7 +218,7 @@ export function CashPage() {
         <div className="flex justify-center py-12"><div className="animate-spin h-8 w-8 border-4 border-primary-600 border-t-transparent rounded-full" /></div>
       ) : (
         <>
-          <Table>
+          <Table className="border-2 border-ink dark:border-gray-500">
             <TableHeader>
               <TableRow>
                 <TableHead>Tanggal</TableHead>

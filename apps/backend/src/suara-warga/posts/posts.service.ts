@@ -320,9 +320,7 @@ export class PostsService {
 
   async remove(id: string, scope: AuthScope) {
     const post = await this.findOne(id, scope);
-    if (!scope.isAdmin && post.authorId !== scope.userId) {
-      throw new ForbiddenException('Anda hanya dapat menghapus posting milik Anda sendiri');
-    }
+    if (!scope.isAdmin) throw new ForbiddenException('Hanya admin yang dapat menghapus posting');
     return this.prisma.post.update({ where: { id }, data: { deletedAt: new Date() } });
   }
 

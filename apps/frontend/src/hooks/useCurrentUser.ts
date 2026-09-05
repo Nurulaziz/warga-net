@@ -30,7 +30,7 @@ function isAdminRole(roleName?: string | null): boolean {
  * Hook untuk fetch data user saat ini (role & permissions) dari /users/me.
  * Data di-cache selama session aktif.
  */
-export function useCurrentUser(isAuthenticated: boolean) {
+export function useCurrentUser(isAuthenticated: boolean, sessionUserId?: string) {
   const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -49,7 +49,7 @@ export function useCurrentUser(isAuthenticated: boolean) {
     } finally {
       setLoading(false);
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, sessionUserId]);
 
   useEffect(() => {
     fetchCurrentUser();

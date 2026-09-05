@@ -124,14 +124,15 @@ export function DesktopNavigation({ collapsed, onToggle }: DesktopNavigationProp
         }`}
       >
         {!collapsed && (
-          <span className="font-display text-[1.4rem] font-extrabold tracking-[-0.035em] text-ink dark:text-white whitespace-nowrap">
-            {settings.app_name}
+          <span className="flex min-w-0 items-center gap-2 font-display text-[1.4rem] font-extrabold tracking-[-0.035em] text-ink dark:text-white whitespace-nowrap">
+            {settings.app_logo_url && <img src={settings.app_logo_url} alt="" className="h-8 w-8 shrink-0 object-contain" />}
+            <span className="truncate">{settings.app_name}</span>
           </span>
         )}
         <button
           type="button"
           onClick={onToggle}
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-sm border-2 border-transparent text-ink transition-colors hover:border-ink hover:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/30 dark:text-white dark:hover:border-gray-400 dark:hover:bg-gray-700"
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-sm border-2 border-transparent text-ink transition-colors hover:border-ink hover:bg-white focus:outline-none focus:ring-2 focus:ring-ink/30 dark:text-white dark:hover:border-gray-400 dark:hover:bg-gray-700"
           title={collapsed ? 'Perbesar sidebar' : 'Perkecil sidebar'}
           aria-label={collapsed ? 'Perbesar sidebar' : 'Perkecil sidebar'}
         >
@@ -164,7 +165,7 @@ export function DesktopNavigation({ collapsed, onToggle }: DesktopNavigationProp
             {/* Group label — disembunyikan untuk warga agar daftar menu lebih ringkas */}
             {!collapsed && admin && (
               <div className="px-2 pb-1.5">
-                <span className="text-[10px] font-semibold text-[#94A3B8] dark:text-gray-500 uppercase tracking-[0.06em]">
+                <span className="text-[10px] font-bold text-[#6b5f50] dark:text-gray-300 uppercase tracking-[0.07em]">
                   {section.group}
                 </span>
               </div>
@@ -215,7 +216,7 @@ function SidebarLink({ item, collapsed }: { item: NavItem; collapsed: boolean })
         } ${
           isActive
             ? 'border-ink bg-brand-500 text-white shadow-[2px_2px_0_#171717] dark:border-gray-300 dark:text-white'
-            : 'border-transparent text-[#525252] dark:text-gray-400 hover:border-ink hover:bg-white dark:hover:border-gray-500 dark:hover:bg-gray-700/50 hover:text-ink dark:hover:text-gray-200'
+            : 'border-transparent text-[#292524] dark:text-gray-200 hover:border-ink hover:bg-white dark:hover:border-gray-500 dark:hover:bg-gray-700/50 hover:text-ink dark:hover:text-white'
         }`
       }
     >
@@ -228,7 +229,7 @@ function SidebarLink({ item, collapsed }: { item: NavItem; collapsed: boolean })
             }`}
             aria-hidden="true"
           />
-          {!collapsed && <span className="text-[13px] font-semibold truncate">{item.label}</span>}
+          {!collapsed && <span className="text-[13px] font-bold truncate">{item.label}</span>}
           {/* Tooltip for collapsed */}
           {collapsed && (
             <div className="absolute left-full ml-2 px-2.5 py-1.5 bg-[#0F172A] text-white text-xs rounded-md whitespace-nowrap opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150 pointer-events-none z-50 shadow-lg">

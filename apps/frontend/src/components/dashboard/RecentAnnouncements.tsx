@@ -52,10 +52,10 @@ export function RecentAnnouncements({ limit = 5 }: { limit?: number }) {
     <Card className="p-6">
       <div className="flex items-center justify-between mb-5">
         <div>
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Pengumuman Terbaru</h3>
-          <p className="text-sm text-gray-500 dark:text-gray-400">Info terkini dari pengurus RT</p>
+          <h3 className="font-display text-lg font-bold text-ink dark:text-gray-100">Pengumuman Terbaru</h3>
+          <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Info terkini dari pengurus RT</p>
         </div>
-        <Link to="/announcements" className="text-sm text-primary-600 hover:text-primary-700 dark:text-primary-400">
+        <Link to="/announcements" className="text-sm font-bold text-ink underline-offset-4 hover:underline dark:text-gray-200">
           Lihat semua
         </Link>
       </div>
@@ -68,15 +68,15 @@ export function RecentAnnouncements({ limit = 5 }: { limit?: number }) {
         </div>
       ) : items.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-8 text-center">
-          <MegaphoneIcon className="w-10 h-10 text-gray-300 dark:text-gray-600 mb-2" />
-          <p className="text-sm text-gray-500 dark:text-gray-400">Belum ada pengumuman</p>
+          <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-sm border-2 border-ink bg-[#f1dfc4] dark:border-gray-500 dark:bg-gray-700"><MegaphoneIcon className="h-7 w-7 text-ink dark:text-white" /></div>
+          <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">Belum ada pengumuman</p>
         </div>
       ) : (
         <ul className="space-y-3">
           {items.map((a) => {
             const meta = PRIORITY_META[a.priority] || PRIORITY_META.normal;
             return (
-              <li key={a.id} className="border-b border-gray-100 dark:border-gray-800 last:border-0 pb-3 last:pb-0">
+              <li key={a.id} className="border-b-2 border-ink/20 pb-3 last:border-0 last:pb-0 dark:border-gray-600">
                 <Link to="/announcements" className="block group">
                   <div className="flex items-center gap-2 mb-0.5">
                     <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded-full ${meta.badge}`}>

@@ -26,8 +26,9 @@ function normalizePhone(phoneNumber: string): string {
 export async function sendWhatsAppViaFonnte(
   phoneNumber: string,
   message: string,
+  configuredToken?: string,
 ): Promise<FonnteResult> {
-  const token = process.env.FONNTE_TOKEN;
+  const token = configuredToken || process.env.FONNTE_TOKEN;
 
   if (!token) {
     logger.error('FONNTE_TOKEN belum diset di environment');

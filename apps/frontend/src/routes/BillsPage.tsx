@@ -871,9 +871,9 @@ export function BillsPage() {
   // Badge status dengan kontras tinggi (WCAG AA: teks putih di atas warna solid)
   const statusBadge = (status: string) => {
     const styles: Record<string, string> = {
-      paid: 'bg-green-600 text-white',
-      unpaid: 'bg-amber-500 text-white',
-      overdue: 'bg-red-600 text-white',
+      paid: 'bg-green-100 text-green-900',
+      unpaid: 'bg-amber-100 text-amber-950',
+      overdue: 'bg-red-100 text-red-900',
     };
     const labels: Record<string, string> = {
       paid: 'Lunas',
@@ -882,7 +882,7 @@ export function BillsPage() {
     };
     return (
       <span
-        className={`inline-flex px-2.5 py-1 text-xs font-medium rounded-full ${styles[status] || 'bg-gray-500 text-white'}`}
+        className={`inline-flex rounded-sm border border-ink px-2 py-0.5 text-xs font-bold shadow-[1px_1px_0_#171717] ${styles[status] || 'bg-gray-100 text-ink'}`}
       >
         {labels[status] || status}
       </span>
@@ -983,7 +983,7 @@ export function BillsPage() {
     const settled = getSettledPayment(bill);
     if (bill.status === 'paid' && settled?.paidAt) {
       return (
-        <span className="text-xs text-gray-400">
+        <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
           {formatDate(settled.paidAt)}
           {settled.method && METHOD_LABELS[settled.method]
             ? ` · ${METHOD_LABELS[settled.method]}`
@@ -1000,7 +1000,7 @@ export function BillsPage() {
           </span>
         );
       }
-      return <span className="text-xs text-gray-400">Jatuh tempo {formatDate(bill.dueDate)}</span>;
+      return <span className="text-xs font-medium text-gray-700 dark:text-gray-300">Jatuh tempo {formatDate(bill.dueDate)}</span>;
     }
     return null;
   };
@@ -1055,10 +1055,9 @@ export function BillsPage() {
           <FilterStatCard
             label="Total Tagihan"
             value={formatCurrency(summary.totalAmount)}
-            icon={<BanknotesIcon className="w-5 h-5 text-blue-600" />}
-            iconBg="bg-blue-50 dark:bg-blue-900/20"
+            icon={<BanknotesIcon className="w-5 h-5 text-ink dark:text-white" />}
+            iconBg="bg-[#f1dfc4] dark:bg-gray-700"
             active={statusFilter === ''}
-            activeRing="ring-blue-500"
             onClick={() => {
               setStatusFilter('');
               setPage(1);
@@ -1067,11 +1066,9 @@ export function BillsPage() {
           <FilterStatCard
             label="Terbayar"
             value={formatCurrency(summary.paidAmount)}
-            valueClass="text-green-600"
-            icon={<CheckCircleIcon className="w-5 h-5 text-green-600" />}
-            iconBg="bg-green-50 dark:bg-green-900/20"
+            icon={<CheckCircleIcon className="w-5 h-5 text-ink dark:text-white" />}
+            iconBg="bg-[#f1dfc4] dark:bg-gray-700"
             active={statusFilter === 'paid'}
-            activeRing="ring-green-500"
             onClick={() => {
               setStatusFilter('paid');
               setPage(1);
@@ -1080,11 +1077,9 @@ export function BillsPage() {
           <FilterStatCard
             label="Belum Bayar"
             value={formatCurrency(summary.unpaidAmount)}
-            valueClass="text-amber-600"
-            icon={<ClockIcon className="w-5 h-5 text-amber-600" />}
-            iconBg="bg-amber-50 dark:bg-amber-900/20"
+            icon={<ClockIcon className="w-5 h-5 text-ink dark:text-white" />}
+            iconBg="bg-[#f1dfc4] dark:bg-gray-700"
             active={statusFilter === 'unpaid'}
-            activeRing="ring-amber-500"
             onClick={() => {
               setStatusFilter('unpaid');
               setPage(1);
@@ -1094,9 +1089,9 @@ export function BillsPage() {
       )}
 
       {/* Filter periode & jenis iuran */}
-      <div className="flex flex-wrap items-end gap-3 mb-4 pb-5 sm:pb-0">
+      <div className="mb-4 flex flex-wrap items-start gap-3">
         <div className="relative">
-          <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+          <label className="mb-1 block text-xs font-bold text-gray-700 dark:text-gray-300">
             Periode
           </label>
           <Input
@@ -1106,16 +1101,16 @@ export function BillsPage() {
               setPeriodFilter(e.target.value);
               setPage(1);
             }}
-            className="w-[220px] max-w-full pr-12"
+            className="w-[220px] max-w-full pr-12 focus:border-ink focus:ring-ink/20"
           />
           {periodFilter && (
-            <p className="absolute left-0 top-full mt-1 whitespace-nowrap text-xs text-gray-400 dark:text-gray-500">
+            <p className="mt-1 whitespace-nowrap text-xs font-medium text-gray-700 dark:text-gray-300">
               Menampilkan: {formatPeriodId(periodFilter)}
             </p>
           )}
         </div>
         <div>
-          <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+          <label className="mb-1 block text-xs font-bold text-gray-700 dark:text-gray-300">
             Jenis Iuran
           </label>
           <select
@@ -1124,7 +1119,7 @@ export function BillsPage() {
               setBillTypeFilter(e.target.value);
               setPage(1);
             }}
-            className="h-11 px-3 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 max-w-[200px] focus:outline-none focus:ring-2 focus:ring-primary-500"
+            className="h-11 max-w-[200px] rounded-sm border-2 border-ink bg-white px-3 text-sm font-semibold text-ink focus:outline-none focus:ring-2 focus:ring-ink/20 dark:border-gray-500 dark:bg-gray-800 dark:text-gray-200"
           >
             <option value="">Semua Jenis</option>
             {billTypes.map((t) => (
@@ -1138,7 +1133,7 @@ export function BillsPage() {
         {/* Pencarian nama keluarga (admin) */}
         {admin && (
           <div>
-            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+            <label className="mb-1 block text-xs font-bold text-gray-700 dark:text-gray-300">
               Cari Warga
             </label>
             <div className="relative">
@@ -1154,7 +1149,7 @@ export function BillsPage() {
                     setPage(1);
                   }
                 }}
-                className="h-11 w-full sm:w-[220px] pl-9 pr-9 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="h-11 w-full rounded-sm border-2 border-ink bg-white pl-9 pr-9 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-ink/20 dark:border-gray-500 dark:bg-gray-800 dark:text-gray-200 sm:w-[220px]"
               />
               {searchInput && (
                 <button
@@ -1178,7 +1173,7 @@ export function BillsPage() {
           <Button
             variant="ghost"
             size="sm"
-            className="h-11"
+            className="mt-5 h-11"
             onClick={() => {
               setPeriodFilter('');
               setBillTypeFilter('');
@@ -1219,15 +1214,22 @@ export function BillsPage() {
           <div className="animate-spin h-8 w-8 border-4 border-primary-600 border-t-transparent rounded-full" />
         </div>
       ) : bills.length === 0 ? (
-        <Card className="py-16 text-center">
-          <BanknotesIcon className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
-          <p className="text-sm text-gray-500 dark:text-gray-400">Belum ada tagihan</p>
+        <Card className="flex min-h-52 flex-col items-center justify-center bg-[#fff8ec] px-6 py-12 text-center dark:bg-gray-800">
+          <div className="flex h-14 w-14 items-center justify-center rounded-sm border-2 border-ink bg-[#f1dfc4] shadow-[3px_3px_0_#171717] dark:border-gray-400 dark:bg-gray-700 dark:shadow-[3px_3px_0_#a3a3a3]">
+            <BanknotesIcon className="h-7 w-7 text-ink dark:text-white" aria-hidden="true" />
+          </div>
+          <h2 className="mt-5 font-display text-lg font-bold text-ink dark:text-gray-100">
+            Belum ada tagihan
+          </h2>
+          <p className="mt-1 max-w-sm text-sm font-medium text-gray-700 dark:text-gray-300">
+            Tagihan pada periode dan filter yang dipilih belum tersedia.
+          </p>
         </Card>
       ) : (
         <>
           {/* Desktop: tabel (disembunyikan di mobile) */}
           <div className="hidden md:block">
-            <Table className="table-fixed">
+            <Table className="table-fixed border-2 border-ink dark:border-gray-500">
               <TableHeader>
                 <TableRow>
                   {admin && (
@@ -1251,7 +1253,7 @@ export function BillsPage() {
               </TableHeader>
               <TableBody>
                 {bills.map((bill) => (
-                  <TableRow key={bill.id}>
+                  <TableRow key={bill.id} className="border-ink/20 dark:border-gray-600">
                     {admin && (
                       <TableCell className="w-10">
                         {bill.status !== 'paid' && (
@@ -1269,7 +1271,7 @@ export function BillsPage() {
                       <div className="font-medium text-gray-900 dark:text-gray-100">
                         {bill.family?.headOfFamily}
                       </div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400">
+                      <div className="text-xs font-medium text-gray-700 dark:text-gray-300">
                         {bill.billType?.name}
                       </div>
                     </TableCell>
@@ -1594,7 +1596,7 @@ export function BillsPage() {
         <div className="space-y-4">
           {/* Ringkasan tagihan */}
           {payModal && (
-            <div className="rounded-lg border border-gray-200 dark:border-gray-700 p-4 space-y-2">
+            <div className="space-y-2 rounded-sm border-2 border-ink bg-[#fff8ec] p-4 dark:border-gray-400 dark:bg-gray-900">
               <div className="flex items-center justify-between gap-3">
                 <div className="min-w-0">
                   <p className="font-medium text-gray-900 dark:text-gray-100 truncate">
@@ -1626,7 +1628,7 @@ export function BillsPage() {
 
           {/* Metode pembayaran — tombol pilihan */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="mb-2 block text-sm font-bold text-ink dark:text-gray-200">
               Metode Pembayaran
             </label>
             <div className="grid grid-cols-2 gap-3">
@@ -1645,10 +1647,10 @@ export function BillsPage() {
                     type="button"
                     onClick={() => setPayForm({ ...payForm, method: m.value })}
                     aria-pressed={active}
-                    className={`flex items-center justify-center gap-2 min-h-[48px] rounded-lg border text-sm font-medium transition-colors ${
+                    className={`flex min-h-[48px] items-center justify-center gap-2 rounded-sm border-2 border-ink text-sm font-bold shadow-[2px_2px_0_#171717] transition-transform hover:translate-x-px hover:translate-y-px hover:shadow-none dark:border-gray-300 ${
                       active
-                        ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300'
-                        : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
+                        ? 'bg-brand-500 text-white dark:bg-blue-600'
+                        : 'bg-white text-ink hover:bg-[#f1dfc4] dark:bg-gray-800 dark:text-gray-100 dark:hover:bg-gray-700'
                     }`}
                   >
                     {m.icon}
@@ -1891,17 +1893,17 @@ export function BillsPage() {
         {confirmPay && (
           <div className="space-y-5">
             {/* Nominal utama */}
-            <div className="text-center py-4 rounded-lg bg-primary-50 dark:bg-primary-900/15">
-              <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">
+            <div className="rounded-sm border-2 border-ink bg-[#f1dfc4] py-4 text-center dark:border-gray-400 dark:bg-gray-700">
+              <p className="mb-1 text-xs font-bold uppercase tracking-wide text-ink dark:text-gray-200">
                 Total yang harus dibayar
               </p>
-              <p className="text-3xl font-bold text-primary-700 dark:text-primary-300">
+              <p className="text-3xl font-bold text-ink dark:text-white">
                 {formatCurrency(confirmPay.amount)}
               </p>
             </div>
 
             {/* Rincian tagihan */}
-            <div className="space-y-3 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+            <div className="space-y-3 rounded-sm border-2 border-ink bg-white p-4 dark:border-gray-400 dark:bg-gray-800">
               <DetailRow label="Jenis Iuran" value={confirmPay.billType?.name || '-'} />
               <DetailRow label="Keluarga" value={confirmPay.family?.headOfFamily || '-'} />
               <DetailRow label="Periode" value={confirmPay.period} />
@@ -1911,9 +1913,9 @@ export function BillsPage() {
             </div>
 
             {/* Info metode */}
-            <div className="flex items-start gap-3 rounded-lg bg-blue-50 dark:bg-blue-900/15 border border-blue-200 dark:border-blue-800/40 p-3">
-              <CreditCardIcon className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
-              <p className="text-xs text-blue-800 dark:text-blue-300">
+            <div className="flex items-start gap-3 rounded-sm border-2 border-ink bg-[#fff8ec] p-3 dark:border-gray-400 dark:bg-gray-900">
+              <CreditCardIcon className="mt-0.5 h-5 w-5 flex-shrink-0 text-ink dark:text-gray-100" />
+              <p className="text-xs font-medium text-ink dark:text-gray-200">
                 Halaman pembayaran aman akan terbuka di jendela ini. Pilih metode seperti QRIS,
                 transfer bank, atau gerai retail. Status tagihan diperbarui otomatis setelah
                 pembayaran.
@@ -1951,10 +1953,10 @@ export function BillsPage() {
         contentClassName="p-0"
       >
         {snapBill && (
-          <div className="border-b border-gray-200 bg-gradient-to-br from-primary-50 via-white to-blue-50 px-6 py-5 dark:border-gray-700 dark:from-primary-950/30 dark:via-gray-800 dark:to-blue-950/20">
+          <div className="border-b-2 border-ink bg-[#fff8ec] px-6 py-5 dark:border-gray-400 dark:bg-gray-900">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex min-w-0 items-center gap-3">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary-600 text-white shadow-sm shadow-primary-600/30">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-sm border-2 border-ink bg-brand-500 text-white shadow-[2px_2px_0_#171717] dark:border-gray-300">
                   <CreditCardIcon className="h-5 w-5" aria-hidden="true" />
                 </div>
                 <div className="min-w-0">
@@ -1978,19 +1980,19 @@ export function BillsPage() {
           </div>
         )}
 
-        <div className="bg-gray-50 px-3 py-4 dark:bg-gray-900/50 sm:px-6">
-          <div className="mb-3 flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
-            <ShieldCheckIcon className="h-4 w-4 text-emerald-600" aria-hidden="true" />
+        <div className="bg-[#fffdf8] px-3 py-4 dark:bg-gray-800 sm:px-6">
+          <div className="mb-3 flex items-center gap-2 text-xs font-semibold text-ink dark:text-gray-200">
+            <ShieldCheckIcon className="h-4 w-4 text-ink dark:text-gray-100" aria-hidden="true" />
             <span>Pilih metode pembayaran yang paling nyaman untuk Anda</span>
           </div>
           {/* Container tempat Snap dirender (min. 320x560 sesuai standar Midtrans) */}
-          <div className="mx-auto max-w-md overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-gray-200 dark:ring-gray-700">
+          <div className="mx-auto max-w-md overflow-hidden rounded-sm border-2 border-ink bg-white shadow-[4px_4px_0_#171717] dark:border-gray-400 dark:shadow-[4px_4px_0_#a3a3a3]">
             <div id={SNAP_CONTAINER_ID} className="w-full min-h-[560px]" />
           </div>
         </div>
 
-        <div className="flex flex-col gap-3 border-t border-gray-200 bg-white px-6 py-4 dark:border-gray-700 dark:bg-gray-800 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+        <div className="flex flex-col gap-3 border-t-2 border-ink bg-[#fff8ec] px-6 py-4 dark:border-gray-400 dark:bg-gray-900 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-2 text-xs font-semibold text-ink dark:text-gray-200">
             <LockClosedIcon className="h-4 w-4" aria-hidden="true" />
             Transaksi diproses secara aman oleh Midtrans
           </div>
@@ -2011,7 +2013,6 @@ function FilterStatCard({
   icon,
   iconBg,
   active,
-  activeRing,
   onClick,
 }: {
   label: string;
@@ -2020,7 +2021,6 @@ function FilterStatCard({
   icon: React.ReactNode;
   iconBg: string;
   active: boolean;
-  activeRing: string;
   onClick: () => void;
 }) {
   return (
@@ -2028,14 +2028,14 @@ function FilterStatCard({
       type="button"
       onClick={onClick}
       aria-pressed={active}
-      className={`text-left transition-all ${active ? `ring-2 ${activeRing} ring-offset-1 dark:ring-offset-gray-900` : ''} rounded-lg`}
+      className="rounded-sm text-left transition-transform hover:-translate-y-0.5"
     >
-      <Card className="p-4 flex items-center gap-4 h-full">
-        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${iconBg}`}>
+      <Card className={`flex h-full items-center gap-4 p-4 ${active ? 'bg-[#fff8ec] dark:bg-gray-700' : ''}`}>
+        <div className={`flex h-10 w-10 items-center justify-center rounded-sm border-2 border-ink dark:border-gray-500 ${iconBg}`}>
           {icon}
         </div>
         <div>
-          <p className="text-xs text-gray-500">{label}</p>
+          <p className="text-sm font-bold text-ink dark:text-gray-100">{label}</p>
           <p className={`text-lg font-bold ${valueClass}`}>{value}</p>
         </div>
       </Card>
@@ -2113,9 +2113,9 @@ function PayActions({
       {open && (
         <div
           role="menu"
-          className="absolute right-0 top-full mt-1 w-64 z-20 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg py-1"
+          className="absolute right-0 top-full z-20 mt-2 w-64 rounded-sm border-2 border-ink bg-white shadow-[4px_4px_0_#171717] dark:border-gray-300 dark:bg-gray-800 dark:shadow-[4px_4px_0_#a3a3a3]"
         >
-          <p className="px-3 py-1.5 text-xs font-medium text-gray-400 dark:text-gray-500">
+          <p className="border-b-2 border-ink bg-[#fff8ec] px-3 py-2 text-xs font-bold uppercase tracking-wide text-ink dark:border-gray-400 dark:bg-gray-900 dark:text-gray-200">
             Pilih cara pembayaran
           </p>
           <button
@@ -2125,12 +2125,12 @@ function PayActions({
               setOpen(false);
               onPayOnline();
             }}
-            className="flex w-full items-start gap-2.5 px-3 py-2 text-left hover:bg-gray-50 dark:hover:bg-gray-700"
+            className="flex w-full items-start gap-2.5 border-b border-ink/20 px-3 py-3 text-left hover:bg-[#f1dfc4] focus:bg-[#f1dfc4] focus:outline-none dark:border-gray-600 dark:hover:bg-gray-700 dark:focus:bg-gray-700"
           >
-            <CreditCardIcon className="w-4 h-4 mt-0.5 text-primary-600 flex-shrink-0" />
+            <CreditCardIcon className="mt-0.5 h-4 w-4 flex-shrink-0 text-ink dark:text-gray-100" />
             <span>
-              <span className="block text-sm text-gray-700 dark:text-gray-200">Bayar Online</span>
-              <span className="block text-xs text-gray-400">QRIS, transfer, e-wallet</span>
+              <span className="block text-sm font-bold text-ink dark:text-gray-100">Bayar Online</span>
+              <span className="block text-xs font-medium text-gray-700 dark:text-gray-300">QRIS, transfer, e-wallet</span>
             </span>
           </button>
           <button
@@ -2140,12 +2140,12 @@ function PayActions({
               setOpen(false);
               onManual();
             }}
-            className="flex w-full items-start gap-2.5 px-3 py-2 text-left hover:bg-gray-50 dark:hover:bg-gray-700"
+            className="flex w-full items-start gap-2.5 px-3 py-3 text-left hover:bg-[#f1dfc4] focus:bg-[#f1dfc4] focus:outline-none dark:hover:bg-gray-700 dark:focus:bg-gray-700"
           >
-            <BanknotesIcon className="w-4 h-4 mt-0.5 text-gray-500 flex-shrink-0" />
+            <BanknotesIcon className="mt-0.5 h-4 w-4 flex-shrink-0 text-ink dark:text-gray-100" />
             <span>
-              <span className="block text-sm text-gray-700 dark:text-gray-200">Catat Tunai</span>
-              <span className="block text-xs text-gray-400">Pembayaran diterima langsung</span>
+              <span className="block text-sm font-bold text-ink dark:text-gray-100">Catat Tunai</span>
+              <span className="block text-xs font-medium text-gray-700 dark:text-gray-300">Pembayaran diterima langsung</span>
             </span>
           </button>
         </div>

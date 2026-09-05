@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { PencilIcon, TrashIcon, PlusIcon, MagnifyingGlassIcon, ArrowDownTrayIcon } from '@heroicons/react/24/outline';
+import { PlusIcon, MagnifyingGlassIcon, ArrowDownTrayIcon } from '@heroicons/react/24/outline';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/Table';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Modal, ModalFooter } from '@/components/ui/Modal';
 import { FilterBar, SearchInput, FilterSelect } from '@/components/ui/FilterBar';
 import { Pagination } from '@/components/ui/Pagination';
+import { TableActionButton } from '@/components/ui/TableActionButton';
 import { usePaginatedApi, apiPost, apiPut, apiDelete } from '@/hooks/useApi';
 
 interface Resident {
@@ -141,7 +142,7 @@ export function ResidentsPage() {
             </TableHeader>
             <TableBody>
               {residents.length === 0 ? (
-                <TableRow><TableCell className="text-center py-8 text-gray-500" colSpan={6}>Belum ada data warga</TableCell></TableRow>
+                <TableRow><TableCell className="py-10 text-center font-semibold text-ink dark:text-gray-200" colSpan={6}>Belum ada data warga</TableCell></TableRow>
               ) : (
                 residents.map((r) => (
                   <TableRow key={r.id}>
@@ -152,8 +153,8 @@ export function ResidentsPage() {
                     <TableCell>{r.family?.headOfFamily || '-'}</TableCell>
                     <TableCell>
                       <div className="flex gap-2">
-                        <button onClick={() => openEdit(r)} className="text-blue-600 hover:text-blue-800 min-h-[44px] min-w-[44px] flex items-center justify-center"><PencilIcon className="w-4 h-4" /></button>
-                        <button onClick={() => setDeleteModal(r)} className="text-red-600 hover:text-red-800 min-h-[44px] min-w-[44px] flex items-center justify-center"><TrashIcon className="w-4 h-4" /></button>
+                        <TableActionButton action="edit" label={`Edit warga ${r.fullName}`} onClick={() => openEdit(r)} />
+                        <TableActionButton action="delete" label={`Hapus warga ${r.fullName}`} onClick={() => setDeleteModal(r)} />
                       </div>
                     </TableCell>
                   </TableRow>
