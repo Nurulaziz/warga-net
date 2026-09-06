@@ -65,9 +65,35 @@ export class ResidentsService {
       throw new ConflictException('NIK sudah terdaftar');
     }
 
+    let familyId = dto.familyId;
+    if (dto.createFamily) {
+      const existingHead = await this.prisma.family.findFirst({
+        where: { deletedAt: null, headOfFamily: { equals: dto.fullName, mode: 'insensitive' } },
+      });
+      if (existingHead) {
+        throw new ConflictException('Keluarga dengan kepala keluarga tersebut sudah ada');
+      }
+      const family = await this.prisma.family.create({
+        data: { headOfFamily: dto.fullName, address: dto.familyAddress || '', housingComplex: '', rt: '', rw: '' },
+      });
+      familyId = family.id;
+      const now = new Date();
+      const period = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+      const types = await this.prisma.billType.findMany({ where: { period: 'monthly', isActive: true }, select: { id: true, amount: true, dueDay: true } });
+      for (const type of types) {
+        const dueDate = new Date(now.getFullYear(), now.getMonth(), Math.min(Math.max(type.dueDay || 10, 1), 28));
+        await this.prisma.bill.upsert({
+          where: { billTypeId_familyId_period: { billTypeId: type.id, familyId: family.id, period } },
+          create: { billTypeId: type.id, familyId: family.id, amount: type.amount, dueDate, period, status: 'unpaid' },
+          update: {},
+        });
+      }
+    }
+    if (!familyId) throw new ConflictException('Pilih keluarga atau buat keluarga baru');
+
     return this.prisma.resident.create({
       data: {
-        familyId: dto.familyId,
+        familyId,
         fullName: dto.fullName,
         idNumber: dto.idNumber,
         birthDate: new Date(dto.birthDate),

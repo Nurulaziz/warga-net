@@ -34,7 +34,7 @@ export function ResidentsPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [deleteModal, setDeleteModal] = useState<Resident | null>(null);
   const [editing, setEditing] = useState<Resident | null>(null);
-  const [formData, setFormData] = useState({ fullName: '', idNumber: '', birthDate: '', gender: 'Laki-laki', relationship: '', familyId: '' });
+  const [formData, setFormData] = useState({ fullName: '', idNumber: '', birthDate: '', gender: 'Laki-laki', relationship: '', familyId: '', createFamily: false, familyAddress: '' });
   const [formError, setFormError] = useState('');
   const [saving, setSaving] = useState(false);
 
@@ -54,20 +54,20 @@ export function ResidentsPage() {
 
   function openCreate() {
     setEditing(null);
-    setFormData({ fullName: '', idNumber: '', birthDate: '', gender: 'Laki-laki', relationship: '', familyId: '' });
+    setFormData({ fullName: '', idNumber: '', birthDate: '', gender: 'Laki-laki', relationship: '', familyId: '', createFamily: false, familyAddress: '' });
     setFormError('');
     setModalOpen(true);
   }
 
   function openEdit(r: Resident) {
     setEditing(r);
-    setFormData({ fullName: r.fullName, idNumber: r.idNumber, birthDate: r.birthDate.split('T')[0], gender: r.gender, relationship: r.relationship, familyId: r.familyId });
+    setFormData({ fullName: r.fullName, idNumber: r.idNumber, birthDate: r.birthDate.split('T')[0], gender: r.gender, relationship: r.relationship, familyId: r.familyId, createFamily: false, familyAddress: '' });
     setFormError('');
     setModalOpen(true);
   }
 
   async function handleSave() {
-    if (!formData.fullName || !formData.idNumber || !formData.familyId || !formData.birthDate) {
+    if (!formData.fullName || !formData.idNumber || (!formData.familyId && !formData.createFamily) || !formData.birthDate) {
       setFormError('Field wajib belum lengkap');
       return;
     }
@@ -193,12 +193,14 @@ export function ResidentsPage() {
           <Input label="Hubungan dalam Keluarga" value={formData.relationship} onChange={(e) => setFormData({ ...formData, relationship: e.target.value })} placeholder="Kepala Keluarga, Istri, Anak..." />
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Keluarga</label>
-            <select value={formData.familyId} onChange={(e) => setFormData({ ...formData, familyId: e.target.value })} className="w-full min-h-[44px] px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100">
+            <select disabled={formData.createFamily} value={formData.familyId} onChange={(e) => setFormData({ ...formData, familyId: e.target.value })} className="w-full min-h-[44px] px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100">
               <option value="">Pilih Keluarga</option>
               {families.map((f) => (
                 <option key={f.id} value={f.id}>{f.headOfFamily}</option>
               ))}
             </select>
+            {!editing && <label className="mt-3 flex items-center gap-2 text-sm"><input type="checkbox" checked={formData.createFamily} onChange={(e) => setFormData({ ...formData, createFamily: e.target.checked, familyId: e.target.checked ? '' : formData.familyId })} /> Buat keluarga baru dari warga ini</label>}
+            {!editing && formData.createFamily && <Input label="Alamat Keluarga" value={formData.familyAddress} onChange={(e) => setFormData({ ...formData, familyAddress: e.target.value })} placeholder="Alamat tempat tinggal" />}
           </div>
           {formError && <p className="text-sm text-red-600">{formError}</p>}
         </div>

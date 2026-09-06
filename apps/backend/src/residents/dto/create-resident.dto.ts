@@ -1,4 +1,4 @@
-import { IsString, IsDateString } from 'class-validator';
+import { IsString, IsDateString, IsBoolean, IsOptional } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateResidentDto {
@@ -25,4 +25,14 @@ export class CreateResidentDto {
   @ApiProperty({ example: 'Kepala Keluarga' })
   @IsString()
   relationship!: string;
+
+  @ApiProperty({ required: false, description: 'Buat keluarga baru dari warga ini' })
+  @IsOptional()
+  @IsBoolean()
+  createFamily?: boolean;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  familyAddress?: string;
 }

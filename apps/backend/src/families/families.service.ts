@@ -72,7 +72,37 @@ export class FamiliesService {
       if (!dto.rw) dto.rw = (map['rw_name'] || '010').replace(/\D/g, '');
     }
 
-    return this.prisma.family.create({ data: dto });
+    const family = await this.prisma.family.create({ data: dto });
+
+    // A family may be added after monthly bills were generated.  Create the
+    // active monthly bills for the current period so the new family is not
+    // silently omitted from billing.
+    const now = new Date();
+    const period = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    const monthlyTypes = await this.prisma.billType.findMany({
+      where: { period: 'monthly', isActive: true },
+      select: { id: true, amount: true, dueDay: true },
+    });
+    for (const type of monthlyTypes) {
+      const dueDate = new Date(now.getFullYear(), now.getMonth(), Math.min(Math.max(type.dueDay || 10, 1), 28));
+      await this.prisma.bill.upsert({
+        where: { billTypeId_familyId_period: { billTypeId: type.id, familyId: family.id, period } },
+        create: { billTypeId: type.id, familyId: family.id, amount: type.amount, dueDate, period, status: 'unpaid' },
+        update: {},
+      });
+    }
+
+    // Preserve the common onboarding flow (account first, family second):
+    // link only an unassigned account with an unambiguous exact name match.
+    const candidates = await this.prisma.user.findMany({
+      where: { familyId: null, deletedAt: null, fullName: { equals: family.headOfFamily, mode: 'insensitive' } },
+      select: { id: true },
+    });
+    if (candidates.length === 1) {
+      await this.prisma.user.update({ where: { id: candidates[0].id }, data: { familyId: family.id } });
+    }
+
+    return family;
   }
 
   async update(id: string, dto: UpdateFamilyDto) {
