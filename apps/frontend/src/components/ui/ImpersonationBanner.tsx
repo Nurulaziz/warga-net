@@ -27,22 +27,26 @@ export function ImpersonationBanner() {
   }
 
   return (
-    <div className="bg-amber-500 dark:bg-amber-600 text-white px-4 py-2 flex items-center justify-between gap-3">
-      <div className="flex items-center gap-2">
-        <ExclamationTriangleIcon className="w-5 h-5 flex-shrink-0" />
-        <span className="text-sm font-medium">
-          Anda sedang melihat sebagai <strong>{session?.user?.name}</strong>
-        </span>
+    <div className="sticky top-0 z-40 border-b-2 border-ink bg-brand-500 px-4 py-2.5 text-ink shadow-[0_2px_0_#171717] dark:border-gray-300 dark:bg-brand-600">
+      <div className="mx-auto flex w-full max-w-screen-xl flex-wrap items-center justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-2">
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-sm border-2 border-ink bg-warm-50 shadow-[2px_2px_0_#171717]">
+            <ExclamationTriangleIcon className="h-4 w-4" />
+          </span>
+          <span className="text-xs font-bold leading-tight sm:text-sm">
+            Anda sedang melihat sebagai <strong>{session?.user?.name}</strong>
+          </span>
+        </div>
+        <Button
+          variant="secondary"
+          size="sm"
+          loading={stopping}
+          onClick={handleStopImpersonating}
+          className="ml-auto shrink-0 border-2 border-ink bg-warm-50 px-3 text-xs font-black text-ink shadow-[2px_2px_0_#171717] hover:bg-[#f1dfc4] dark:border-gray-300 dark:bg-gray-100 dark:text-gray-900"
+        >
+          Kembali ke Akun Admin
+        </Button>
       </div>
-      <Button
-        variant="secondary"
-        size="sm"
-        loading={stopping}
-        onClick={handleStopImpersonating}
-        className="bg-white text-amber-700 hover:bg-amber-50 border-0"
-      >
-        Kembali ke Akun Admin
-      </Button>
     </div>
   );
 }

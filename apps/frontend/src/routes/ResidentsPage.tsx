@@ -190,7 +190,19 @@ export function ResidentsPage() {
               </select>
             </div>
           </div>
-          <Input label="Hubungan dalam Keluarga" value={formData.relationship} onChange={(e) => setFormData({ ...formData, relationship: e.target.value })} placeholder="Kepala Keluarga, Istri, Anak..." />
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Hubungan dalam Keluarga</label>
+            <select value={formData.relationship} onChange={(e) => setFormData({ ...formData, relationship: e.target.value })} className="w-full min-h-[44px] px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100">
+              <option value="">Pilih hubungan</option>
+              <option value="Kepala Keluarga">Kepala Keluarga</option>
+              <option value="Istri">Istri</option>
+              <option value="Suami">Suami</option>
+              <option value="Anak">Anak</option>
+              <option value="Orang Tua">Orang Tua</option>
+              <option value="Saudara">Saudara</option>
+              <option value="Lainnya">Lainnya</option>
+            </select>
+          </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Keluarga</label>
             <select disabled={formData.createFamily} value={formData.familyId} onChange={(e) => setFormData({ ...formData, familyId: e.target.value })} className="w-full min-h-[44px] px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100">

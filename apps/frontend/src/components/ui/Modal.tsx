@@ -57,7 +57,7 @@ export const Modal = ({
       aria-labelledby={title ? 'modal-title' : undefined}
     >
       <div
-        className={`w-full ${sizeStyles[size]} max-h-[90vh] overflow-y-auto rounded-sm border-2 border-ink bg-[#fffdf8] shadow-[7px_7px_0_#171717] dark:border-gray-300 dark:bg-gray-800 dark:shadow-[7px_7px_0_#a3a3a3] ${panelClassName}`}
+        className={`flex w-full ${sizeStyles[size]} max-h-[90dvh] flex-col overflow-hidden rounded-sm border-2 border-ink bg-[#fffdf8] shadow-[7px_7px_0_#171717] dark:border-gray-300 dark:bg-gray-800 dark:shadow-[7px_7px_0_#a3a3a3] ${panelClassName}`}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between border-b-2 border-ink bg-[#fff8ec] px-6 py-4 dark:border-gray-500 dark:bg-gray-900">
@@ -80,7 +80,7 @@ export const Modal = ({
             </button>
           </div>
         </div>
-        <div className={`px-6 py-4 text-ink dark:text-gray-100 ${contentClassName}`}>{children}</div>
+        <div className={`min-h-0 flex-1 overflow-y-auto px-6 py-4 text-ink dark:text-gray-100 ${contentClassName}`}>{children}</div>
       </div>
     </div>
   );

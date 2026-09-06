@@ -37,7 +37,7 @@ export function ResponsiveLayout() {
       <main
         className={`
           min-h-screen transition-all duration-300
-          ${isMobile ? 'pb-16' : sidebarCollapsed ? 'md:ml-[68px]' : 'md:ml-[230px]'}
+          ${isMobile ? 'pb-20' : sidebarCollapsed ? 'md:ml-[68px]' : 'md:ml-[230px]'}
         `}
       >
         <header className="sticky top-0 z-30 flex h-14 items-center justify-end gap-2 border-b-2 border-ink bg-[#FFF9EF]/95 px-4 backdrop-blur md:px-6 lg:px-8 dark:border-gray-500 dark:bg-gray-900/95">

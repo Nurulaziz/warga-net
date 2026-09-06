@@ -74,8 +74,8 @@ export function MobileNavigation() {
   return (
     <>
       {/* Bottom Tab Bar */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-[#FFF9EF] dark:bg-gray-800 border-t-2 border-ink dark:border-gray-500 z-50">
-        <div className="flex justify-around items-center h-16">
+      <nav className="fixed bottom-0 left-0 right-0 z-50 border-t-2 border-ink bg-[#FFF9EF] dark:border-gray-500 dark:bg-gray-800">
+        <div className="flex h-[4.5rem] items-center justify-around px-1 pb-[env(safe-area-inset-bottom)]">
           {primaryItems.map((item) => (
             <NavLink
               key={item.path}
@@ -84,7 +84,7 @@ export function MobileNavigation() {
                 `flex flex-col items-center justify-center flex-1 h-full transition-all ${
                   item.path === '/suara-warga'
                     ? `relative -mt-3 mx-1 h-[4.5rem] rounded-sm border-2 border-ink bg-brand-500 px-1 text-white shadow-[3px_3px_0_#171717] ${isActive ? 'scale-105' : 'opacity-95'}`
-                    : isActive ? 'text-blue-600 dark:text-blue-400' : 'text-gray-600 dark:text-gray-400'
+                    : isActive ? 'border-t-4 border-brand-500 bg-[#f1dfc4] font-black text-ink dark:bg-gray-700 dark:text-white' : 'text-gray-600 dark:text-gray-400'
                 }`
               }
             >
