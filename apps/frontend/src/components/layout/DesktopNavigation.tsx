@@ -17,7 +17,6 @@ import {
   MegaphoneIcon,
   EnvelopeIcon,
   ChatBubbleLeftRightIcon,
-  UserCircleIcon,
 } from '@heroicons/react/24/outline';
 
 // --- Menu configuration ---
@@ -83,7 +82,6 @@ const bottomNavItems: NavItem[] = [
   { path: '/settings', label: 'Pengaturan', icon: Cog6ToothIcon, adminOnly: true },
 ];
 
-const profileNavItem: NavItem = { path: '/profile', label: 'Profil Saya', icon: UserCircleIcon };
 
 // --- Component ---
 
@@ -180,21 +178,15 @@ export function DesktopNavigation({ collapsed, onToggle }: DesktopNavigationProp
         ))}
       </nav>
 
-      {/* Bottom section: Pengaturan, lalu Profil + Theme Toggle dalam 1 row */}
+      {/* Bottom section: Pengaturan dan theme toggle sejajar */}
       <div className="flex-shrink-0 border-t-2 border-ink dark:border-gray-500 px-2 py-2">
-        <div className="space-y-0.5">
-          {visibleBottomItems.map((item) => (
-            <SidebarLink key={item.path} item={item} collapsed={collapsed} />
-          ))}
-        </div>
-        {/* Profil + theme toggle sejajar dalam satu baris */}
-        <div className={`mt-0.5 flex items-center gap-1 ${collapsed ? 'flex-col' : ''}`}>
-          <div className="flex-1 min-w-0">
-            <SidebarLink item={profileNavItem} collapsed={collapsed} />
+        <div className={`flex items-center gap-1 ${collapsed ? 'flex-col' : ''}`}>
+          <div className="min-w-0 flex-1">
+            {visibleBottomItems.map((item) => (
+              <SidebarLink key={item.path} item={item} collapsed={collapsed} />
+            ))}
           </div>
-          <div className="flex-shrink-0 pr-1">
-            <ThemeToggle />
-          </div>
+          <div className="flex-shrink-0 pr-1"><ThemeToggle /></div>
         </div>
       </div>
 

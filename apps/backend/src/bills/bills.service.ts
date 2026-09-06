@@ -726,6 +726,15 @@ export class BillsService {
       await this.prisma.bill.update({ where: { id: bill.id }, data: { status: newStatus } });
     }
     await this.recordBillPaymentToCash(payment.id);
+    if (bill) {
+      void this.notificationsService.notifyFamily(bill.familyId, {
+        type: 'payment_received',
+        title: 'Pembayaran online berhasil',
+        message: `Pembayaran iuran sebesar Rp ${payment.amount.toLocaleString('id-ID')} telah diterima.`,
+        referenceType: 'payment',
+        referenceId: payment.id,
+      });
+    }
   }
 
   // Verifikasi pembayaran sebuah bill langsung ke Midtrans (fallback tanpa webhook).
