@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { KeyboardEvent, TextareaHTMLAttributes } from 'react';
 import { AtSymbolIcon } from '@heroicons/react/24/outline';
 import { fetchMentionSuggestions } from '@/services/posts';
+import { useDismissibleLayer } from '@/hooks/useDismissibleLayer';
 
 type MentionUser = { id: string; fullName: string };
 
@@ -25,6 +26,11 @@ export function MentionTextarea({ value, onChange, onMention, className = '', ..
   const [range, setRange] = useState<{ start: number; cursor: number; query: string } | null>(null);
   const [suggestions, setSuggestions] = useState<MentionUser[]>([]);
   const [activeIndex, setActiveIndex] = useState(0);
+  const suggestionsOpen = suggestions.length > 0;
+  const { rootRef } = useDismissibleLayer(suggestionsOpen, () => {
+    setRange(null);
+    setSuggestions([]);
+  });
 
   function refresh(nextValue: string, cursor: number) {
     const mention = activeMention(nextValue, cursor);
@@ -79,7 +85,7 @@ export function MentionTextarea({ value, onChange, onMention, className = '', ..
   }
 
   return (
-    <div className="relative flex-1">
+    <div ref={rootRef} className="relative flex-1">
       <textarea
         {...props}
         ref={ref}

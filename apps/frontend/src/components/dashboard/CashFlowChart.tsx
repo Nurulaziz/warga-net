@@ -89,10 +89,10 @@ export function CashFlowChart() {
   }, []);
 
   const isDark = theme === 'dark';
-  const axisColor = isDark ? '#94A3B8' : '#64748B';
-  const gridColor = isDark ? 'rgba(148,163,184,0.12)' : 'rgba(100,116,139,0.18)';
-  const tooltipBg = isDark ? '#1f2937' : '#ffffff';
-  const tooltipBorder = isDark ? '#334155' : '#e2e8f0';
+  const axisColor = isDark ? '#d6c9b6' : '#5f564b';
+  const gridColor = isDark ? 'rgba(214,201,182,0.16)' : 'rgba(95,86,75,0.18)';
+  const tooltipBg = isDark ? '#2c261f' : '#fffdf8';
+  const tooltipBorder = isDark ? '#d6c9b6' : '#171717';
 
   const isEmpty = bars.length > 0 && bars.every((b) => b.income === 0 && b.expense === 0);
 
@@ -116,11 +116,11 @@ export function CashFlowChart() {
       {/* Legenda */}
       <div className="flex items-center gap-4 mb-2">
         <div className="flex items-center gap-1.5">
-          <span className="w-3 h-3 rounded-sm bg-emerald-500" />
+          <span className="h-3 w-3 rounded-sm border border-ink bg-[#2f855a]" />
           <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">Pemasukan</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <span className="w-3 h-3 rounded-sm bg-red-500" />
+          <span className="h-3 w-3 rounded-sm border border-ink bg-[#c53030]" />
           <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">Pengeluaran</span>
         </div>
       </div>
@@ -162,10 +162,10 @@ export function CashFlowChart() {
                 tickFormatter={formatTick}
               />
               <Tooltip
-                cursor={{ fill: isDark ? 'rgba(148,163,184,0.08)' : 'rgba(100,116,139,0.08)' }}
+                cursor={{ fill: isDark ? 'rgba(214,201,182,0.08)' : 'rgba(95,86,75,0.08)' }}
                 contentStyle={{
                   backgroundColor: tooltipBg,
-                  border: `2px solid ${isDark ? tooltipBorder : '#171717'}`,
+                  border: `2px solid ${tooltipBorder}`,
                   borderRadius: '2px',
                   boxShadow: '3px 3px 0 rgba(23,23,23,0.8)',
                   fontSize: '13px',
@@ -176,14 +176,14 @@ export function CashFlowChart() {
               <Bar
                 dataKey="income"
                 name="Pemasukan"
-                fill="#10b981"
+                fill="#2f855a"
                 radius={[4, 4, 0, 0]}
                 maxBarSize={22}
               />
               <Bar
                 dataKey="expense"
                 name="Pengeluaran"
-                fill="#ef4444"
+                fill="#c53030"
                 radius={[4, 4, 0, 0]}
                 maxBarSize={22}
               />

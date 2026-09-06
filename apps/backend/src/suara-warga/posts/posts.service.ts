@@ -1,7 +1,7 @@
 import { ForbiddenException, Injectable } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { sanitizeHtml } from '../../common/sanitize';
-import { AuthScope, assertAdmin, requirePostOrThrow } from '../common/scope.helper';
+import { AuthScope, assertAdmin, assertCanModify, requirePostOrThrow } from '../common/scope.helper';
 import { extractHashtags, extractMentions } from '../common/parser.helper';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
@@ -52,10 +52,16 @@ export class PostsService {
     },
   >(post: T) {
     const { reactions = [], savedBy = [], ...data } = post;
-    const poll = data.poll
+    const viewerOptionId = data.poll?.votes?.[0]?.optionId ?? null;
+    const pollData = data.poll as ({ expiresAt?: Date | null; resultVisibility?: string; options?: Array<Record<string, unknown>> } & Record<string, unknown>) | null | undefined;
+    const pollEnded = Boolean(pollData?.expiresAt && pollData.expiresAt <= new Date());
+    const resultsVisible = !pollData || pollData.resultVisibility === 'ALWAYS' || Boolean(viewerOptionId) || pollEnded;
+    const poll = pollData
       ? {
-          ...data.poll,
-          viewerOptionId: data.poll.votes?.[0]?.optionId ?? null,
+          ...pollData,
+          options: resultsVisible ? pollData.options : pollData.options?.map((option) => ({ ...option, voteCount: 0 })),
+          viewerOptionId,
+          resultsVisible,
           votes: undefined,
         }
       : null;
@@ -180,6 +186,10 @@ export class PostsService {
     if (dto.poll && pollOptions.length < 2) {
       throw new ForbiddenException('Polling minimal memiliki 2 pilihan yang valid');
     }
+    const pollExpiresAt = dto.poll?.expiresAt ? new Date(dto.poll.expiresAt) : null;
+    if (pollExpiresAt && pollExpiresAt.getTime() <= Date.now()) {
+      throw new ForbiddenException('Waktu berakhir polling harus di masa mendatang');
+    }
 
     const post = await this.prisma.post.create({
       data: {
@@ -192,6 +202,9 @@ export class PostsService {
               poll: {
                 create: {
                   question: sanitizeHtml(dto.poll.question),
+                  expiresAt: pollExpiresAt,
+                  voterVisibility: dto.poll.voterVisibility || 'SECRET',
+                  resultVisibility: dto.poll.resultVisibility || 'AFTER_VOTE',
                   options: {
                     create: pollOptions.map((text, order) => ({
                       text: sanitizeHtml(text),
@@ -525,6 +538,62 @@ export class PostsService {
       });
     });
     return { voted: true, optionId };
+  }
+
+  async closePoll(postId: string, scope: AuthScope) {
+    const post = await this.prisma.post.findFirst({
+      where: { id: postId, deletedAt: null },
+      select: { authorId: true, poll: { select: { id: true, expiresAt: true } } },
+    });
+    const found = requirePostOrThrow(post, 'Posting tidak ditemukan');
+    assertCanModify(scope, found.authorId);
+    if (!found.poll) throw new ForbiddenException('Polling tidak ditemukan');
+    if (found.poll.expiresAt && found.poll.expiresAt <= new Date()) {
+      return { closed: true, expiresAt: found.poll.expiresAt };
+    }
+    const poll = await this.prisma.poll.update({
+      where: { id: found.poll.id },
+      data: { expiresAt: new Date() },
+    });
+    return { closed: true, expiresAt: poll.expiresAt };
+  }
+
+  async getPollResults(postId: string, scope: AuthScope) {
+    await this.assertInteractive(postId, scope);
+    const post = await this.prisma.post.findFirst({
+      where: { id: postId, deletedAt: null },
+      select: {
+        authorId: true,
+        poll: {
+          include: {
+            options: { orderBy: { order: 'asc' } },
+            votes: { include: { user: { select: { id: true, fullName: true } } } },
+          },
+        },
+      },
+    });
+    const found = requirePostOrThrow(post, 'Posting tidak ditemukan');
+    if (!found.poll) throw new ForbiddenException('Polling tidak ditemukan');
+    const ended = Boolean(found.poll.expiresAt && found.poll.expiresAt <= new Date());
+    const viewerVoted = found.poll.votes.some((vote) => vote.userId === scope.userId);
+    const privileged = scope.isAdmin || found.authorId === scope.userId;
+    const resultsVisible = privileged || found.poll.resultVisibility === 'ALWAYS' || viewerVoted || ended;
+    if (!resultsVisible) throw new ForbiddenException('Hasil polling belum dapat dilihat');
+    const exposeVoters = found.poll.voterVisibility === 'VISIBLE';
+    return {
+      totalVotes: found.poll.votes.length,
+      voterVisibility: found.poll.voterVisibility,
+      resultVisibility: found.poll.resultVisibility,
+      ended,
+      options: found.poll.options.map((option) => ({
+        id: option.id,
+        text: option.text,
+        voteCount: option.voteCount,
+        voters: exposeVoters
+          ? found.poll!.votes.filter((vote) => vote.optionId === option.id).map((vote) => vote.user)
+          : undefined,
+      })),
+    };
   }
 
   async analytics(scope: AuthScope) {

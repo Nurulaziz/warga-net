@@ -16,7 +16,6 @@ import {
   XMarkIcon,
   ExclamationTriangleIcon,
   ExclamationCircleIcon,
-  MagnifyingGlassIcon,
   PaperClipIcon,
   ArrowDownTrayIcon,
   EyeIcon,
@@ -38,11 +37,12 @@ import { Modal, ModalFooter } from '@/components/ui/Modal';
 import { Card } from '@/components/ui/Card';
 import { Pagination } from '@/components/ui/Pagination';
 import { TableActionButton } from '@/components/ui/TableActionButton';
-import { FilterSelect } from '@/components/ui/FilterBar';
+import { FilterSelect, SearchInput } from '@/components/ui/FilterBar';
 import { FilterDatePicker } from '@/components/ui/FilterDatePicker';
 import { api } from '@/services/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSettings } from '@/hooks/useSettings';
+import { useDismissibleLayer } from '@/hooks/useDismissibleLayer';
 
 interface BillType {
   id: string;
@@ -669,7 +669,7 @@ export function BillsPage() {
     ctx.textBaseline = 'alphabetic';
 
     // Latar
-    ctx.fillStyle = '#ffffff';
+    ctx.fillStyle = '#fff9ef';
     ctx.fillRect(0, 0, W, finalH);
 
     let cursor = PAD;
@@ -680,14 +680,14 @@ export function BillsPage() {
     ctx.font = `800 18px ${FONT}`;
     ctx.fillText(brand, W / 2, cursor + 16);
     cursor += brandH;
-    ctx.fillStyle = '#6b7280';
+    ctx.fillStyle = '#5f564b';
     ctx.font = `400 11px ${FONT}`;
     for (let i = 0; i < addressLines.length; i++) {
       ctx.fillText(addressLines[i], W / 2, cursor + 12);
       cursor += 15;
     }
     cursor += 6;
-    ctx.fillStyle = '#374151';
+    ctx.fillStyle = '#171717';
     ctx.font = `700 9px ${FONT}`;
     ctx.fillText(titleText, W / 2, cursor + 11);
     cursor += titleH + 5;
@@ -708,7 +708,7 @@ export function BillsPage() {
     ctx.fillText('✓  LUNAS', W / 2, cursor + 16);
     cursor += statusH + 8;
 
-    ctx.strokeStyle = '#d1d5db';
+    ctx.strokeStyle = '#b8aa90';
     ctx.lineWidth = 1;
     ctx.setLineDash([4, 4]);
     ctx.beginPath();
@@ -732,7 +732,7 @@ export function BillsPage() {
       ctx.fillText(valueText, W - PAD, cursor + 12);
       ctx.textAlign = 'left';
       if (index < rows.length - 1) {
-        ctx.strokeStyle = '#f3f4f6';
+        ctx.strokeStyle = '#e5d8c2';
         ctx.lineWidth = 1;
         ctx.beginPath();
         ctx.moveTo(PAD, cursor + rowH - 2);
@@ -747,13 +747,13 @@ export function BillsPage() {
     const amountBoxX = PAD + 8;
     const amountBoxW = W - PAD * 2 - 16;
     roundedRect(ctx, amountBoxX, cursor, amountBoxW, boxH, 10);
-    ctx.fillStyle = '#f0fdf4';
+    ctx.fillStyle = '#e7f5e9';
     ctx.fill();
-    ctx.strokeStyle = '#bbf7d0';
+    ctx.strokeStyle = '#171717';
     ctx.lineWidth = 1;
     ctx.stroke();
     ctx.textAlign = 'center';
-    ctx.fillStyle = '#15803d';
+    ctx.fillStyle = '#166534';
     ctx.font = `600 9px ${FONT}`;
     ctx.fillText(amountLabel, W / 2, cursor + 16);
     ctx.fillStyle = '#166534';
@@ -762,7 +762,7 @@ export function BillsPage() {
     cursor += boxH + 18;
 
     // Meta
-    ctx.fillStyle = '#6b7280';
+    ctx.fillStyle = '#5f564b';
     ctx.font = `400 10px ${FONT}`;
     ctx.textAlign = 'center';
     for (const line of metaLines) {
@@ -772,7 +772,7 @@ export function BillsPage() {
     cursor += 12;
 
     // Footer
-    ctx.fillStyle = '#9ca3af';
+    ctx.fillStyle = '#6b6257';
     ctx.font = `400 10px ${FONT}`;
     ctx.fillText(footText, W / 2, cursor + 10);
 
@@ -966,7 +966,7 @@ export function BillsPage() {
   const renderBillActions = (bill: Bill) => {
     if (bill.status === 'paid') {
       return (
-        <Button variant="ghost" size="sm" onClick={() => setDetailModal(bill)}>
+        <Button variant="secondary" size="sm" className="min-w-[128px] gap-1" onClick={() => setDetailModal(bill)}>
           <DocumentMagnifyingGlassIcon className="w-4 h-4 mr-1" /> Detail
         </Button>
       );
@@ -1138,36 +1138,17 @@ export function BillsPage() {
             <label className="mb-1 block text-xs font-bold text-gray-700 dark:text-gray-300">
               Cari Warga
             </label>
-            <div className="relative">
-              <MagnifyingGlassIcon className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <input
-                type="text"
-                value={searchInput}
-                placeholder="Cari nama keluarga..."
-                onChange={(e) => setSearchInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    setSearch(searchInput.trim());
-                    setPage(1);
-                  }
-                }}
-                className="h-11 w-full rounded-sm border-2 border-ink bg-white pl-9 pr-9 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-ink/20 dark:border-gray-500 dark:bg-gray-800 dark:text-gray-200 sm:w-[220px]"
-              />
-              {searchInput && (
-                <button
-                  type="button"
-                  aria-label="Bersihkan pencarian"
-                  onClick={() => {
-                    setSearchInput('');
-                    setSearch('');
-                    setPage(1);
-                  }}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
-                >
-                  <XMarkIcon className="w-4 h-4" />
-                </button>
-              )}
-            </div>
+            <SearchInput
+              value={searchInput}
+              placeholder="Cari nama keluarga..."
+              aria-label="Cari warga"
+              className="w-full sm:w-[240px]"
+              onChange={(e) => setSearchInput(e.target.value)}
+              onSearch={() => {
+                setSearch(searchInput.trim());
+                setPage(1);
+              }}
+            />
           </div>
         )}
 
@@ -1711,8 +1692,8 @@ export function BillsPage() {
               <div className="space-y-4">
                 {/* Header status */}
                 <div
-                  className={`flex flex-col items-center text-center py-5 rounded-lg ${
-                    isPaid ? 'bg-green-50 dark:bg-green-900/15' : 'bg-amber-50 dark:bg-amber-900/15'
+                    className={`flex flex-col items-center text-center rounded-sm border-2 border-ink py-5 shadow-[2px_2px_0_#171717] dark:border-gray-300 ${
+                    isPaid ? 'bg-[#e7f5e9] dark:bg-green-900/25' : 'bg-[#fff1cf] dark:bg-amber-900/25'
                   }`}
                 >
                   {isPaid ? (
@@ -1723,19 +1704,19 @@ export function BillsPage() {
                   <p
                     className={`text-sm font-semibold ${
                       isPaid
-                        ? 'text-green-700 dark:text-green-300'
-                        : 'text-amber-700 dark:text-amber-300'
+                        ? 'text-green-900 dark:text-green-200'
+                        : 'text-amber-950 dark:text-amber-200'
                     }`}
                   >
                     {isPaid ? 'Pembayaran Lunas' : 'Belum Dibayar'}
                   </p>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-1">
+                  <p className="mt-1 text-2xl font-black text-ink dark:text-white">
                     {formatCurrency(detailModal.amount)}
                   </p>
                 </div>
 
                 {/* Rincian */}
-                <div className="space-y-3 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+                <div className="space-y-3 rounded-sm border-2 border-ink bg-[#fffdf8] p-4 shadow-[2px_2px_0_#171717] dark:border-gray-300 dark:bg-gray-800">
                   <DetailRow label="Keluarga" value={detailModal.family?.headOfFamily || '-'} />
                   <DetailRow label="Jenis Iuran" value={detailModal.billType?.name || '-'} />
                   <DetailRow label="Periode" value={detailModal.period} />
@@ -1760,12 +1741,12 @@ export function BillsPage() {
                             <button
                               type="button"
                               onClick={() => { if (settled.proofUrl) setProofPreview(settled.proofUrl); }}
-                              className="flex items-center gap-1.5 font-medium text-primary-600 hover:text-primary-700 dark:text-primary-400"
+                              className="flex items-center gap-1.5 font-bold text-brand-700 hover:text-brand-800 dark:text-blue-300"
                             >
                               <img
                                 src={settled.proofUrl}
                                 alt="Bukti bayar"
-                                className="h-8 w-8 rounded object-cover border border-gray-200 dark:border-gray-700"
+                                className="h-8 w-8 rounded-sm border-2 border-ink object-cover dark:border-gray-300"
                                 loading="lazy"
                               />
                               <EyeIcon className="w-4 h-4" /> Lihat Bukti
@@ -1774,7 +1755,7 @@ export function BillsPage() {
                               <button
                                 type="button"
                                 onClick={() => proofFileInput.current?.click()}
-                                className="text-xs text-gray-400 dark:text-gray-500 underline hover:text-gray-600 dark:hover:text-gray-300"
+                                className="text-xs font-bold text-ink-muted underline hover:text-ink dark:text-gray-300"
                               >
                                 Ganti
                               </button>
@@ -1782,13 +1763,13 @@ export function BillsPage() {
                           </>
                         ) : (
                           <>
-                            <span className="text-gray-400 dark:text-gray-500">Belum ada</span>
+                            <span className="font-medium text-ink-muted dark:text-gray-300">Belum ada</span>
                             {admin && (
                               <button
                                 type="button"
                                 onClick={() => proofFileInput.current?.click()}
                                 disabled={uploadingProof}
-                                className="flex items-center gap-1 text-xs font-medium text-primary-600 hover:text-primary-700 dark:text-primary-400 disabled:opacity-60"
+                                className="flex items-center gap-1 text-xs font-bold text-brand-700 hover:text-brand-800 dark:text-blue-300 disabled:opacity-60"
                               >
                                 <PaperClipIcon className="w-3.5 h-3.5" />{' '}
                                 {uploadingProof ? 'Mengunggah…' : 'Unggah'}
@@ -1805,7 +1786,7 @@ export function BillsPage() {
           })()}
         {/* Konfirmasi hapus (admin) */}
         {admin && confirmDeletePayment && (
-          <div className="mt-4 flex flex-col gap-3 rounded-lg border border-red-200 dark:border-red-900/60 bg-red-50 dark:bg-red-900/15 p-4">
+          <div className="mt-4 flex flex-col gap-3 rounded-sm border-2 border-ink bg-[#ffe4e1] p-4 shadow-[2px_2px_0_#171717] dark:border-red-300 dark:bg-red-900/25">
             <p className="text-sm text-red-700 dark:text-red-300">
               Hapus pembayaran ini? Entri kas terkait akan dihapus dan status tagihan dikembalikan
               ke belum bayar.
@@ -2068,17 +2049,7 @@ function PayActions({
   onManual: () => void;
 }) {
   const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  // Tutup dropdown saat klik di luar
-  useEffect(() => {
-    if (!open) return;
-    const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, [open]);
+  const { rootRef, triggerRef } = useDismissibleLayer(open, () => setOpen(false));
 
   // Warga: satu tombol utama
   if (!admin) {
@@ -2091,7 +2062,7 @@ function PayActions({
 
   // Admin: split-button (aksi utama + opsi)
   return (
-    <div ref={ref} className="relative inline-flex">
+    <div ref={rootRef} className="relative inline-flex">
       <Button
         variant="primary"
         size="sm"
@@ -2102,6 +2073,7 @@ function PayActions({
         <CreditCardIcon className="w-4 h-4 mr-1" /> Bayar
       </Button>
       <Button
+        ref={triggerRef}
         variant="primary"
         size="sm"
         aria-label="Opsi cara pembayaran"

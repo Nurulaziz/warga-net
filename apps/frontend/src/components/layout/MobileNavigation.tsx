@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import {
-  HomeIcon,
   BanknotesIcon,
   MegaphoneIcon,
   Bars3Icon,
@@ -25,17 +24,17 @@ interface MobileNavItem {
   adminOnly?: boolean;
 }
 
-// Tab bawah untuk admin (punya Dashboard) dan warga (tanpa Dashboard)
+// Suara Warga ditempatkan di tengah sebagai fitur utama aplikasi.
 const adminPrimaryItems: MobileNavItem[] = [
-  { path: '/dashboard', label: 'Home', icon: HomeIcon },
   { path: '/bills', label: 'Iuran', icon: BanknotesIcon },
+  { path: '/suara-warga', label: 'Suara Warga', icon: ChatBubbleLeftRightIcon },
   { path: '/announcements', label: 'Info', icon: MegaphoneIcon },
 ];
 
 const wargaPrimaryItems: MobileNavItem[] = [
   { path: '/bills', label: 'Iuran', icon: BanknotesIcon },
-  { path: '/announcements', label: 'Info', icon: MegaphoneIcon },
   { path: '/suara-warga', label: 'Suara Warga', icon: ChatBubbleLeftRightIcon },
+  { path: '/announcements', label: 'Info', icon: MegaphoneIcon },
 ];
 
 // Urutan disamakan dengan sidebar desktop: Keuangan → Data Warga → Komunikasi
@@ -82,13 +81,15 @@ export function MobileNavigation() {
               key={item.path}
               to={item.path}
               className={({ isActive }) =>
-                `flex flex-col items-center justify-center flex-1 h-full transition-colors ${
-                  isActive ? 'text-blue-600 dark:text-blue-400' : 'text-gray-600 dark:text-gray-400'
+                `flex flex-col items-center justify-center flex-1 h-full transition-all ${
+                  item.path === '/suara-warga'
+                    ? `relative -mt-3 mx-1 h-[4.5rem] rounded-sm border-2 border-ink bg-brand-500 px-1 text-white shadow-[3px_3px_0_#171717] ${isActive ? 'scale-105' : 'opacity-95'}`
+                    : isActive ? 'text-blue-600 dark:text-blue-400' : 'text-gray-600 dark:text-gray-400'
                 }`
               }
             >
-              <item.icon className="w-6 h-6 mb-1" aria-hidden="true" />
-              <span className="text-xs font-medium">{item.label}</span>
+              <item.icon className={`${item.path === '/suara-warga' ? 'h-7 w-7' : 'h-6 w-6'} mb-1`} aria-hidden="true" />
+              <span className={`${item.path === '/suara-warga' ? 'text-[10px] font-black uppercase tracking-tight' : 'text-xs font-medium'}`}>{item.label}</span>
             </NavLink>
           ))}
           {/* More button */}

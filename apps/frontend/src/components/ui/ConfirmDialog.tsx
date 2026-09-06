@@ -27,11 +27,11 @@ export function ConfirmDialog({
 }: ConfirmDialogProps) {
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={title} size="sm">
-      <div className="flex items-start gap-4">
-        <div className="w-10 h-10 rounded-full bg-red-50 dark:bg-red-900/20 flex items-center justify-center flex-shrink-0">
-          <ExclamationTriangleIcon className="w-5 h-5 text-red-500" />
+      <div className="flex items-start gap-3 rounded-sm border-2 border-ink bg-[#fff8ec] p-3 shadow-[2px_2px_0_#171717] dark:border-gray-400 dark:bg-gray-800">
+        <div className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-sm border-2 border-ink dark:border-gray-300 ${variant === 'danger' ? 'bg-[#ffe4e1] text-red-700' : 'bg-[#f1dfc4] text-ink'}`}>
+          <ExclamationTriangleIcon className="h-5 w-5" />
         </div>
-        <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed pt-2">{message}</p>
+        <p className="pt-1.5 text-sm font-semibold leading-relaxed text-ink dark:text-gray-100">{message}</p>
       </div>
       <ModalFooter>
         <Button variant="secondary" size="sm" onClick={onClose} disabled={loading}>

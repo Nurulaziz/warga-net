@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { PlusIcon, MagnifyingGlassIcon, ArrowDownTrayIcon } from '@heroicons/react/24/outline';
+import { PlusIcon, ArrowDownTrayIcon } from '@heroicons/react/24/outline';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/Table';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -116,7 +116,6 @@ export function ResidentsPage() {
 
       <FilterBar>
         <SearchInput placeholder="Cari nama atau NIK..." value={searchInput} onChange={(e) => setSearchInput(e.target.value)} onSearch={handleSearch} />
-        <Button variant="secondary" size="sm" onClick={handleSearch} className="h-11"><MagnifyingGlassIcon className="w-4 h-4" /></Button>
         <FilterSelect value={familyFilter} onChange={(e) => { setFamilyFilter(e.target.value); setPage(1); }} className="max-w-[220px]">
           <option value="">Semua Keluarga</option>
           {families.map((f) => (

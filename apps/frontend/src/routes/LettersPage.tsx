@@ -2,9 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import {
   PlusIcon,
   PrinterIcon,
-  TrashIcon,
   DocumentTextIcon,
-  CheckCircleIcon,
 } from '@heroicons/react/24/outline';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/Table';
 import { Button } from '@/components/ui/Button';
@@ -12,9 +10,11 @@ import { Input } from '@/components/ui/Input';
 import { Card } from '@/components/ui/Card';
 import { FilterBar, FilterSelect } from '@/components/ui/FilterBar';
 import { Pagination } from '@/components/ui/Pagination';
+import { TableActionButton } from '@/components/ui/TableActionButton';
 import { api } from '@/services/api';
 import { useSettings } from '@/hooks/useSettings';
 import { useAuth } from '@/contexts/AuthContext';
+import { useDismissibleLayer } from '@/hooks/useDismissibleLayer';
 
 interface LetterTemplate {
   id: string;
@@ -76,6 +76,7 @@ export function LettersPage() {
   const [selectedResident, setSelectedResident] = useState<Resident | null>(null);
   const [residentSearch, setResidentSearch] = useState('');
   const [showResidentDropdown, setShowResidentDropdown] = useState(false);
+  const { rootRef: residentDropdownRef } = useDismissibleLayer(showResidentDropdown && !selectedResident, () => setShowResidentDropdown(false));
   const [purpose, setPurpose] = useState('');
   const [extraVars, setExtraVars] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
@@ -256,7 +257,7 @@ export function LettersPage() {
             {/* Warga selection */}
             <Card className="p-5">
               <h3 className="text-sm font-semibold text-[#0F172A] dark:text-gray-100 mb-3">Pilih Warga</h3>
-              <div className="relative">
+              <div ref={residentDropdownRef} className="relative">
                 <Input
                   placeholder="Ketik nama atau NIK warga..."
                   value={selectedResident ? selectedResident.fullName : residentSearch}
@@ -264,13 +265,14 @@ export function LettersPage() {
                   onFocus={() => setShowResidentDropdown(true)}
                 />
                 {showResidentDropdown && !selectedResident && (
-                  <div className="absolute z-20 top-full left-0 right-0 mt-1 bg-white dark:bg-gray-800 border border-[#E2E8F0] dark:border-gray-700 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                  <div role="listbox" aria-label="Pilih warga" className="absolute z-20 top-full left-0 right-0 mt-1 bg-white dark:bg-gray-800 border border-[#E2E8F0] dark:border-gray-700 rounded-lg shadow-lg max-h-48 overflow-y-auto">
                     {filteredResidents.length === 0 ? (
                       <p className="p-3 text-sm text-gray-500">Tidak ditemukan</p>
                     ) : (
                       filteredResidents.map((r) => (
                         <button
                           key={r.id}
+                          role="option"
                           onClick={() => { setSelectedResident(r); setResidentSearch(''); setShowResidentDropdown(false); }}
                           className="w-full text-left px-4 py-2.5 hover:bg-[#F8FAFC] dark:hover:bg-gray-700 border-b border-gray-100 dark:border-gray-700 last:border-0"
                         >
@@ -536,11 +538,18 @@ export function LettersPage() {
       {loading ? (
         <div className="flex justify-center py-12"><div className="animate-spin h-8 w-8 border-4 border-primary-600 border-t-transparent rounded-full" /></div>
       ) : letters.length === 0 ? (
-        <Card className="p-12 text-center">
-          <DocumentTextIcon className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-          <p className="text-[#64748B]">Belum ada surat yang dibuat</p>
-          <Button variant="primary" size="sm" className="mt-4" onClick={() => { setView('create'); resetForm(); }}>
-            Buat Surat Pertama
+        <Card className="flex min-h-52 flex-col items-center justify-center bg-[#fff8ec] px-6 py-12 text-center dark:bg-gray-800">
+          <div className="flex h-14 w-14 items-center justify-center rounded-sm border-2 border-ink bg-[#f1dfc4] shadow-[3px_3px_0_#171717] dark:border-gray-400 dark:bg-gray-700 dark:shadow-[3px_3px_0_#a3a3a3]">
+            <DocumentTextIcon className="h-7 w-7 text-ink dark:text-white" aria-hidden="true" />
+          </div>
+          <h2 className="mt-5 font-display text-lg font-bold text-ink dark:text-gray-100">
+            Belum ada surat
+          </h2>
+          <p className="mt-1 max-w-sm text-sm font-medium text-gray-700 dark:text-gray-300">
+            Surat yang dibuat untuk warga akan tersimpan dan dapat dikelola di sini.
+          </p>
+          <Button variant="primary" size="sm" className="mt-5" onClick={() => { setView('create'); resetForm(); }}>
+            <PlusIcon className="mr-1 h-4 w-4" /> Buat surat pertama
           </Button>
         </Card>
       ) : (
@@ -567,17 +576,11 @@ export function LettersPage() {
                   <TableCell>
                     <div className="flex gap-1">
                       {admin && letter.status === 'draft' && (
-                        <button onClick={() => handleSign(letter.id)} className="text-green-600 hover:text-green-800 min-h-[44px] min-w-[44px] flex items-center justify-center" title="Tandatangani">
-                          <CheckCircleIcon className="w-4 h-4" />
-                        </button>
+                        <TableActionButton action="approve" label={`Tandatangani surat ${letter.letterNumber}`} onClick={() => handleSign(letter.id)} />
                       )}
-                      <button onClick={() => handlePrint(letter.id)} className="text-[#0054A6] hover:text-[#003A77] min-h-[44px] min-w-[44px] flex items-center justify-center" title="Cetak">
-                        <PrinterIcon className="w-4 h-4" />
-                      </button>
+                      <TableActionButton action="print" label={`Cetak surat ${letter.letterNumber}`} onClick={() => handlePrint(letter.id)} />
                       {admin && (
-                        <button onClick={() => handleDelete(letter.id)} className="text-red-500 hover:text-red-700 min-h-[44px] min-w-[44px] flex items-center justify-center" title="Hapus">
-                          <TrashIcon className="w-4 h-4" />
-                        </button>
+                        <TableActionButton action="delete" label={`Hapus surat ${letter.letterNumber}`} onClick={() => handleDelete(letter.id)} />
                       )}
                     </div>
                   </TableCell>

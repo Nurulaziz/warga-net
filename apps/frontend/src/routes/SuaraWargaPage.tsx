@@ -56,7 +56,7 @@ export function SuaraWargaPage() {
   async function handleCreate(
     content: string,
     media: PostMediaItem[] = [],
-    poll?: { question: string; options: string[] },
+    poll?: { question: string; options: string[]; expiresAt?: string; voterVisibility?: 'SECRET' | 'VISIBLE'; resultVisibility?: 'ALWAYS' | 'AFTER_VOTE' | 'AFTER_END' },
     mentionedUserIds?: string[],
   ) {
     await createPost({

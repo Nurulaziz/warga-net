@@ -10,6 +10,7 @@ import {
   EyeSlashIcon,
   PencilSquareIcon,
   EllipsisHorizontalIcon,
+  PaperAirplaneIcon,
 } from '@heroicons/react/24/outline';
 import { HeartIcon as HeartSolid, BookmarkIcon as BookmarkSolid } from '@heroicons/react/24/solid';
 import { useToast } from '@/components/ui/Toast';
@@ -27,10 +28,14 @@ import {
   moderatePost,
   updatePost,
   fetchComments,
+  createComment,
+  closePoll,
 } from '@/services/posts';
 import type { Comment, Post } from '@/types/posts';
 import { useAuth } from '@/contexts/AuthContext';
+import { useDismissibleLayer } from '@/hooks/useDismissibleLayer';
 import { UserAvatar } from '@/components/ui/UserAvatar';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 
 interface PostCardProps {
   post: Post;
@@ -79,11 +84,26 @@ export function PostCard({
   const [busy, setBusy] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const { rootRef: menuRef, triggerRef: menuTriggerRef } = useDismissibleLayer(menuOpen, () => setMenuOpen(false));
   const [editing, setEditing] = useState(false);
   const [editContent, setEditContent] = useState(post.content ?? '');
   const [commentsOpen, setCommentsOpen] = useState(false);
   const [commentsLoading, setCommentsLoading] = useState(false);
   const [inlineComments, setInlineComments] = useState<Comment[]>([]);
+  const [commentText, setCommentText] = useState('');
+  const [commentCount, setCommentCount] = useState(post.commentCount);
+  const [commentSubmitting, setCommentSubmitting] = useState(false);
+  const [pollExpiresAt, setPollExpiresAt] = useState(post.poll?.expiresAt ?? null);
+  const [confirmPollClose, setConfirmPollClose] = useState(false);
+
+  const pollEnded = Boolean(pollExpiresAt && new Date(pollExpiresAt).getTime() <= Date.now());
+  const pollTimeLabel = !post.poll
+    ? ''
+    : !pollExpiresAt
+      ? 'Tanpa batas waktu'
+      : pollEnded
+        ? 'Polling ditutup'
+        : `Berakhir ${new Date(pollExpiresAt).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' })}`;
 
   async function toggleComments() {
     if (!showInlineComments) {
@@ -110,6 +130,44 @@ export function PostCard({
       setCommentsOpen(false);
     } finally {
       setCommentsLoading(false);
+    }
+  }
+
+  async function submitInlineComment() {
+    const content = commentText.trim();
+    if (!content || commentSubmitting || post.commentsLocked) return;
+    setCommentSubmitting(true);
+    try {
+      const response = await createComment(post.id, { content });
+      const items = Array.isArray(response)
+        ? response
+        : (response as { data: Comment[] }).data;
+      setInlineComments(
+        [...items].sort((a, b) => Date.parse(a.createdAt) - Date.parse(b.createdAt)),
+      );
+      setCommentCount((count) => count + 1);
+      setCommentText('');
+      showToast('Komentar terkirim');
+    } catch (error: unknown) {
+      const message = (error as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      showToast(message || 'Gagal mengirim komentar', 'error');
+    } finally {
+      setCommentSubmitting(false);
+    }
+  }
+
+  async function handleClosePoll() {
+    setBusy(true);
+    try {
+      const result = await closePoll(post.id);
+      setPollExpiresAt(result.expiresAt);
+      setConfirmPollClose(false);
+      showToast('Polling ditutup');
+      onChanged?.();
+    } catch {
+      showToast('Gagal menutup polling', 'error');
+    } finally {
+      setBusy(false);
     }
   }
 
@@ -212,21 +270,33 @@ export function PostCard({
             {post.isPinned && <span className="ml-2 text-primary">📌 Disematkan</span>}
           </p>
         </div>
-        <div className="relative shrink-0">
+        <div ref={menuRef} className="relative shrink-0">
           <button
+            ref={menuTriggerRef}
             type="button"
             onClick={() => setMenuOpen((value) => !value)}
             aria-label="Aksi posting"
+            aria-haspopup="menu"
             aria-expanded={menuOpen}
             className="flex h-8 w-8 items-center justify-center rounded-full text-gray-600 transition-colors hover:bg-[#f5efe4] hover:text-ink dark:text-gray-300 dark:hover:bg-gray-700"
           >
             <EllipsisHorizontalIcon className="h-6 w-6" />
           </button>
           {menuOpen && (
-            <div className="absolute right-0 top-9 z-20 min-w-40 overflow-hidden rounded-md border-2 border-ink bg-white py-1 shadow-[3px_3px_0_#171717] dark:border-gray-500 dark:bg-gray-800">
+            <div role="menu" className="absolute right-0 top-9 z-20 min-w-40 overflow-hidden rounded-md border-2 border-ink bg-white py-1 shadow-[3px_3px_0_#171717] dark:border-gray-500 dark:bg-gray-800">
               {post.authorId === currentUser?.id && (
                 <button type="button" onClick={() => { setEditing((value) => !value); setMenuOpen(false); }} className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm font-semibold hover:bg-[#f5efe4] dark:hover:bg-gray-700">
                   <PencilSquareIcon className="h-4 w-4" /> Edit posting
+                </button>
+              )}
+              {post.poll && (
+                <div className="border-y border-ink/20 px-3 py-2 text-[11px] font-bold text-ink-secondary dark:text-gray-300">
+                  {pollTimeLabel}
+                </div>
+              )}
+              {post.poll && !pollEnded && (post.authorId === currentUser?.id || canModerate) && (
+                <button type="button" onClick={() => { setConfirmPollClose(true); setMenuOpen(false); }} className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm font-semibold hover:bg-[#f5efe4] dark:hover:bg-gray-700">
+                  <LockClosedIcon className="h-4 w-4" /> Tutup polling
                 </button>
               )}
               <button type="button" onClick={() => { setReportOpen(true); setMenuOpen(false); }} className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm font-semibold hover:bg-[#f5efe4] dark:hover:bg-gray-700">
@@ -272,7 +342,7 @@ export function PostCard({
           />
         )}
         <PostMedia urls={(post.media ?? []).map((m) => m.url)} />
-        {post.poll && <PostPoll postId={post.id} poll={post.poll} />}
+        {post.poll && <PostPoll postId={post.id} poll={{ ...post.poll, expiresAt: pollExpiresAt }} />}
       </div>
 
       <footer className="mt-4 flex items-center gap-1 border-t-2 border-ink pt-2 dark:border-gray-500">
@@ -289,12 +359,12 @@ export function PostCard({
         <button
           onClick={() => void toggleComments()}
           aria-expanded={commentsOpen}
-          aria-label={`Komentar; ${post.commentCount}`}
+          aria-label={`Komentar; ${commentCount}`}
           title="Komentar"
           className={`${actionBase} text-gray-500 dark:text-gray-400`}
         >
           <ChatBubbleLeftIcon className="h-5 w-5" />
-          <span className="sr-only">Komentar</span><span className="font-mono text-[11px]">{post.commentCount}</span>
+          <span className="sr-only">Komentar</span><span className="font-mono text-[11px]">{commentCount}</span>
         </button>
         <button
           onClick={handleShare}
@@ -318,7 +388,7 @@ export function PostCard({
         </button>
       </footer>
       {commentsOpen && (
-        <div className="border-b border-gray-300 bg-[#fffaf2] px-3 py-3 dark:border-gray-600 dark:bg-gray-700/40">
+        <div className="border-b-2 border-ink bg-[#fffaf2] px-3 py-3 dark:border-gray-500 dark:bg-gray-700/40">
           {commentsLoading ? (
             <p className="py-2 text-center text-xs text-gray-500">Memuat komentar...</p>
           ) : inlineComments.length === 0 ? (
@@ -335,15 +405,47 @@ export function PostCard({
                   </button>
                 </div>
               ))}
-              {post.commentCount > 2 && (
+              {commentCount > 2 && (
                 <button
                   type="button"
                   onClick={() => onOpen?.(post.id)}
                   className="text-xs font-bold text-brand-600 hover:underline"
                 >
-                  Lihat {post.commentCount - 2} komentar lainnya →
+                  Lihat {commentCount - 2} komentar lainnya →
                 </button>
               )}
+            </div>
+          )}
+          {post.commentsLocked ? (
+            <div className="mt-3 flex items-center gap-2 rounded-sm border-2 border-ink bg-[#f1dfc4] px-3 py-2 text-xs font-bold text-ink dark:border-gray-400 dark:bg-gray-700 dark:text-white">
+              <LockClosedIcon className="h-4 w-4" /> Komentar pada posting ini dikunci.
+            </div>
+          ) : (
+            <div className="mt-3 flex items-end gap-2 border-t-2 border-ink pt-3 dark:border-gray-500">
+              <textarea
+                value={commentText}
+                onChange={(event) => setCommentText(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' && !event.shiftKey) {
+                    event.preventDefault();
+                    void submitInlineComment();
+                  }
+                }}
+                rows={2}
+                maxLength={2000}
+                placeholder="Tulis komentar..."
+                aria-label="Tulis komentar"
+                className="min-h-11 flex-1 resize-none rounded-sm border-2 border-ink bg-white px-3 py-2 text-sm text-ink shadow-[2px_2px_0_#171717] outline-none placeholder:text-ink-muted focus:ring-2 focus:ring-ink/25 dark:border-gray-400 dark:bg-gray-800 dark:text-white"
+              />
+              <button
+                type="button"
+                onClick={() => void submitInlineComment()}
+                disabled={!commentText.trim() || commentSubmitting}
+                aria-label="Kirim komentar"
+                className="flex h-11 w-11 flex-none items-center justify-center rounded-sm border-2 border-ink bg-brand-500 text-white shadow-[2px_2px_0_#171717] transition hover:translate-x-px hover:translate-y-px hover:shadow-none focus:outline-none focus:ring-2 focus:ring-ink/30 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <PaperAirplaneIcon className="h-5 w-5" />
+              </button>
             </div>
           )}
         </div>
@@ -383,6 +485,16 @@ export function PostCard({
           await reportPost(post.id, { reason, description });
           showToast('Laporan terkirim');
         }}
+      />
+      <ConfirmDialog
+        isOpen={confirmPollClose}
+        onClose={() => setConfirmPollClose(false)}
+        onConfirm={() => void handleClosePoll()}
+        title="Tutup Polling"
+        message="Tutup polling sekarang? Warga tidak dapat memberikan atau mengubah suara setelah polling ditutup."
+        confirmText="Ya, tutup"
+        variant="primary"
+        loading={busy}
       />
     </article>
   );

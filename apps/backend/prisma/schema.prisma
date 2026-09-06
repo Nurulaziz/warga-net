@@ -626,6 +626,8 @@ model Poll {
   postId    String    @unique @map("post_id")
   question  String
   expiresAt DateTime? @map("expires_at")
+  voterVisibility String @default("SECRET") @map("voter_visibility")
+  resultVisibility String @default("AFTER_VOTE") @map("result_visibility")
   createdAt DateTime  @default(now()) @map("created_at")
   updatedAt DateTime  @updatedAt @map("updated_at")
 

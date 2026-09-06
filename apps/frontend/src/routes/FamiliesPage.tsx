@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { PlusIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
+import { PlusIcon } from '@heroicons/react/24/outline';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/Table';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -106,7 +106,6 @@ export function FamiliesPage() {
 
       <FilterBar>
         <SearchInput placeholder="Cari kepala keluarga atau alamat..." value={searchInput} onChange={(e) => setSearchInput(e.target.value)} onSearch={handleSearch} />
-        <Button variant="secondary" size="sm" onClick={handleSearch} className="h-11"><MagnifyingGlassIcon className="w-4 h-4" /></Button>
       </FilterBar>
 
       {loading ? (

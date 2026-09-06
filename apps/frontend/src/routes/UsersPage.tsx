@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { PencilIcon, TrashIcon, PlusIcon, UserIcon } from '@heroicons/react/24/outline';
+import { PlusIcon } from '@heroicons/react/24/outline';
 import { authClient } from '@/lib/auth-client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSettings } from '@/hooks/useSettings';
@@ -19,6 +19,7 @@ import { Pagination } from '@/components/ui/Pagination';
 import { usePaginatedApi, apiPost, apiPut, apiDelete } from '@/hooks/useApi';
 import { useToast } from '@/components/ui/Toast';
 import { api } from '@/services/api';
+import { TableActionButton } from '@/components/ui/TableActionButton';
 
 interface User {
   id: string;
@@ -277,28 +278,10 @@ export function UsersPage() {
                     <TableCell>
                       <div className="flex items-center gap-1">
                         {isAdmin() && (
-                          <button
-                            onClick={() => handleImpersonate(user.id)}
-                            title="Impersonate"
-                            className="text-ink-muted hover:text-ink dark:text-gray-500 dark:hover:text-gray-200 min-h-[36px] min-w-[36px] flex items-center justify-center rounded-sm transition-colors"
-                          >
-                            <UserIcon className="w-4 h-4" />
-                          </button>
+                          <TableActionButton action="impersonate" label={`Masuk sebagai ${user.fullName}`} onClick={() => handleImpersonate(user.id)} />
                         )}
-                        <button
-                          onClick={() => openEdit(user)}
-                          title="Edit"
-                          className="text-ink-muted hover:text-ink dark:text-gray-500 dark:hover:text-gray-200 min-h-[36px] min-w-[36px] flex items-center justify-center rounded-sm transition-colors"
-                        >
-                          <PencilIcon className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => setDeleteModal(user)}
-                          title="Hapus"
-                          className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 min-h-[36px] min-w-[36px] flex items-center justify-center rounded-sm transition-colors"
-                        >
-                          <TrashIcon className="w-4 h-4" />
-                        </button>
+                        <TableActionButton action="edit" label={`Edit pengguna ${user.fullName}`} onClick={() => openEdit(user)} />
+                        <TableActionButton action="delete" label={`Hapus pengguna ${user.fullName}`} onClick={() => setDeleteModal(user)} />
                       </div>
                     </TableCell>
                   </TableRow>

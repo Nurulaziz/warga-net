@@ -65,7 +65,7 @@ export interface CreatePostPayload {
   content: string;
   visibility?: string;
   media?: PostMediaItem[];
-  poll?: { question: string; options: string[] };
+  poll?: { question: string; options: string[]; expiresAt?: string; voterVisibility?: 'SECRET' | 'VISIBLE'; resultVisibility?: 'ALWAYS' | 'AFTER_VOTE' | 'AFTER_END' };
   mentionedUserIds?: string[];
 }
 
@@ -82,6 +82,17 @@ export interface Poll {
   expiresAt: string | null;
   options: PollOption[];
   viewerOptionId: string | null;
+  voterVisibility: 'SECRET' | 'VISIBLE';
+  resultVisibility: 'ALWAYS' | 'AFTER_VOTE' | 'AFTER_END';
+  resultsVisible?: boolean;
+}
+
+export interface PollResults {
+  totalVotes: number;
+  voterVisibility: 'SECRET' | 'VISIBLE';
+  resultVisibility: 'ALWAYS' | 'AFTER_VOTE' | 'AFTER_END';
+  ended: boolean;
+  options: Array<{ id: string; text: string; voteCount: number; voters?: Array<{ id: string; fullName: string }> }>;
 }
 
 export interface PostAnalytics {

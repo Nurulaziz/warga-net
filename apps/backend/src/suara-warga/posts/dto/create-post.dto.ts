@@ -11,6 +11,7 @@ import {
   ArrayMinSize,
   ArrayUnique,
   IsUUID,
+  IsISO8601,
 } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
@@ -43,6 +44,21 @@ export class CreatePollDto {
   @ArrayMaxSize(6, { message: 'Polling maksimal memiliki 6 pilihan' })
   @IsString({ each: true })
   options!: string[];
+
+  @ApiProperty({ required: false, example: '2026-09-13T17:00:00.000Z' })
+  @IsOptional()
+  @IsISO8601({}, { message: 'Waktu berakhir polling tidak valid' })
+  expiresAt?: string;
+
+  @ApiProperty({ required: false, enum: ['SECRET', 'VISIBLE'], default: 'SECRET' })
+  @IsOptional()
+  @IsIn(['SECRET', 'VISIBLE'])
+  voterVisibility?: 'SECRET' | 'VISIBLE';
+
+  @ApiProperty({ required: false, enum: ['ALWAYS', 'AFTER_VOTE', 'AFTER_END'], default: 'AFTER_VOTE' })
+  @IsOptional()
+  @IsIn(['ALWAYS', 'AFTER_VOTE', 'AFTER_END'])
+  resultVisibility?: 'ALWAYS' | 'AFTER_VOTE' | 'AFTER_END';
 }
 
 export class CreatePostDto {

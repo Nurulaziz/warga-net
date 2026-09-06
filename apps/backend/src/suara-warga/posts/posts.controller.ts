@@ -138,6 +138,18 @@ export class PostsController {
     return this.postsService.votePoll(id, dto.optionId, await this.resolveScope(session));
   }
 
+  @Post(':id/poll/close')
+  @ApiOperation({ summary: 'Tutup polling (pemilik posting/admin)' })
+  async closePoll(@Session() session: UserSession, @Param('id') id: string) {
+    return this.postsService.closePoll(id, await this.resolveScope(session));
+  }
+
+  @Get(':id/poll/results')
+  @ApiOperation({ summary: 'Rincian hasil polling sesuai pengaturan privasi' })
+  async pollResults(@Session() session: UserSession, @Param('id') id: string) {
+    return this.postsService.getPollResults(id, await this.resolveScope(session));
+  }
+
   // ==== Comments ====
 
   @Get(':id/comments')

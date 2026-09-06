@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
-import { PencilIcon, TrashIcon, PlusIcon } from '@heroicons/react/24/outline';
+import { PlusIcon } from '@heroicons/react/24/outline';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/Table';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Modal, ModalFooter } from '@/components/ui/Modal';
 import { api } from '@/services/api';
+import { TableActionButton } from '@/components/ui/TableActionButton';
 
 interface Permission {
   id: string;
@@ -144,8 +145,8 @@ export function RolesPage() {
                   <TableCell>{role._count.users} user</TableCell>
                   <TableCell>
                     <div className="flex gap-2">
-                      <button onClick={() => openEdit(role)} className="text-blue-600 hover:text-blue-800 min-h-[44px] min-w-[44px] flex items-center justify-center"><PencilIcon className="w-4 h-4" /></button>
-                      <button onClick={() => setDeleteModal(role)} className="text-red-600 hover:text-red-800 min-h-[44px] min-w-[44px] flex items-center justify-center" disabled={role._count.users > 0}><TrashIcon className="w-4 h-4" /></button>
+                      <TableActionButton action="edit" label={`Edit role ${role.name}`} onClick={() => openEdit(role)} />
+                      <TableActionButton action="delete" label={`Hapus role ${role.name}`} onClick={() => setDeleteModal(role)} disabled={role._count.users > 0} />
                     </div>
                   </TableCell>
                 </TableRow>

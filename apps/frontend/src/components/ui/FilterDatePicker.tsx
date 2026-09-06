@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { CalendarDaysIcon, CheckIcon, ChevronLeftIcon, ChevronRightIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { useDismissibleLayer } from '@/hooks/useDismissibleLayer';
 
 const MONTHS = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
 const WEEKDAYS = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'];
@@ -22,19 +23,11 @@ function toDateValue(year: number, month: number, day: number) {
 }
 
 export function FilterDatePicker({ mode = 'date', value, onChange, placeholder, className = '', 'aria-label': ariaLabel }: FilterDatePickerProps) {
-  const rootRef = useRef<HTMLDivElement>(null);
   const initial = value ? new Date(`${value}${mode === 'month' ? '-01' : ''}T00:00:00`) : new Date();
   const [open, setOpen] = useState(false);
+  const { rootRef, triggerRef } = useDismissibleLayer(open, () => setOpen(false));
   const [viewYear, setViewYear] = useState(initial.getFullYear());
   const [viewMonth, setViewMonth] = useState(initial.getMonth());
-
-  useEffect(() => {
-    function close(event: MouseEvent) {
-      if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
-    }
-    document.addEventListener('mousedown', close);
-    return () => document.removeEventListener('mousedown', close);
-  }, []);
 
   const days = useMemo(() => {
     const count = new Date(viewYear, viewMonth + 1, 0).getDate();
@@ -57,6 +50,7 @@ export function FilterDatePicker({ mode = 'date', value, onChange, placeholder, 
   return (
     <div ref={rootRef} className={`relative min-w-[180px] ${className}`}>
       <button
+        ref={triggerRef}
         type="button"
         aria-label={ariaLabel}
         aria-haspopup="dialog"

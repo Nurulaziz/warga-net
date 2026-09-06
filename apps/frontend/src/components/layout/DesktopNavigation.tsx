@@ -203,12 +203,12 @@ function SidebarLink({ item, collapsed }: { item: NavItem; collapsed: boolean })
       title={collapsed ? item.label : undefined}
       aria-label={collapsed ? item.label : undefined}
       className={({ isActive }) =>
-        `group relative flex items-center gap-2.5 rounded-sm border transition-colors duration-150 min-h-[40px] ${
+        `group relative flex min-h-[40px] items-center gap-2.5 rounded-sm border-2 transition-[background-color,color,border-color,box-shadow,transform] duration-150 ${
           collapsed ? 'justify-center px-2' : 'px-3'
         } ${
           isActive
             ? 'border-ink bg-brand-500 text-white shadow-[2px_2px_0_#171717] dark:border-gray-300 dark:text-white'
-            : 'border-transparent text-[#292524] dark:text-gray-200 hover:border-ink hover:bg-white dark:hover:border-gray-500 dark:hover:bg-gray-700/50 hover:text-ink dark:hover:text-white'
+            : 'border-transparent text-[#292524] dark:text-gray-200 hover:-translate-y-px hover:border-ink hover:bg-white hover:text-ink hover:shadow-[2px_2px_0_#171717] dark:hover:border-gray-400 dark:hover:bg-gray-700/50 dark:hover:text-white dark:hover:shadow-[2px_2px_0_#d4d4d4]'
         }`
       }
     >

@@ -10,6 +10,7 @@ import type {
   PaginatedReports,
   ReportReason,
   PostAnalytics,
+  PollResults,
 } from '@/types/posts';
 
 export interface FeedParams {
@@ -75,6 +76,16 @@ export async function createPost(payload: CreatePostPayload): Promise<Post> {
 
 export async function updatePost(id: string, payload: Partial<CreatePostPayload>): Promise<Post> {
   const { data } = await api.patch<Post>(`/posts/${id}`, payload);
+  return data;
+}
+
+export async function closePoll(postId: string): Promise<{ closed: boolean; expiresAt: string }> {
+  const { data } = await api.post<{ closed: boolean; expiresAt: string }>(`/posts/${postId}/poll/close`);
+  return data;
+}
+
+export async function fetchPollResults(postId: string): Promise<PollResults> {
+  const { data } = await api.get<PollResults>(`/posts/${postId}/poll/results`);
   return data;
 }
 

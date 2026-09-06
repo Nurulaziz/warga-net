@@ -26,8 +26,8 @@ import { LandingPage } from './LandingPage';
 
 // Landing setelah login: admin ke Dashboard, warga langsung ke Iuran
 const RoleLandingRedirect = () => {
-  const { isAdmin } = useAuth();
-  return <Navigate to={isAdmin() ? '/dashboard' : '/bills'} replace />;
+  // Suara Warga menjadi beranda utama setelah login untuk seluruh peran.
+  return <Navigate to="/suara-warga" replace />;
 };
 
 // Root publik-pintar: pengunjung anonim melihat landing page; pengguna yang sudah login

@@ -8,6 +8,7 @@ import { Card } from '@/components/ui/Card';
 import { FilterBar, FilterSelect } from '@/components/ui/FilterBar';
 import { FilterDatePicker } from '@/components/ui/FilterDatePicker';
 import { Pagination } from '@/components/ui/Pagination';
+import { TableActionButton } from '@/components/ui/TableActionButton';
 import { api } from '@/services/api';
 
 interface CashCategory {
@@ -238,7 +239,7 @@ export function CashPage() {
                   <TableRow key={tx.id}>
                     <TableCell className="whitespace-nowrap">{formatDate(tx.date)}</TableCell>
                     <TableCell>
-                      <span className={`inline-flex px-2 py-0.5 text-xs rounded-full ${tx.type === 'income' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                      <span className={`inline-flex rounded-sm border border-ink px-2 py-1 text-xs font-bold text-ink shadow-[1px_1px_0_#171717] dark:border-gray-400 dark:text-white ${tx.type === 'income' ? 'bg-green-100 dark:bg-green-900/40' : 'bg-red-100 dark:bg-red-900/40'}`}>
                         {tx.type === 'income' ? 'Masuk' : 'Keluar'}
                       </span>
                     </TableCell>
@@ -248,7 +249,7 @@ export function CashPage() {
                       {tx.type === 'income' ? '+' : '-'}{formatCurrency(tx.amount)}
                     </TableCell>
                     <TableCell>
-                      <button onClick={() => handleDeleteTx(tx.id)} className="text-red-600 hover:text-red-800 text-sm min-h-[44px] min-w-[44px] flex items-center justify-center">Hapus</button>
+                      <TableActionButton action="delete" label={`Hapus transaksi ${tx.description}`} onClick={() => handleDeleteTx(tx.id)} />
                     </TableCell>
                   </TableRow>
                 ))

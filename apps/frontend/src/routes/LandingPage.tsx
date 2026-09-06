@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useSettings } from '@/hooks/useSettings';
 import { LoginSlidePanel } from '@/components/auth/LoginSlidePanel';
 import { HeroVisual } from '@/components/landing/HeroVisual';
+import { useDismissibleLayer } from '@/hooks/useDismissibleLayer';
 import {
   ArrowRightIcon,
   Bars3Icon,
@@ -88,6 +89,7 @@ export function LandingPage() {
   const { settings } = useSettings();
   const [isLoginOpen, setLoginOpen] = useState(false);
   const [isMobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { rootRef: mobileMenuRef, triggerRef: mobileMenuTriggerRef } = useDismissibleLayer(isMobileMenuOpen, () => setMobileMenuOpen(false));
   const [activeRow, setActiveRow] = useState<string | null>(null);
   const [heroWordIndex, setHeroWordIndex] = useState(0);
 
@@ -116,7 +118,7 @@ export function LandingPage() {
         }`}
       >
         {/* ─── NAVBAR ─── */}
-        <header className="sticky top-0 z-30 border-b-2 border-ink bg-warm-50 dark:border-gray-600 dark:bg-gray-950">
+        <header ref={mobileMenuRef} className="sticky top-0 z-30 border-b-2 border-ink bg-warm-50 dark:border-gray-600 dark:bg-gray-950">
           <nav
             className="mx-auto flex max-w-[1220px] items-center gap-4 px-5 sm:px-8"
             style={{ height: 68 }}
@@ -155,9 +157,12 @@ export function LandingPage() {
 
             {/* Mobile: hamburger */}
             <button
+              ref={mobileMenuTriggerRef}
               type="button"
               onClick={() => setMobileMenuOpen((v) => !v)}
               aria-label="Buka menu"
+              aria-haspopup="menu"
+              aria-expanded={isMobileMenuOpen}
               className="ml-auto flex h-11 w-11 items-center justify-center rounded text-ink hover:bg-warm-100 dark:text-gray-200 dark:hover:bg-gray-800 lg:hidden"
             >
               {isMobileMenuOpen ? (
@@ -170,7 +175,7 @@ export function LandingPage() {
 
           {/* Mobile menu */}
           {isMobileMenuOpen && (
-            <div className="border-t-2 border-ink bg-warm-50 px-5 py-4 dark:border-gray-600 dark:bg-gray-950 lg:hidden">
+            <div role="menu" className="border-t-2 border-ink bg-warm-50 px-5 py-4 dark:border-gray-600 dark:bg-gray-950 lg:hidden">
               <ul className="flex flex-col gap-1">
                 {NAV_ITEMS.map((item) => (
                   <li key={item.href}>

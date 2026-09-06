@@ -1,8 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import {
   PlusIcon,
-  PencilIcon,
-  TrashIcon,
   MegaphoneIcon,
   PaperClipIcon,
   XMarkIcon,
@@ -17,6 +15,7 @@ import { Pagination } from '@/components/ui/Pagination';
 import { useAuth } from '@/contexts/AuthContext';
 import { AnnouncementDetailDialog } from '@/components/announcements/AnnouncementDetailDialog';
 import { api } from '@/services/api';
+import { TableActionButton } from '@/components/ui/TableActionButton';
 
 // Metadata prioritas: label + warna badge
 const PRIORITY_OPTIONS = [
@@ -307,24 +306,8 @@ export function AnnouncementsPage() {
                 </div>
                 {admin && (
                   <div className="flex flex-shrink-0 gap-2">
-                    <button
-                      type="button"
-                      onClick={() => openEdit(a)}
-                      aria-label={`Edit pengumuman ${a.title}`}
-                      title="Edit pengumuman"
-                      className="flex min-h-[40px] min-w-[40px] items-center justify-center rounded-sm border-2 border-ink bg-white text-brand-600 shadow-[2px_2px_0_#171717] transition-all hover:translate-x-0.5 hover:translate-y-0.5 hover:bg-[#f1dfc4] hover:shadow-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-offset-2"
-                    >
-                      <PencilIcon className="w-4 h-4" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setDeleteModal(a)}
-                      aria-label={`Hapus pengumuman ${a.title}`}
-                      title="Hapus pengumuman"
-                      className="flex min-h-[40px] min-w-[40px] items-center justify-center rounded-sm border-2 border-ink bg-white text-red-600 shadow-[2px_2px_0_#171717] transition-all hover:translate-x-0.5 hover:translate-y-0.5 hover:bg-red-50 hover:shadow-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-offset-2"
-                    >
-                      <TrashIcon className="w-4 h-4" />
-                    </button>
+                    <TableActionButton action="edit" label={`Edit pengumuman ${a.title}`} onClick={() => openEdit(a)} />
+                    <TableActionButton action="delete" label={`Hapus pengumuman ${a.title}`} onClick={() => setDeleteModal(a)} />
                   </div>
                 )}
               </div>

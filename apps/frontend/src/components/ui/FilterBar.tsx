@@ -1,7 +1,6 @@
 import {
   Children,
   isValidElement,
-  useEffect,
   useImperativeHandle,
   useRef,
   useState,
@@ -13,6 +12,7 @@ import {
   forwardRef,
 } from 'react';
 import { CheckIcon, ChevronDownIcon, MagnifyingGlassIcon, QueueListIcon } from '@heroicons/react/24/outline';
+import { useDismissibleLayer } from '@/hooks/useDismissibleLayer';
 
 // Toolbar pembungkus search + filter agar sejajar & rapi
 export function FilterBar({
@@ -34,18 +34,28 @@ interface SearchInputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, '
 export const SearchInput = forwardRef<HTMLInputElement, SearchInputProps>(
   ({ onSearch, onKeyDown, className = '', ...props }, ref) => {
     return (
-      <div className={`relative ${className || 'w-full sm:w-72'}`}>
-        <MagnifyingGlassIcon className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-muted" />
+      <div className={`relative flex h-11 overflow-hidden rounded-sm border-2 border-ink bg-white text-ink shadow-[2px_2px_0_#171717] transition-colors focus-within:bg-[#fff8ec] focus-within:ring-2 focus-within:ring-ink/20 dark:border-gray-500 dark:bg-gray-800 dark:text-gray-100 dark:shadow-[2px_2px_0_#a3a3a3] ${className || 'w-full sm:w-72'}`}>
+        <MagnifyingGlassIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-muted dark:text-gray-400" />
         <input
           ref={ref}
           type="text"
-          className="w-full h-10 pl-9 pr-3 text-sm font-body border-2 border-ink dark:border-gray-500 rounded-sm bg-white dark:bg-gray-800 text-ink dark:text-gray-100 placeholder:text-ink/60 focus:outline-none focus:border-ink focus:ring-2 focus:ring-ink/20"
+          className="h-full min-w-0 flex-1 border-0 bg-transparent pl-9 pr-3 font-body text-sm text-ink outline-none placeholder:text-ink/55 dark:text-gray-100 dark:placeholder:text-gray-400"
           onKeyDown={(e) => {
             if (e.key === 'Enter') onSearch?.();
             onKeyDown?.(e);
           }}
           {...props}
         />
+        {onSearch && (
+          <button
+            type="button"
+            aria-label="Cari"
+            onClick={onSearch}
+            className="flex h-full w-11 flex-none items-center justify-center border-l-2 border-ink bg-[#fffdf8] transition-colors hover:bg-[#f1dfc4] focus:outline-none focus:ring-2 focus:ring-inset focus:ring-ink/30 dark:border-gray-500 dark:bg-gray-700 dark:hover:bg-gray-600"
+          >
+            <MagnifyingGlassIcon className="h-4 w-4" aria-hidden="true" />
+          </button>
+        )}
       </div>
     );
   },
@@ -60,9 +70,9 @@ interface FilterSelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
 
 export const FilterSelect = forwardRef<HTMLSelectElement, FilterSelectProps>(
   ({ children, className = '', value, defaultValue, onChange, disabled, id, name, icon, 'aria-label': ariaLabel }, forwardedRef) => {
-    const rootRef = useRef<HTMLDivElement>(null);
     const selectRef = useRef<HTMLSelectElement>(null);
     const [open, setOpen] = useState(false);
+    const { rootRef, triggerRef } = useDismissibleLayer(open, () => setOpen(false));
     const [activeIndex, setActiveIndex] = useState(0);
     useImperativeHandle(forwardedRef, () => selectRef.current as HTMLSelectElement);
 
@@ -75,14 +85,6 @@ export const FilterSelect = forwardRef<HTMLSelectElement, FilterSelectProps>(
       }));
     const selectedValue = String(value ?? defaultValue ?? '');
     const selected = options.find((option) => option.value === selectedValue) ?? options[0];
-
-    useEffect(() => {
-      function closeOnOutsideClick(event: MouseEvent) {
-        if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
-      }
-      document.addEventListener('mousedown', closeOnOutsideClick);
-      return () => document.removeEventListener('mousedown', closeOnOutsideClick);
-    }, []);
 
     function selectOption(nextValue: string) {
       if (disabled) return;
@@ -117,6 +119,7 @@ export const FilterSelect = forwardRef<HTMLSelectElement, FilterSelectProps>(
           {children}
         </select>
         <button
+          ref={triggerRef}
           type="button"
           aria-label={ariaLabel}
           aria-haspopup="listbox"

@@ -1,11 +1,12 @@
 import { useRef, useState } from 'react';
-import { ChartBarIcon, PaperAirplaneIcon, PhotoIcon, PlusIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { ChartBarIcon, ClockIcon, EyeIcon, PaperAirplaneIcon, PhotoIcon, PlusIcon, UserGroupIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { Button } from '@/components/ui/Button';
 import { useToast } from '@/components/ui/Toast';
 import { uploadPostMedia } from '@/services/posts';
 import type { PostMediaItem } from '@/types/posts';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { MentionTextarea } from '@/components/posts/MentionTextarea';
+import { FilterSelect } from '@/components/ui/FilterBar';
 
 interface PostComposerProps {
   currentUserName: string;
@@ -13,7 +14,7 @@ interface PostComposerProps {
   onSubmit: (
     content: string,
     media: PostMediaItem[],
-    poll?: { question: string; options: string[] },
+    poll?: { question: string; options: string[]; expiresAt?: string; voterVisibility?: 'SECRET' | 'VISIBLE'; resultVisibility?: 'ALWAYS' | 'AFTER_VOTE' | 'AFTER_END' },
     mentionedUserIds?: string[],
   ) => Promise<void>;
   disabled?: boolean;
@@ -30,6 +31,10 @@ export function PostComposer({ currentUserName, currentUserAvatar, onSubmit, dis
   const [pollEnabled, setPollEnabled] = useState(false);
   const [pollQuestion, setPollQuestion] = useState('');
   const [pollOptions, setPollOptions] = useState(['', '']);
+  const [pollDuration, setPollDuration] = useState('3d');
+  const [pollCustomEnd, setPollCustomEnd] = useState('');
+  const [pollVoterVisibility, setPollVoterVisibility] = useState<'SECRET' | 'VISIBLE'>('SECRET');
+  const [pollResultVisibility, setPollResultVisibility] = useState<'ALWAYS' | 'AFTER_VOTE' | 'AFTER_END'>('AFTER_VOTE');
   const [mentionedUserIds, setMentionedUserIds] = useState<string[]>([]);
 
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -68,13 +73,26 @@ export function PostComposer({ currentUserName, currentUserAvatar, onSubmit, dis
       setError('Isi pertanyaan dan minimal 2 pilihan polling');
       return;
     }
+    let expiresAt: string | undefined;
+    if (pollEnabled && pollDuration !== 'none') {
+      if (pollDuration === 'custom') {
+        if (!pollCustomEnd || new Date(pollCustomEnd).getTime() <= Date.now()) {
+          setError('Pilih waktu berakhir polling yang masih akan datang');
+          return;
+        }
+        expiresAt = new Date(pollCustomEnd).toISOString();
+      } else {
+        const durationMs: Record<string, number> = { '1h': 3_600_000, '1d': 86_400_000, '3d': 259_200_000, '7d': 604_800_000 };
+        expiresAt = new Date(Date.now() + durationMs[pollDuration]).toISOString();
+      }
+    }
     setError('');
     setSubmitting(true);
     try {
       await onSubmit(
         text,
         media,
-        pollEnabled ? { question: pollQuestion.trim(), options: validPollOptions } : undefined,
+        pollEnabled ? { question: pollQuestion.trim(), options: validPollOptions, ...(expiresAt ? { expiresAt } : {}), voterVisibility: pollVoterVisibility, resultVisibility: pollResultVisibility } : undefined,
         mentionedUserIds,
       );
       setContent('');
@@ -82,6 +100,10 @@ export function PostComposer({ currentUserName, currentUserAvatar, onSubmit, dis
       setPollEnabled(false);
       setPollQuestion('');
       setPollOptions(['', '']);
+      setPollDuration('3d');
+      setPollCustomEnd('');
+      setPollVoterVisibility('SECRET');
+      setPollResultVisibility('AFTER_VOTE');
       setMentionedUserIds([]);
     } catch {
       setError('Gagal memposting. Coba lagi.');
@@ -188,6 +210,57 @@ export function PostComposer({ currentUserName, currentUserAvatar, onSubmit, dis
               <PlusIcon className="h-4 w-4" /> Tambah pilihan
             </button>
           )}
+          <div className="grid gap-2 border-t-2 border-ink pt-3 dark:border-gray-500 sm:grid-cols-2">
+            <div className="text-xs font-black uppercase text-ink dark:text-gray-100">
+              <label id="poll-duration-label">Durasi polling</label>
+              <FilterSelect
+                value={pollDuration}
+                onChange={(event) => setPollDuration(event.target.value)}
+                className="mt-1 min-w-0 normal-case"
+                aria-label="Durasi polling"
+                icon={<ClockIcon className="h-3.5 w-3.5" />}
+              >
+                <option value="1h">1 jam</option>
+                <option value="1d">1 hari</option>
+                <option value="3d">3 hari</option>
+                <option value="7d">7 hari</option>
+                <option value="custom">Tanggal khusus</option>
+                <option value="none">Tanpa batas waktu</option>
+              </FilterSelect>
+            </div>
+            {pollDuration === 'custom' && (
+              <label className="text-xs font-black uppercase text-ink dark:text-gray-100">
+                Berakhir pada
+                <input
+                  type="datetime-local"
+                  value={pollCustomEnd}
+                  min={new Date(Date.now() + 60_000).toISOString().slice(0, 16)}
+                  onChange={(event) => setPollCustomEnd(event.target.value)}
+                  className="mt-1 h-11 w-full rounded-sm border-2 border-ink bg-white px-3 text-sm font-bold text-ink shadow-[1px_1px_0_#171717] focus:outline-none focus:ring-2 focus:ring-ink/25 dark:border-gray-500 dark:bg-gray-800 dark:text-white"
+                />
+              </label>
+            )}
+          </div>
+          <div className="grid gap-2 sm:grid-cols-2">
+            <div className="text-xs font-black uppercase text-ink dark:text-gray-100">
+              <label>Privasi suara</label>
+              <FilterSelect value={pollVoterVisibility} onChange={(event) => setPollVoterVisibility(event.target.value as 'SECRET' | 'VISIBLE')} className="mt-1 min-w-0 normal-case" aria-label="Privasi suara" icon={<UserGroupIcon className="h-3.5 w-3.5" />}>
+                <option value="SECRET">Suara Rahasia</option>
+                <option value="VISIBLE">Pemilih Terlihat</option>
+              </FilterSelect>
+            </div>
+            <div className="text-xs font-black uppercase text-ink dark:text-gray-100">
+              <label>Hasil terlihat</label>
+              <FilterSelect value={pollResultVisibility} onChange={(event) => setPollResultVisibility(event.target.value as 'ALWAYS' | 'AFTER_VOTE' | 'AFTER_END')} className="mt-1 min-w-0 normal-case" aria-label="Waktu hasil terlihat" icon={<EyeIcon className="h-3.5 w-3.5" />}>
+                <option value="ALWAYS">Sejak Dipublikasikan</option>
+                <option value="AFTER_VOTE">Setelah Memilih</option>
+                <option value="AFTER_END">Setelah Polling Berakhir</option>
+              </FilterSelect>
+            </div>
+          </div>
+          <p className="text-[11px] font-medium leading-relaxed text-ink-secondary dark:text-gray-300">
+            {pollVoterVisibility === 'SECRET' ? 'Identitas pemilih tidak akan ditampilkan.' : 'Nama pemilih dapat dilihat pada rincian hasil.'}
+          </p>
         </div>
       )}
 
