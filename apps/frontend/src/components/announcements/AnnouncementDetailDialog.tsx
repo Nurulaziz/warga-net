@@ -57,30 +57,30 @@ export function AnnouncementDetailDialog({ announcement, onClose, footer }: Prop
 
   return (
     <div
-      className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/50"
+      className="fixed inset-0 z-[70] flex items-center justify-center bg-ink/65 p-4"
       role="dialog"
       aria-modal="true"
       aria-labelledby="announcement-detail-title"
       onClick={onClose}
     >
       <div
-        className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto"
+        className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-sm border-2 border-ink bg-[#fffdf8] shadow-[7px_7px_0_#171717] dark:bg-gray-900"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-start justify-between gap-3 px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+        <div className="flex items-start justify-between gap-3 border-b-2 border-ink bg-[#fff8ec] px-6 py-4 dark:bg-gray-800">
           <div className="flex items-center gap-2 min-w-0">
-            <div className="w-9 h-9 rounded-lg bg-[#E8F0FF] dark:bg-[#0054A6]/15 flex items-center justify-center flex-shrink-0">
-              <MegaphoneIcon className="w-5 h-5 text-[#0054A6] dark:text-blue-400" />
+            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-sm border-2 border-ink bg-[#f1dfc4] shadow-[2px_2px_0_#171717]">
+              <MegaphoneIcon className="h-5 w-5 text-ink" />
             </div>
             <div className="min-w-0">
-              <p className="text-xs text-gray-400">Pengumuman</p>
-              <div className="flex items-center gap-2">
-                <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded-full ${meta.badge}`}>
+              <p className="font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-brand-600">Pengumuman</p>
+              <div className="mt-0.5 flex flex-wrap items-center gap-2">
+                <span className={`inline-flex items-center gap-1 rounded-sm border border-ink px-2 py-0.5 text-xs font-bold ${meta.badge}`}>
                   <span className={`w-1.5 h-1.5 rounded-full ${meta.dot}`} />
                   {meta.label}
                 </span>
-                <span className="text-xs text-gray-400">{formatDate(announcement.createdAt)}</span>
+                <span className="text-xs font-medium text-ink-secondary dark:text-gray-300">{formatDate(announcement.createdAt)}</span>
               </div>
             </div>
           </div>
@@ -88,7 +88,7 @@ export function AnnouncementDetailDialog({ announcement, onClose, footer }: Prop
             type="button"
             onClick={onClose}
             aria-label="Tutup"
-            className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 transition-colors flex-shrink-0"
+            className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-sm border-2 border-ink bg-white text-ink shadow-[2px_2px_0_#171717] transition-all hover:translate-x-0.5 hover:translate-y-0.5 hover:bg-[#f1dfc4] hover:shadow-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-offset-2"
           >
             <XMarkIcon className="h-5 w-5" />
           </button>
@@ -96,33 +96,33 @@ export function AnnouncementDetailDialog({ announcement, onClose, footer }: Prop
 
         {/* Body */}
         <div className="px-6 py-5">
-          <h2 id="announcement-detail-title" className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-3">
+          <h2 id="announcement-detail-title" className="mb-3 font-display text-xl font-black text-ink dark:text-white">
             {announcement.title}
           </h2>
           <div
-            className="text-sm leading-relaxed text-gray-700 dark:text-gray-300 break-words [&_a]:text-primary-600 [&_a]:underline [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_p]:mb-2 [&_strong]:font-semibold"
+            className="break-words text-sm font-medium leading-relaxed text-ink-secondary dark:text-gray-200 [&_a]:font-bold [&_a]:text-brand-600 [&_a]:underline [&_ol]:list-decimal [&_ol]:pl-5 [&_p]:mb-2 [&_strong]:font-bold [&_ul]:list-disc [&_ul]:pl-5"
             dangerouslySetInnerHTML={{ __html: announcement.content }}
           />
 
           {/* Lampiran */}
           {url && (
             <div className="mt-5">
-              <div className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 uppercase mb-2">
+              <div className="mb-2 flex items-center gap-1.5 font-mono text-[11px] font-bold uppercase tracking-[0.1em] text-ink">
                 <PaperClipIcon className="w-3.5 h-3.5" /> Lampiran
               </div>
 
               {isImage(url) ? (
-                <a href={url} target="_blank" rel="noopener noreferrer" className="block">
+                <a href={url} target="_blank" rel="noopener noreferrer" className="block rounded-sm border-2 border-ink bg-white p-2 shadow-[3px_3px_0_#171717]">
                   <img
                     src={url}
                     alt={announcement.attachmentName || 'Lampiran pengumuman'}
-                    className="w-full rounded-lg border border-gray-200 dark:border-gray-700 max-h-[420px] object-contain bg-gray-50 dark:bg-gray-900"
+                    className="max-h-[420px] w-full object-contain"
                   />
                 </a>
               ) : isPdf(url) ? (
                 <div className="space-y-2">
-                  <object data={url} type="application/pdf" className="w-full h-[420px] rounded-lg border border-gray-200 dark:border-gray-700">
-                    <div className="p-4 text-sm text-gray-500">
+                  <object data={url} type="application/pdf" className="h-[420px] w-full rounded-sm border-2 border-ink bg-white shadow-[3px_3px_0_#171717]">
+                    <div className="p-4 text-sm font-medium text-ink-secondary">
                       Pratinjau PDF tidak tersedia di browser ini.
                     </div>
                   </object>
@@ -130,7 +130,7 @@ export function AnnouncementDetailDialog({ announcement, onClose, footer }: Prop
                     href={url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 text-sm text-primary-600 dark:text-primary-400 hover:underline"
+                    className="inline-flex items-center gap-1.5 text-sm font-bold text-brand-600 hover:underline"
                   >
                     <ArrowTopRightOnSquareIcon className="w-4 h-4" />
                     Buka {announcement.attachmentName || 'PDF'} di tab baru
@@ -141,7 +141,7 @@ export function AnnouncementDetailDialog({ announcement, onClose, footer }: Prop
                   href={url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-4 py-3 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-primary-600 dark:text-primary-400 hover:bg-gray-50 dark:hover:bg-gray-900"
+                  className="inline-flex items-center gap-2 rounded-sm border-2 border-ink bg-white px-4 py-3 text-sm font-bold text-brand-600 shadow-[3px_3px_0_#171717] transition-all hover:translate-x-0.5 hover:translate-y-0.5 hover:bg-[#fff8ec] hover:shadow-none"
                 >
                   <PaperClipIcon className="w-4 h-4" />
                   {announcement.attachmentName || 'Lihat lampiran'}
@@ -153,7 +153,7 @@ export function AnnouncementDetailDialog({ announcement, onClose, footer }: Prop
 
         {/* Footer */}
         {footer && (
-          <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between gap-3">
+          <div className="flex items-center justify-between gap-3 border-t-2 border-ink bg-[#fff8ec] px-6 py-4 dark:bg-gray-800">
             {footer}
           </div>
         )}

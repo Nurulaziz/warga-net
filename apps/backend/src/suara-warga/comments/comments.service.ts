@@ -5,6 +5,10 @@ import { AuthScope, requirePostOrThrow } from '../common/scope.helper';
 import { CreateCommentDto } from './dto/create-comment.dto';
 import { UpdateCommentDto } from './dto/update-comment.dto';
 
+type AvatarAccountStore = {
+  findMany(args: object): Promise<Array<{ phoneNumber: string | null; image: string | null }>>;
+};
+
 const COMMENT_INCLUDE = {
   author: { select: { id: true, fullName: true, phoneNumber: true } },
 };
@@ -48,12 +52,24 @@ export class CommentsService {
       include: COMMENT_INCLUDE,
       orderBy: { createdAt: 'asc' },
     });
-    type CommentNode = (typeof comments)[number] & { replies: CommentNode[] };
+    const accountStore = (this.prisma as unknown as { betterAuthUser?: AvatarAccountStore }).betterAuthUser;
+    const accounts = accountStore
+      ? await accountStore.findMany({
+          where: { phoneNumber: { in: [...new Set(comments.map((comment) => comment.author.phoneNumber))] } },
+          select: { phoneNumber: true, image: true },
+        })
+      : [];
+    const images = new Map(accounts.map((account) => [account.phoneNumber, account.image]));
+    const enriched = comments.map((comment) => ({
+      ...comment,
+      author: { ...comment.author, avatarUrl: images.get(comment.author.phoneNumber) ?? null },
+    }));
+    type CommentNode = (typeof enriched)[number] & { replies: CommentNode[] };
     const nodes = new Map<string, CommentNode>(
-      comments.map((comment) => [comment.id, { ...comment, replies: [] }]),
+      enriched.map((comment) => [comment.id, { ...comment, replies: [] }]),
     );
     const roots: CommentNode[] = [];
-    for (const comment of comments) {
+    for (const comment of enriched) {
       const node = nodes.get(comment.id)!;
       const parent = comment.parentId ? nodes.get(comment.parentId) : undefined;
       if (parent) parent.replies.push(node);
@@ -85,7 +101,7 @@ export class CommentsService {
       parentId = parent.id;
     }
 
-    await this.prisma.$transaction([
+    const [createdComment] = await this.prisma.$transaction([
       this.prisma.comment.create({
         data: { postId, authorId: scope.userId, content, parentId },
       }),
@@ -94,6 +110,28 @@ export class CommentsService {
         data: { commentCount: { increment: 1 } },
       }),
     ]);
+
+    const mentionedUserIds = dto.mentionedUserIds ?? [];
+    if (createdComment && mentionedUserIds.length) {
+      const users = await this.prisma.user.findMany({
+        where: {
+          id: { in: mentionedUserIds },
+          isActive: true,
+          deletedAt: null,
+          ...(!scope.isAdmin && scope.rt ? { family: { rt: scope.rt } } : {}),
+        },
+        select: { id: true },
+      });
+      await Promise.all(
+        users
+          .filter((user) => user.id !== scope.userId)
+          .map((user) =>
+            this.prisma.mention.create({
+              data: { commentId: createdComment.id, mentionedUserId: user.id },
+            }),
+          ),
+      );
+    }
 
     return this.findOne(postId, scope);
   }

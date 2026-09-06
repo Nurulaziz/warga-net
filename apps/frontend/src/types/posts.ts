@@ -20,6 +20,7 @@ export interface Post {
     id: string;
     fullName: string;
     phoneNumber: string;
+    avatarUrl?: string | null;
   };
   media?: Array<{
     id: string;
@@ -65,6 +66,7 @@ export interface CreatePostPayload {
   visibility?: string;
   media?: PostMediaItem[];
   poll?: { question: string; options: string[] };
+  mentionedUserIds?: string[];
 }
 
 export interface PollOption {
@@ -112,6 +114,7 @@ export interface Comment {
     id: string;
     fullName: string;
     phoneNumber: string;
+    avatarUrl?: string | null;
   };
   replies?: Comment[];
 }

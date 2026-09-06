@@ -21,6 +21,7 @@ interface AuthContextValue {
   hasPermission: (feature: string, action: string) => boolean;
   isAdmin: () => boolean;
   isWarga: () => boolean;
+  refreshCurrentUser: () => Promise<void>;
   requestOtp: (phoneNumber: string) => Promise<void>;
   verifyOtp: (phoneNumber: string, code: string) => Promise<void>;
   logout: () => Promise<void>;
@@ -50,6 +51,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     hasPermission,
     isAdmin,
     isWarga,
+    refetch: refreshCurrentUser,
     loading: roleLoading,
   } = useCurrentUser(isAuthenticated, session?.user.id);
 
@@ -86,6 +88,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       hasPermission,
       isAdmin,
       isWarga,
+      refreshCurrentUser,
       requestOtp,
       verifyOtp,
       logout,
@@ -99,6 +102,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       hasPermission,
       isAdmin,
       isWarga,
+      refreshCurrentUser,
       requestOtp,
       verifyOtp,
       logout,

@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 
 function renderText(text: string, keyPrefix: string) {
   const parts: Array<{ type: 'text' | 'tag' | 'mention'; value: string }> = [];
-  const regex = /(#[\p{L}\p{N}_]+)|(@[\p{L}\p{N} .\-']+)/gu;
+  const regex = /(#[\p{L}\p{N}_]+)|(@[\p{L}\p{N}_]+)/gu;
   let lastIndex = 0;
   let match: RegExpExecArray | null;
   let i = 0;
@@ -33,7 +33,7 @@ function renderText(text: string, keyPrefix: string) {
           to={`/suara-warga/hashtag/${encodeURIComponent(part.value.slice(1).toLowerCase())}`}
           className="font-medium text-primary hover:underline"
         >
-          {part.value}
+          {part.value.replace(/_/g, ' ')}
         </Link>
       );
     }

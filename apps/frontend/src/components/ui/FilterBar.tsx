@@ -1,10 +1,18 @@
 import {
+  Children,
+  isValidElement,
+  useEffect,
+  useImperativeHandle,
+  useRef,
+  useState,
+  type ChangeEvent,
+  type KeyboardEvent,
   type ReactNode,
   type SelectHTMLAttributes,
   type InputHTMLAttributes,
   forwardRef,
 } from 'react';
-import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
+import { CheckIcon, ChevronDownIcon, MagnifyingGlassIcon, QueueListIcon } from '@heroicons/react/24/outline';
 
 // Toolbar pembungkus search + filter agar sejajar & rapi
 export function FilterBar({
@@ -47,18 +55,109 @@ SearchInput.displayName = 'SearchInput';
 // Dropdown filter dengan gaya seragam
 interface FilterSelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
   children: ReactNode;
+  icon?: ReactNode;
 }
 
 export const FilterSelect = forwardRef<HTMLSelectElement, FilterSelectProps>(
-  ({ children, className = '', ...props }, ref) => {
+  ({ children, className = '', value, defaultValue, onChange, disabled, id, name, icon, 'aria-label': ariaLabel }, forwardedRef) => {
+    const rootRef = useRef<HTMLDivElement>(null);
+    const selectRef = useRef<HTMLSelectElement>(null);
+    const [open, setOpen] = useState(false);
+    const [activeIndex, setActiveIndex] = useState(0);
+    useImperativeHandle(forwardedRef, () => selectRef.current as HTMLSelectElement);
+
+    const options = Children.toArray(children)
+      .filter(isValidElement)
+      .map((option) => ({
+        value: String((option.props as { value?: string | number }).value ?? ''),
+        label: (option.props as { children?: ReactNode }).children,
+        disabled: Boolean((option.props as { disabled?: boolean }).disabled),
+      }));
+    const selectedValue = String(value ?? defaultValue ?? '');
+    const selected = options.find((option) => option.value === selectedValue) ?? options[0];
+
+    useEffect(() => {
+      function closeOnOutsideClick(event: MouseEvent) {
+        if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
+      }
+      document.addEventListener('mousedown', closeOnOutsideClick);
+      return () => document.removeEventListener('mousedown', closeOnOutsideClick);
+    }, []);
+
+    function selectOption(nextValue: string) {
+      if (disabled) return;
+      onChange?.({
+        target: { value: nextValue },
+        currentTarget: { value: nextValue },
+      } as ChangeEvent<HTMLSelectElement>);
+      setOpen(false);
+    }
+
+    function handleKeyDown(event: KeyboardEvent<HTMLButtonElement>) {
+      if (disabled) return;
+      if (event.key === 'Escape') {
+        setOpen(false);
+        return;
+      }
+      if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+        event.preventDefault();
+        if (!open) setOpen(true);
+        const step = event.key === 'ArrowDown' ? 1 : -1;
+        setActiveIndex((index) => (index + step + options.length) % options.length);
+      } else if ((event.key === 'Enter' || event.key === ' ') && open) {
+        event.preventDefault();
+        const option = options[activeIndex];
+        if (option && !option.disabled) selectOption(option.value);
+      }
+    }
+
     return (
-      <select
-        ref={ref}
-        className={`h-10 px-3 pr-8 text-sm font-semibold border-2 border-ink dark:border-gray-500 rounded-sm bg-white dark:bg-gray-800 text-ink dark:text-gray-300 focus:outline-none focus:border-ink focus:ring-2 focus:ring-ink/20 appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2020%2020%22%20fill%3D%22%23171717%22%3E%3Cpath%20fill-rule%3D%22evenodd%22%20d%3D%22M5.23%207.21a.75.75%200%20011.06.02L10%2011.168l3.71-3.938a.75.75%200%20111.08%201.04l-4.25%204.5a.75.75%200%2001-1.08%200l-4.25-4.5a.75.75%200%2001.02-1.06z%22%20clip-rule%3D%22evenodd%22/%3E%3C/svg%3E')] bg-[length:20px] bg-[right_4px_center] bg-no-repeat ${className}`}
-        {...props}
-      >
-        {children}
-      </select>
+      <div ref={rootRef} className={`relative min-w-[168px] ${className}`}>
+        <select ref={selectRef} id={id} name={name} value={selectedValue} onChange={onChange} disabled={disabled} tabIndex={-1} aria-hidden="true" className="sr-only">
+          {children}
+        </select>
+        <button
+          type="button"
+          aria-label={ariaLabel}
+          aria-haspopup="listbox"
+          aria-expanded={open}
+          disabled={disabled}
+          onClick={() => {
+            setActiveIndex(Math.max(0, options.findIndex((option) => option.value === selectedValue)));
+            setOpen((current) => !current);
+          }}
+          onKeyDown={handleKeyDown}
+          className={`flex h-11 w-full items-center gap-2 rounded-sm border-2 border-ink bg-white px-3 text-left text-sm font-bold text-ink transition-all focus:outline-none focus:ring-2 focus:ring-ink/25 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-500 dark:bg-gray-800 dark:text-gray-100 ${open ? 'translate-x-0.5 translate-y-0.5 bg-[#fff8ec] shadow-none' : 'shadow-[2px_2px_0_#171717] hover:bg-[#fff8ec]'}`}
+        >
+          <span className="flex h-6 w-6 flex-none items-center justify-center rounded-sm border border-ink bg-[#f1dfc4] text-ink">
+            {icon || <QueueListIcon className="h-3.5 w-3.5" />}
+          </span>
+          <span className="min-w-0 flex-1 truncate">{selected?.label}</span>
+          <ChevronDownIcon className={`h-4 w-4 flex-none transition-transform ${open ? 'rotate-180' : ''}`} />
+        </button>
+        {open && (
+          <div role="listbox" aria-label={ariaLabel || 'Pilihan filter'} className="absolute left-0 z-50 mt-2 max-h-64 min-w-full overflow-y-auto rounded-sm border-2 border-ink bg-[#fffdf8] p-1 shadow-[4px_4px_0_#171717] dark:border-gray-500 dark:bg-gray-800">
+            {options.map((option, index) => {
+              const isSelected = option.value === selectedValue;
+              return (
+                <button
+                  key={`${option.value}-${index}`}
+                  type="button"
+                  role="option"
+                  aria-selected={isSelected}
+                  disabled={option.disabled}
+                  onMouseEnter={() => setActiveIndex(index)}
+                  onClick={() => selectOption(option.value)}
+                  className={`flex min-h-10 w-full items-center gap-2 rounded-sm border px-3 text-left text-sm font-semibold transition-colors disabled:opacity-40 ${isSelected ? 'border-ink bg-[#f1dfc4] font-black text-ink shadow-[1px_1px_0_#171717]' : index === activeIndex ? 'border-transparent bg-[#fff8ec] text-ink dark:bg-gray-700 dark:text-white' : 'border-transparent text-ink hover:bg-[#fff8ec] dark:text-gray-100 dark:hover:bg-gray-700'}`}
+                >
+                  <span className="min-w-0 flex-1 truncate">{option.label}</span>
+                  {isSelected && <CheckIcon className="h-4 w-4 flex-none" />}
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
     );
   },
 );

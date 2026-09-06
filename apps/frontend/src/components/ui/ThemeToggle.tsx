@@ -24,7 +24,7 @@ export const ThemeToggle = ({ showLabel = false }: ThemeToggleProps) => {
         onClick={toggleTheme}
         title="Ubah Tema"
         aria-label={`Ubah ke mode ${isDark ? 'terang' : 'gelap'}`}
-        className="inline-flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-sm border-2 border-ink bg-white text-ink shadow-[2px_2px_0_#171717] transition-transform hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-brand-500/30 dark:border-gray-300 dark:bg-gray-800 dark:text-white dark:shadow-[2px_2px_0_#d4d4d4]"
+        className="inline-flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-sm border-2 border-ink bg-white text-ink shadow-[2px_2px_0_#171717] transition-transform hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-ink/30 dark:border-gray-300 dark:bg-gray-800 dark:text-white dark:shadow-[2px_2px_0_#d4d4d4]"
       >
         <span className="inline-flex items-center justify-center">
           {isDark ? (

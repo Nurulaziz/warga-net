@@ -1,4 +1,4 @@
-import { Injectable, NestInterceptor, ExecutionContext, CallHandler } from '@nestjs/common';
+import { Injectable, NestInterceptor, ExecutionContext, CallHandler, Logger } from '@nestjs/common';
 import { Observable, tap } from 'rxjs';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -15,6 +15,8 @@ const EXCLUDED_PATHS = ['/api/v1/health', '/api/v1/auth', '/api/v1/audit-logs'];
 
 @Injectable()
 export class AuditLogInterceptor implements NestInterceptor {
+  private readonly logger = new Logger(AuditLogInterceptor.name);
+
   constructor(private readonly prisma: PrismaService) {}
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
@@ -26,7 +28,7 @@ export class AuditLogInterceptor implements NestInterceptor {
       return next.handle();
     }
 
-    const path = request.url || request.path;
+    const path = this.normalizePath(request.originalUrl || request.url || request.path || '');
 
     // Skip excluded paths
     if (EXCLUDED_PATHS.some((p) => path.startsWith(p))) {
@@ -39,15 +41,19 @@ export class AuditLogInterceptor implements NestInterceptor {
     const ipAddress = request.ip || request.headers['x-forwarded-for'] || 'unknown';
     const userAgent = request.headers['user-agent'] || 'unknown';
 
-    // Ambil userId dari Better Auth session (di-inject ke request oleh AuthGuard)
-    const userId = request.user?.id || request.session?.userId || null;
+    // ID Better Auth berbeda dari ID tabel users WargaNet. Nomor telepon menjadi
+    // penghubung yang stabil agar foreign key audit_logs.user_id selalu valid.
+    const authUser = request.user || request.session?.user;
+    const authUserId = authUser?.id || request.session?.userId || null;
+    const phoneNumber = authUser?.phoneNumber || request.session?.user?.phoneNumber || null;
 
     return next.handle().pipe(
       tap({
         next: () => {
           // Log berhasil — fire and forget
           this.writeLog({
-            userId,
+            authUserId,
+            phoneNumber,
             action: `${resource}.${action}`,
             resource,
             ipAddress,
@@ -59,12 +65,17 @@ export class AuditLogInterceptor implements NestInterceptor {
     );
   }
 
+  private normalizePath(rawPath: string): string {
+    const withoutOrigin = rawPath.replace(/^https?:\/\/[^/]+/i, '');
+    return withoutOrigin.split('?')[0] || '/';
+  }
+
   private extractResource(path: string): string {
     // /api/v1/users/123 → users
     // /api/v1/bills/types → bills
     // /api/v1/cash/transactions/123 → cash
-    const segments = path.replace('/api/v1/', '').split('/');
-    return segments[0] || 'unknown';
+    const normalized = path.replace(/^\/api\/v1\/?/, '').replace(/^\/v1\/?/, '').replace(/^\//, '');
+    return normalized.split('/')[0] || 'unknown';
   }
 
   private buildDetails(method: string, path: string, body: unknown): Record<string, unknown> {
@@ -91,7 +102,8 @@ export class AuditLogInterceptor implements NestInterceptor {
   }
 
   private async writeLog(data: {
-    userId?: string | null;
+    authUserId?: string | null;
+    phoneNumber?: string | null;
     action: string;
     resource: string;
     ipAddress: string;
@@ -99,9 +111,20 @@ export class AuditLogInterceptor implements NestInterceptor {
     details?: Record<string, unknown>;
   }) {
     try {
+      const user = data.phoneNumber
+        ? await this.prisma.user.findFirst({
+            where: { phoneNumber: data.phoneNumber, deletedAt: null },
+            select: { id: true },
+          })
+        : data.authUserId
+          ? await this.prisma.user.findFirst({
+              where: { id: data.authUserId, deletedAt: null },
+              select: { id: true },
+            })
+          : null;
       await this.prisma.auditLog.create({
         data: {
-          userId: data.userId || undefined,
+          userId: user?.id,
           action: data.action,
           resource: data.resource,
           ipAddress: data.ipAddress,
@@ -109,8 +132,9 @@ export class AuditLogInterceptor implements NestInterceptor {
           details: data.details ? JSON.parse(JSON.stringify(data.details)) : undefined,
         },
       });
-    } catch {
-      // Silent fail — jangan ganggu request utama
+    } catch (error) {
+      // Audit tidak boleh menggagalkan aksi utama, tetapi kegagalannya harus dapat didiagnosis.
+      this.logger.warn(`Gagal mencatat audit log: ${error instanceof Error ? error.message : 'unknown error'}`);
     }
   }
 }

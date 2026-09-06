@@ -348,7 +348,7 @@ export function UsersPage() {
             <select
               value={formData.roleId}
               onChange={(e) => setFormData({ ...formData, roleId: e.target.value })}
-              className="w-full min-h-[44px] px-4 py-2 border-2 border-ink dark:border-gray-500 rounded-sm bg-white dark:bg-gray-800 text-ink dark:text-gray-100 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/25"
+              className="w-full min-h-[44px] px-4 py-2 border-2 border-ink dark:border-gray-500 rounded-sm bg-white dark:bg-gray-800 text-ink dark:text-gray-100 focus:outline-none focus:border-ink focus:ring-2 focus:ring-ink/25"
             >
               <option value="">Pilih Role</option>
               {roles.map((r) => (
@@ -365,7 +365,7 @@ export function UsersPage() {
             <select
               value={formData.familyId}
               onChange={(e) => setFormData({ ...formData, familyId: e.target.value })}
-              className="w-full min-h-[44px] px-4 py-2 border-2 border-ink dark:border-gray-500 rounded-sm bg-white dark:bg-gray-800 text-ink dark:text-gray-100 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/25"
+              className="w-full min-h-[44px] px-4 py-2 border-2 border-ink dark:border-gray-500 rounded-sm bg-white dark:bg-gray-800 text-ink dark:text-gray-100 focus:outline-none focus:border-ink focus:ring-2 focus:ring-ink/25"
             >
               <option value="">Tanpa keluarga</option>
               {families.map((f) => (
@@ -381,7 +381,7 @@ export function UsersPage() {
               id="isActive"
               checked={formData.isActive}
               onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
-              className="w-4 h-4 rounded-sm border-2 border-ink text-brand-500 focus:ring-brand-500/25"
+              className="w-4 h-4 rounded-sm border-2 border-ink text-brand-500 focus:ring-ink/25"
             />
             <label htmlFor="isActive" className="text-sm text-ink dark:text-gray-300">
               Aktif

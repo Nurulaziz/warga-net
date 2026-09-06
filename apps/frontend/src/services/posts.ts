@@ -118,7 +118,7 @@ export async function fetchComments(postId: string): Promise<PaginatedComments> 
 
 export async function createComment(
   postId: string,
-  payload: { content: string; parentId?: string },
+  payload: { content: string; parentId?: string; mentionedUserIds?: string[] },
 ): Promise<Comment[]> {
   const { data } = await api.post<Comment[]>(`/posts/${postId}/comments`, payload);
   return Array.isArray(data) ? data : (data as { data: Comment[] }).data;

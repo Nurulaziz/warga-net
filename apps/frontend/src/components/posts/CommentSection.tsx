@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { ChatBubbleLeftIcon, FlagIcon, PaperAirplaneIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { ChatBubbleLeftIcon, FlagIcon, PaperAirplaneIcon, PencilSquareIcon, TrashIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { Button } from '@/components/ui/Button';
 import { useAuth } from '@/contexts/AuthContext';
 import {
@@ -12,6 +12,9 @@ import {
 import { ReportDialog } from '@/components/posts/ReportDialog';
 import { useToast } from '@/components/ui/Toast';
 import type { Comment } from '@/types/posts';
+import { UserAvatar } from '@/components/ui/UserAvatar';
+import { MentionTextarea } from '@/components/posts/MentionTextarea';
+import { PostContent } from '@/components/posts/PostContent';
 
 function timeAgo(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr).getTime();
@@ -21,15 +24,6 @@ function timeAgo(dateStr: string): string {
   const hours = Math.floor(minutes / 60);
   if (hours < 24) return `${hours} jam lalu`;
   return new Date(dateStr).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
-}
-
-function initials(name: string): string {
-  return name
-    .split(' ')
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((w) => w[0]?.toUpperCase())
-    .join('');
 }
 
 function CommentItem({
@@ -69,9 +63,7 @@ function CommentItem({
 
   return (
     <div className={`relative flex gap-3 ${depth > 0 ? 'ml-2 border-l-2 border-gray-400 pl-4 dark:border-gray-500' : ''}`}>
-      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary dark:bg-primary/20">
-        {initials(comment.author?.fullName || 'Warga')}
-      </div>
+      <UserAvatar name={comment.author?.fullName || 'Warga'} src={comment.author?.avatarUrl} size="sm" />
       <div className="min-w-0 flex-1">
         <div className="inline-block rounded-2xl rounded-tl-sm bg-gray-100 px-3 py-2 dark:bg-gray-700">
           <p className="text-xs font-semibold text-gray-800 dark:text-gray-100">
@@ -92,25 +84,25 @@ function CommentItem({
               </button>
             </div>
           ) : (
-            <p className="text-sm text-gray-800 dark:text-gray-100">{comment.content}</p>
+            <PostContent content={comment.content} className="text-sm text-gray-800 dark:text-gray-100" />
           )}
         </div>
-        <div className="mt-1 flex flex-wrap items-center gap-3 pl-1 text-xs font-medium text-gray-700 dark:text-gray-300">
-          <span>{timeAgo(comment.createdAt)}</span>
-          <button onClick={() => onReply(comment.id, comment.author?.fullName || 'Warga')}>
-            Komen
+        <div className="mt-1 flex items-center gap-1 pl-1 text-xs font-medium text-ink-secondary dark:text-gray-300">
+          <span className="mr-1">{timeAgo(comment.createdAt)}</span>
+          <button className="flex h-8 w-8 items-center justify-center rounded-sm hover:bg-[#f1dfc4] focus:outline-none focus:ring-2 focus:ring-ink/25 dark:hover:bg-gray-700" onClick={() => onReply(comment.id, comment.author?.fullName || 'Warga')} aria-label={`Balas komentar ${comment.author?.fullName || 'Warga'}`} title="Balas">
+            <ChatBubbleLeftIcon className="h-4 w-4" />
           </button>
-          <button className="inline-flex items-center gap-1" onClick={() => onReport(comment)} aria-label="Laporkan komentar">
-            <FlagIcon className="h-3.5 w-3.5" /> Laporkan
+          <button className="flex h-8 w-8 items-center justify-center rounded-sm hover:bg-[#f1dfc4] focus:outline-none focus:ring-2 focus:ring-ink/25 dark:hover:bg-gray-700" onClick={() => onReport(comment)} aria-label="Laporkan komentar" title="Laporkan">
+            <FlagIcon className="h-4 w-4" />
           </button>
           {canEdit(comment) && (
-            <button onClick={() => edit(comment)} className="text-primary">
-              Edit
+            <button onClick={() => edit(comment)} className="flex h-8 w-8 items-center justify-center rounded-sm text-primary hover:bg-[#f1dfc4] focus:outline-none focus:ring-2 focus:ring-ink/25 dark:hover:bg-gray-700" aria-label="Edit komentar" title="Edit">
+              <PencilSquareIcon className="h-4 w-4" />
             </button>
           )}
           {canDelete && (
-              <button onClick={() => onDelete(comment.id)} className="text-red-500">
-                Hapus
+              <button onClick={() => onDelete(comment.id)} className="flex h-8 w-8 items-center justify-center rounded-sm text-red-600 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-ink/25 dark:hover:bg-red-950" aria-label="Hapus komentar" title="Hapus">
+                <TrashIcon className="h-4 w-4" />
               </button>
           )}
         </div>
@@ -144,6 +136,7 @@ export function CommentSection({ postId, embedded = false }: { postId: string; e
   const [comments, setComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState(true);
   const [text, setText] = useState('');
+  const [mentionedUserIds, setMentionedUserIds] = useState<string[]>([]);
   const [replyTo, setReplyTo] = useState<{ id: string; name: string } | null>(null);
   const [composerOpen, setComposerOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -181,10 +174,12 @@ export function CommentSection({ postId, embedded = false }: { postId: string; e
       const result = await createComment(postId, {
         content,
         ...(replyTo ? { parentId: replyTo.id } : {}),
+        ...(mentionedUserIds.length ? { mentionedUserIds } : {}),
       });
       setComments([...result].sort((a, b) => Date.parse(a.createdAt) - Date.parse(b.createdAt)));
       setText('');
       setReplyTo(null);
+      setMentionedUserIds([]);
       setComposerOpen(false);
     } catch {
       showToast('Gagal mengirim komentar. Silakan coba lagi.', 'error');
@@ -195,7 +190,11 @@ export function CommentSection({ postId, embedded = false }: { postId: string; e
 
   async function handleReply(parentId: string, name: string) {
     setReplyTo((prev) => (prev && prev.id === parentId ? null : { id: parentId, name }));
-    setText('');
+    const author = comments.flatMap(function flatten(comment: Comment): Comment[] {
+      return [comment, ...(comment.replies?.flatMap(flatten) ?? [])];
+    }).find((comment) => comment.id === parentId)?.author;
+    setText(`@${name.trim().replace(/\s+/g, '_')} `);
+    setMentionedUserIds(author?.id ? [author.id] : []);
     setComposerOpen(true);
   }
 
@@ -226,9 +225,10 @@ export function CommentSection({ postId, embedded = false }: { postId: string; e
 
       {composerOpen && <div className="order-3 mt-6 rounded-sm border-2 border-ink bg-[#fffaf2] p-3 dark:border-gray-500 dark:bg-gray-700">
         <p className="mb-1 px-2 font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-brand-600">Tulis komentar</p>
-        <textarea
+        <MentionTextarea
           value={text}
-          onChange={(e) => setText(e.target.value)}
+          onChange={setText}
+          onMention={(user) => setMentionedUserIds((ids) => ids.includes(user.id) ? ids : [...ids, user.id])}
           rows={4}
           placeholder={replyTo ? `Balas ${replyTo.name}...` : 'Tulis komentar...'}
           className="min-h-[112px] w-full resize-y rounded-sm border-0 bg-transparent px-2 py-2 text-[15px] leading-relaxed text-gray-800 outline-none placeholder:text-gray-400 focus:ring-0 dark:text-gray-100"
@@ -239,6 +239,7 @@ export function CommentSection({ postId, embedded = false }: { postId: string; e
               onClick={() => {
                 setReplyTo(null);
                 setText('');
+                setMentionedUserIds([]);
                 setComposerOpen(false);
               }}
               className="inline-flex min-h-9 items-center gap-1 rounded-sm px-3 text-sm font-semibold text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-600"

@@ -111,7 +111,7 @@ export function DesktopNavigation({ collapsed, onToggle }: DesktopNavigationProp
 
   return (
     <aside
-      className={`fixed left-0 top-0 h-screen bg-[#FFF9EF] dark:bg-gray-800 border-r-2 border-ink dark:border-gray-500 z-40 flex flex-col transition-all duration-300 ${
+      className={`fixed left-0 top-0 z-40 flex h-screen flex-col border-r-[3px] border-ink bg-[#FFF9EF] transition-all duration-300 dark:border-gray-400 dark:bg-gray-800 ${
         collapsed ? 'w-[68px]' : 'w-[230px]'
       }`}
       role="navigation"

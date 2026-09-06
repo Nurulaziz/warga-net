@@ -5,9 +5,10 @@ import { BillsSchedulerService } from './bills.scheduler';
 import { MidtransModule } from '../midtrans/midtrans.module';
 import { UsersModule } from '../users/users.module';
 import { SettingsModule } from '../settings/settings.module';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
-  imports: [MidtransModule, UsersModule, SettingsModule],
+  imports: [MidtransModule, UsersModule, SettingsModule, NotificationsModule],
   controllers: [BillsController],
   providers: [BillsService, BillsSchedulerService],
   exports: [BillsService],

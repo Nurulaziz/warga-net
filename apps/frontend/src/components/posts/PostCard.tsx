@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import {
   HeartIcon as HeartOutline,
   ChatBubbleLeftIcon,
@@ -30,6 +30,7 @@ import {
 } from '@/services/posts';
 import type { Comment, Post } from '@/types/posts';
 import { useAuth } from '@/contexts/AuthContext';
+import { UserAvatar } from '@/components/ui/UserAvatar';
 
 interface PostCardProps {
   post: Post;
@@ -58,15 +59,6 @@ function timeAgo(dateStr: string): string {
   });
 }
 
-function initials(name: string): string {
-  return name
-    .split(' ')
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((w) => w[0]?.toUpperCase())
-    .join('');
-}
-
 export function PostCard({
   post,
   onOpen,
@@ -80,7 +72,6 @@ export function PostCard({
   const { showToast } = useToast();
   const { currentUser } = useAuth();
   const authorName = post.author?.fullName || 'Warga';
-  const authorInitials = useMemo(() => initials(authorName), [authorName]);
 
   const [liked, setLiked] = useState(!!post.viewerHasReacted);
   const [likeCount, setLikeCount] = useState(post.likeCount);
@@ -206,14 +197,12 @@ export function PostCard({
   }
 
   const actionBase =
-    'inline-flex min-h-10 items-center justify-center gap-1.5 rounded-md px-2 text-sm font-semibold transition-colors hover:bg-[#f5efe4] hover:text-ink dark:hover:bg-gray-700 dark:hover:text-white';
+    'inline-flex h-9 min-w-9 items-center justify-center gap-1 rounded-sm px-2 text-sm font-semibold transition-colors hover:bg-[#f1dfc4] hover:text-ink focus:outline-none focus:ring-2 focus:ring-ink/25 dark:hover:bg-gray-700 dark:hover:text-white';
 
   return (
     <article className="rounded-sm border-2 border-ink bg-white p-4 shadow-[3px_3px_0_#171717] dark:border-gray-500 dark:bg-gray-800">
       <header className="flex items-start gap-3">
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-sm border-2 border-ink bg-brand-500 font-mono text-xs font-bold text-white shadow-[2px_2px_0_#171717]">
-          {authorInitials}
-        </div>
+        <UserAvatar name={authorName} src={post.author?.avatarUrl} />
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-semibold text-gray-900 dark:text-gray-100">
             {authorName}
@@ -286,39 +275,46 @@ export function PostCard({
         {post.poll && <PostPoll postId={post.id} poll={post.poll} />}
       </div>
 
-      <footer className="mt-4 grid grid-cols-4 gap-1 border-t border-gray-300 pt-1 dark:border-gray-600">
+      <footer className="mt-4 flex items-center gap-1 border-t-2 border-ink pt-2 dark:border-gray-500">
         <button
           onClick={handleLike}
           disabled={busy}
+          aria-label={`${liked ? 'Batal suka' : 'Suka'}; ${likeCount}`}
+          title={liked ? 'Batal suka' : 'Suka'}
           className={`${actionBase} ${liked ? 'text-primary' : 'text-gray-500 dark:text-gray-400'}`}
         >
           {liked ? <HeartSolid className="h-5 w-5" /> : <HeartOutline className="h-5 w-5" />}
-          <span>Suka</span><span className="font-mono text-[11px]">{likeCount}</span>
+          <span className="sr-only">Suka</span><span className="font-mono text-[11px]">{likeCount}</span>
         </button>
         <button
           onClick={() => void toggleComments()}
           aria-expanded={commentsOpen}
+          aria-label={`Komentar; ${post.commentCount}`}
+          title="Komentar"
           className={`${actionBase} text-gray-500 dark:text-gray-400`}
         >
           <ChatBubbleLeftIcon className="h-5 w-5" />
-          <span>Komentar</span><span className="font-mono text-[11px]">{post.commentCount}</span>
+          <span className="sr-only">Komentar</span><span className="font-mono text-[11px]">{post.commentCount}</span>
         </button>
         <button
           onClick={handleShare}
           disabled={busy}
+          aria-label={`Bagikan; ${post.shareCount}`}
+          title="Bagikan"
           className={`${actionBase} text-gray-500 dark:text-gray-400`}
         >
           <ShareOutline className="h-5 w-5" />
-          <span>Bagikan</span><span className="font-mono text-[11px]">{post.shareCount}</span>
+          <span className="sr-only">Bagikan</span><span className="font-mono text-[11px]">{post.shareCount}</span>
         </button>
         <button
           onClick={handleSave}
           disabled={busy}
-          className={`${actionBase} ${saved ? 'text-primary' : 'text-gray-500 dark:text-gray-400'}`}
-          aria-label="Simpan"
+          className={`${actionBase} ml-auto ${saved ? 'text-primary' : 'text-gray-500 dark:text-gray-400'}`}
+          aria-label={saved ? 'Hapus dari tersimpan' : 'Simpan'}
+          title={saved ? 'Hapus dari tersimpan' : 'Simpan'}
         >
           {saved ? <BookmarkSolid className="h-5 w-5" /> : <BookmarkOutline className="h-5 w-5" />}
-          <span>Simpan</span>
+          <span className="sr-only">Simpan</span>
         </button>
       </footer>
       {commentsOpen && (
@@ -331,12 +327,10 @@ export function PostCard({
             <div className="space-y-3">
               {inlineComments.slice(-2).map((comment) => (
                 <div key={comment.id} className="flex gap-2.5">
-                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-sm border border-ink bg-brand-500 font-mono text-[10px] font-bold text-white dark:border-gray-400">
-                    {initials(comment.author?.fullName || 'Warga')}
-                  </span>
+                  <UserAvatar name={comment.author?.fullName || 'Warga'} src={comment.author?.avatarUrl} size="sm" className="border" />
                   <button type="button" onClick={() => onOpen?.(post.id)} className="min-w-0 rounded-sm border border-gray-300 bg-white px-3 py-2 text-left transition-colors hover:border-ink hover:bg-[#f5efe4] dark:border-gray-600 dark:bg-gray-800 dark:hover:bg-gray-700">
                     <p className="text-xs font-bold text-ink dark:text-white">{comment.author?.fullName || 'Warga'}</p>
-                    <p className="mt-0.5 text-sm text-gray-700 dark:text-gray-200">{comment.content}</p>
+                    <PostContent content={comment.content} className="mt-0.5 text-sm text-gray-700 dark:text-gray-200" />
                     <p className="mt-1 text-[10px] text-gray-400">{timeAgo(comment.createdAt)}</p>
                   </button>
                 </div>

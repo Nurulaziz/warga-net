@@ -27,6 +27,7 @@ import { LettersModule } from './letters/letters.module';
 import { SettingsModule } from './settings/settings.module';
 import { ExportModule } from './export/export.module';
 import { auth } from './auth/auth';
+import { NotificationsModule } from './notifications/notifications.module';
 
 @Module({
   imports: [
@@ -71,6 +72,7 @@ import { auth } from './auth/auth';
     LettersModule,
     SettingsModule,
     ExportModule,
+    NotificationsModule,
   ],
   controllers: [AppController],
   providers: [

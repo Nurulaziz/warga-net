@@ -9,6 +9,8 @@ import {
   MaxLength,
   ValidateNested,
   ArrayMinSize,
+  ArrayUnique,
+  IsUUID,
 } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
@@ -44,6 +46,14 @@ export class CreatePollDto {
 }
 
 export class CreatePostDto {
+  @ApiProperty({ type: [String], required: false, description: 'ID akun yang dipilih melalui fitur tag' })
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(20)
+  @ArrayUnique()
+  @IsUUID('4', { each: true })
+  mentionedUserIds?: string[];
+
   @ApiProperty({ example: 'TEXT', enum: ['TEXT', 'IMAGE', 'POLL', 'ANNOUNCEMENT'] })
   @IsOptional()
   @IsIn(['TEXT', 'IMAGE', 'POLL', 'ANNOUNCEMENT'])

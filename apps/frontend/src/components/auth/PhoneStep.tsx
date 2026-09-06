@@ -81,7 +81,7 @@ export function PhoneStep({ onSubmitted }: PhoneStepProps) {
       <div
         className={`
           flex items-center w-full h-11 sm:h-12 rounded-sm border-2 border-ink bg-white shadow-[3px_3px_0_#171717] dark:border-gray-400 dark:bg-gray-800 dark:shadow-[3px_3px_0_#737373]
-          focus-within:border-brand-500 focus-within:ring-2 focus-within:ring-brand-500/25
+          focus-within:border-ink focus-within:ring-2 focus-within:ring-ink/25
           transition-shadow duration-150
           ${
             hasError
@@ -135,7 +135,7 @@ export function PhoneStep({ onSubmitted }: PhoneStepProps) {
       <button
         type="submit"
         disabled={isSubmitting || !phoneValid}
-        className="btn-brutal btn-brutal-primary mt-5 w-full h-11 sm:h-12 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:ring-offset-2"
+        className="btn-brutal btn-brutal-primary mt-5 w-full h-11 sm:h-12 focus:outline-none focus:ring-2 focus:ring-ink/30 focus:ring-offset-2"
       >
         {isSubmitting ? (
           <>

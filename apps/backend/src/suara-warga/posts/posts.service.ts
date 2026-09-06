@@ -6,6 +6,10 @@ import { extractHashtags, extractMentions } from '../common/parser.helper';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 
+type AvatarAccountStore = {
+  findMany(args: object): Promise<Array<{ phoneNumber: string | null; image: string | null }>>;
+};
+
 @Injectable()
 export class PostsService {
   constructor(private readonly prisma: PrismaService) {}
@@ -61,6 +65,19 @@ export class PostsService {
       viewerHasReacted: reactions.length > 0,
       viewerHasSaved: savedBy.length > 0,
     };
+  }
+
+  private async withAuthorAvatars<T extends { author?: { phoneNumber: string } | null }>(posts: T[]) {
+    const phones = [...new Set(posts.map((post) => post.author?.phoneNumber).filter((phone): phone is string => !!phone))];
+    const accountStore = (this.prisma as unknown as { betterAuthUser?: AvatarAccountStore }).betterAuthUser;
+    const accounts = phones.length && accountStore
+      ? await accountStore.findMany({ where: { phoneNumber: { in: phones } }, select: { phoneNumber: true, image: true } })
+      : [];
+    const images = new Map(accounts.map((account) => [account.phoneNumber, account.image]));
+    return posts.map((post) => ({
+      ...post,
+      ...(post.author ? { author: { ...post.author, avatarUrl: images.get(post.author.phoneNumber) ?? null } } : {}),
+    }));
   }
 
   async findAll(scope: AuthScope, query: { page?: number; limit?: number; sort?: string }) {
@@ -121,8 +138,9 @@ export class PostsService {
             .map(({ post }) => post)
         : rawData;
 
+    const enriched = await this.withAuthorAvatars(data);
     return {
-      data: data.map((post) => this.withViewerState(post)),
+      data: enriched.map((post) => this.withViewerState(post)),
       meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
     };
   }
@@ -149,7 +167,7 @@ export class PostsService {
     ) {
       throw new ForbiddenException('Anda tidak dapat mengakses posting ini');
     }
-    return this.withViewerState(found);
+    return this.withViewerState((await this.withAuthorAvatars([found]))[0]);
   }
 
   async create(authorId: string, dto: CreatePostDto, rt?: string | null) {
@@ -224,12 +242,17 @@ export class PostsService {
 
     // Mention
     const mentionNames = extractMentions(content);
-    if (mentionNames.length) {
+    const mentionedUserIds = dto.mentionedUserIds ?? [];
+    if (mentionNames.length || mentionedUserIds.length) {
       const users = await this.prisma.user
         .findMany({
           where: {
-            fullName: { in: mentionNames },
+            OR: [
+              ...(mentionedUserIds.length ? [{ id: { in: mentionedUserIds } }] : []),
+              ...(mentionNames.length ? [{ fullName: { in: mentionNames } }] : []),
+            ],
             isActive: true,
+            deletedAt: null,
             ...(rt ? { family: { rt } } : {}),
           },
           select: { id: true },
@@ -270,8 +293,9 @@ export class PostsService {
       this.prisma.post.count({ where }),
     ]);
 
+    const enriched = await this.withAuthorAvatars(data);
     return {
-      data: data.map((post) => this.withViewerState(post)),
+      data: enriched.map((post) => this.withViewerState(post)),
       meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
     };
   }
@@ -298,8 +322,9 @@ export class PostsService {
       }),
       this.prisma.post.count({ where }),
     ]);
+    const enriched = await this.withAuthorAvatars(data);
     return {
-      data: data.map((post) => this.withViewerState(post)),
+      data: enriched.map((post) => this.withViewerState(post)),
       meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
     };
   }
@@ -428,8 +453,9 @@ export class PostsService {
       this.prisma.savedPost.count({ where }),
     ]);
 
+    const enriched = await this.withAuthorAvatars(saved.map((item) => item.post));
     return {
-      data: saved.map((s) => this.withViewerState(s.post)),
+      data: enriched.map((post) => this.withViewerState(post)),
       meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
     };
   }

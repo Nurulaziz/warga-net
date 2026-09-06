@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsOptional, IsString, IsUUID, MaxLength } from 'class-validator';
+import { ArrayMaxSize, ArrayUnique, IsArray, IsNotEmpty, IsOptional, IsString, IsUUID, MaxLength } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateCommentDto {
@@ -12,4 +12,12 @@ export class CreateCommentDto {
   @IsOptional()
   @IsUUID()
   parentId?: string;
+
+  @ApiProperty({ type: [String], required: false, description: 'ID akun yang dipilih melalui fitur tag' })
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(10)
+  @ArrayUnique()
+  @IsUUID('4', { each: true })
+  mentionedUserIds?: string[];
 }

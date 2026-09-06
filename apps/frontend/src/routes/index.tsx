@@ -10,6 +10,7 @@ import { ResidentsPage } from './ResidentsPage';
 import { RolesPage } from './RolesPage';
 import { AuditLogPage } from './AuditLogPage';
 import { ReportsPage } from './ReportsPage';
+import { BillTypesPage } from './BillTypesPage';
 import { BillsPage } from './BillsPage';
 import { CashPage } from './CashPage';
 import { AnnouncementsPage } from './AnnouncementsPage';
@@ -169,6 +170,14 @@ const routes: RouteObject[] = [
         element: (
           <ProtectedRoute adminOnly>
             <ReportsPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'bill-types',
+        element: (
+          <ProtectedRoute adminOnly>
+            <BillTypesPage />
           </ProtectedRoute>
         ),
       },

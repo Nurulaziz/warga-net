@@ -72,12 +72,52 @@ export class UsersService {
       fullName: user.fullName,
       isActive: user.isActive,
       familyId: user.familyId,
+      createdAt: user.createdAt,
+      ...(await this.getBetterAuthProfile(user.phoneNumber)),
       role: {
         id: user.role.id,
         name: user.role.name,
       },
       permissions,
     };
+  }
+
+  private async getBetterAuthProfile(phoneNumber: string) {
+    const account = await this.prisma.betterAuthUser.findFirst({
+      where: { phoneNumber },
+      select: { email: true, image: true },
+    });
+    return { email: account?.email ?? null, avatarUrl: account?.image ?? null };
+  }
+
+  async updateOwnProfile(phoneNumber: string, input: { fullName?: string; email?: string }) {
+    const user = await this.prisma.user.findFirst({ where: { phoneNumber, deletedAt: null } });
+    if (!user) throw new NotFoundException('User tidak ditemukan');
+    const fullName = input.fullName?.trim();
+    if (input.fullName !== undefined && (!fullName || fullName.length > 100)) {
+      throw new ConflictException('Nama lengkap wajib diisi dan maksimal 100 karakter');
+    }
+    const email = input.email?.trim().toLowerCase();
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      throw new ConflictException('Format email tidak valid');
+    }
+    await this.prisma.$transaction([
+      this.prisma.user.update({ where: { id: user.id }, data: fullName ? { fullName } : {} }),
+      this.prisma.betterAuthUser.updateMany({
+        where: { phoneNumber },
+        data: { ...(fullName ? { name: fullName } : {}), ...(email ? { email } : {}) },
+      }),
+    ]);
+    return this.findByPhoneNumber(phoneNumber);
+  }
+
+  async updateOwnAvatar(phoneNumber: string, avatarUrl: string) {
+    const result = await this.prisma.betterAuthUser.updateMany({
+      where: { phoneNumber },
+      data: { image: avatarUrl },
+    });
+    if (!result.count) throw new NotFoundException('Akun login tidak ditemukan');
+    return this.findByPhoneNumber(phoneNumber);
   }
 
   // Resolusi user aplikasi (id, role, familyId) dari nomor telepon session.

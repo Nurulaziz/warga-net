@@ -16,6 +16,9 @@ export interface CurrentUser {
   fullName: string;
   isActive: boolean;
   familyId: string | null;
+  email: string | null;
+  avatarUrl: string | null;
+  createdAt: string;
   role: UserRole;
   permissions: UserPermissions;
 }

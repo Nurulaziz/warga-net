@@ -1,21 +1,25 @@
-import { useEffect, useRef, useState } from 'react';
-import { ChartBarIcon, PaperAirplaneIcon, PhotoIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { useRef, useState } from 'react';
+import { ChartBarIcon, PaperAirplaneIcon, PhotoIcon, PlusIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { Button } from '@/components/ui/Button';
 import { useToast } from '@/components/ui/Toast';
-import { fetchMentionSuggestions, uploadPostMedia } from '@/services/posts';
+import { uploadPostMedia } from '@/services/posts';
 import type { PostMediaItem } from '@/types/posts';
+import { UserAvatar } from '@/components/ui/UserAvatar';
+import { MentionTextarea } from '@/components/posts/MentionTextarea';
 
 interface PostComposerProps {
   currentUserName: string;
+  currentUserAvatar?: string | null;
   onSubmit: (
     content: string,
     media: PostMediaItem[],
     poll?: { question: string; options: string[] },
+    mentionedUserIds?: string[],
   ) => Promise<void>;
   disabled?: boolean;
 }
 
-export function PostComposer({ currentUserName, onSubmit, disabled }: PostComposerProps) {
+export function PostComposer({ currentUserName, currentUserAvatar, onSubmit, disabled }: PostComposerProps) {
   const { showToast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [content, setContent] = useState('');
@@ -26,35 +30,7 @@ export function PostComposer({ currentUserName, onSubmit, disabled }: PostCompos
   const [pollEnabled, setPollEnabled] = useState(false);
   const [pollQuestion, setPollQuestion] = useState('');
   const [pollOptions, setPollOptions] = useState(['', '']);
-  const [mentions, setMentions] = useState<Array<{ id: string; fullName: string }>>([]);
-
-  useEffect(() => {
-    const match = content.match(/@([^@\n]{1,40})$/u);
-    if (!match) {
-      setMentions([]);
-      return;
-    }
-    const timer = window.setTimeout(() => {
-      void fetchMentionSuggestions(match[1].trim())
-        .then(setMentions)
-        .catch(() => setMentions([]));
-    }, 250);
-    return () => window.clearTimeout(timer);
-  }, [content]);
-
-  function selectMention(fullName: string) {
-    setContent((value) => value.replace(/@([^@\n]{1,40})$/u, `@${fullName} `));
-    setMentions([]);
-  }
-
-  function initials(name: string): string {
-    return name
-      .split(' ')
-      .filter(Boolean)
-      .slice(0, 2)
-      .map((w) => w[0]?.toUpperCase())
-      .join('');
-  }
+  const [mentionedUserIds, setMentionedUserIds] = useState<string[]>([]);
 
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? []);
@@ -99,12 +75,14 @@ export function PostComposer({ currentUserName, onSubmit, disabled }: PostCompos
         text,
         media,
         pollEnabled ? { question: pollQuestion.trim(), options: validPollOptions } : undefined,
+        mentionedUserIds,
       );
       setContent('');
       setMedia([]);
       setPollEnabled(false);
       setPollQuestion('');
       setPollOptions(['', '']);
+      setMentionedUserIds([]);
     } catch {
       setError('Gagal memposting. Coba lagi.');
     } finally {
@@ -115,44 +93,30 @@ export function PostComposer({ currentUserName, onSubmit, disabled }: PostCompos
   return (
     <div className="rounded-sm border-2 border-ink bg-white p-4 shadow-[3px_3px_0_#171717] dark:border-gray-500 dark:bg-gray-800">
       <div className="flex items-start gap-3">
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-sm border-2 border-ink bg-brand-500 font-mono text-xs font-bold text-white shadow-[2px_2px_0_#171717]">
-          {initials(currentUserName || 'Warga')}
-        </div>
-        <textarea
+        <UserAvatar name={currentUserName || 'Warga'} src={currentUserAvatar} />
+        <MentionTextarea
           value={content}
-          onChange={(e) => setContent(e.target.value)}
+          onChange={setContent}
+          onMention={(user) => setMentionedUserIds((ids) => ids.includes(user.id) ? ids : [...ids, user.id])}
           rows={2}
           maxLength={5000}
           disabled={disabled}
           placeholder="Apa yang ingin Anda sampaikan ke warga?"
-          className="min-h-[76px] flex-1 resize-none rounded-sm border-2 border-ink bg-[#fffaf2] px-4 py-3 text-[15px] text-gray-800 outline-none focus:ring-2 focus:ring-brand-500/25 dark:border-gray-500 dark:bg-gray-700 dark:text-gray-100"
+          className="min-h-[76px] w-full resize-none rounded-sm border-2 border-ink bg-[#fffaf2] px-4 py-3 text-[15px] text-gray-800 outline-none focus:ring-2 focus:ring-ink/25 dark:border-gray-500 dark:bg-gray-700 dark:text-gray-100"
         />
       </div>
-
-      {mentions.length > 0 && (
-        <div className="ml-14 mt-1 overflow-hidden rounded-xl border bg-white shadow-lg dark:border-gray-600 dark:bg-gray-700">
-          {mentions.map((user) => (
-            <button
-              key={user.id}
-              type="button"
-              onClick={() => selectMention(user.fullName)}
-              className="block w-full px-3 py-2 text-left text-sm hover:bg-gray-50 dark:hover:bg-gray-600"
-            >
-              @{user.fullName}
-            </button>
-          ))}
-        </div>
-      )}
 
       {media.length > 0 && (
         <div className="mt-3 grid grid-cols-4 gap-2">
           {media.map((m) => (
-            <div key={m.url} className="group relative">
-              <img src={m.url} alt="Pratinjau" className="h-20 w-full rounded-lg object-cover" />
+            <div key={m.url} className="group relative rounded-sm border-2 border-ink bg-white p-1 shadow-[2px_2px_0_#171717]">
+              <img src={m.url} alt="Pratinjau" className="h-20 w-full object-cover" />
               <button
+                type="button"
                 onClick={() => removeMedia(m.url)}
                 aria-label="Hapus gambar"
-                className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-black/60 text-white hover:bg-black/80"
+                title="Hapus gambar"
+                className="absolute right-1 top-1 flex h-7 w-7 items-center justify-center rounded-sm border-2 border-ink bg-white text-ink shadow-[1px_1px_0_#171717] transition hover:bg-red-50 hover:text-red-600"
               >
                 <XMarkIcon className="h-3.5 w-3.5" />
               </button>
@@ -162,11 +126,22 @@ export function PostComposer({ currentUserName, onSubmit, disabled }: PostCompos
       )}
 
       {pollEnabled && (
-        <div className="mt-3 space-y-2 rounded-xl bg-gray-50 p-3 dark:bg-gray-700/50">
-          <div className="flex items-center justify-between">
-            <p className="text-sm font-semibold dark:text-gray-100">Buat polling</p>
-            <button onClick={() => setPollEnabled(false)} aria-label="Hapus polling">
-              <XMarkIcon className="h-5 w-5" />
+        <div className="mt-3 space-y-3 rounded-sm border-2 border-ink bg-[#fff8ec] p-3 shadow-[2px_2px_0_#171717] dark:border-gray-500 dark:bg-gray-700">
+          <div className="flex items-center justify-between border-b-2 border-ink pb-2 dark:border-gray-500">
+            <div className="flex items-center gap-2">
+              <span className="flex h-8 w-8 items-center justify-center rounded-sm border border-ink bg-[#f1dfc4] text-ink">
+                <ChartBarIcon className="h-4 w-4" />
+              </span>
+              <p className="font-display text-sm font-black text-ink dark:text-gray-100">Buat polling</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setPollEnabled(false)}
+              aria-label="Hapus polling"
+              title="Hapus polling"
+              className="flex h-9 w-9 items-center justify-center rounded-sm border-2 border-ink bg-white text-ink shadow-[2px_2px_0_#171717] transition-all hover:translate-x-0.5 hover:translate-y-0.5 hover:bg-red-50 hover:text-red-600 hover:shadow-none focus:outline-none focus:ring-2 focus:ring-ink/25 dark:bg-gray-800 dark:text-white"
+            >
+              <XMarkIcon className="h-4 w-4" />
             </button>
           </div>
           <input
@@ -174,7 +149,8 @@ export function PostComposer({ currentUserName, onSubmit, disabled }: PostCompos
             onChange={(e) => setPollQuestion(e.target.value)}
             maxLength={300}
             placeholder="Pertanyaan polling"
-            className="w-full rounded-lg border bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-700"
+            aria-label="Pertanyaan polling"
+            className="min-h-11 w-full rounded-sm border-2 border-ink bg-white px-3 py-2 text-sm font-semibold text-ink outline-none shadow-[1px_1px_0_#171717] transition-colors placeholder:text-ink/50 focus:border-ink focus:ring-2 focus:ring-ink/25 dark:border-gray-500 dark:bg-gray-800 dark:text-white"
           />
           {pollOptions.map((option, index) => (
             <div key={index} className="flex gap-2">
@@ -187,12 +163,16 @@ export function PostComposer({ currentUserName, onSubmit, disabled }: PostCompos
                 }
                 maxLength={200}
                 placeholder={`Pilihan ${index + 1}`}
-                className="flex-1 rounded-lg border bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-700"
+                aria-label={`Pilihan polling ${index + 1}`}
+                className="min-h-11 flex-1 rounded-sm border-2 border-ink bg-white px-3 py-2 text-sm font-medium text-ink outline-none transition-colors placeholder:text-ink/50 focus:border-ink focus:ring-2 focus:ring-ink/25 dark:border-gray-500 dark:bg-gray-800 dark:text-white"
               />
               {pollOptions.length > 2 && (
                 <button
+                  type="button"
                   onClick={() => setPollOptions((items) => items.filter((_, i) => i !== index))}
                   aria-label={`Hapus pilihan ${index + 1}`}
+                  title={`Hapus pilihan ${index + 1}`}
+                  className="flex h-11 w-11 flex-none items-center justify-center rounded-sm border-2 border-ink bg-white text-ink transition-colors hover:bg-red-50 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-ink/25 dark:bg-gray-800 dark:text-white"
                 >
                   <XMarkIcon className="h-4 w-4" />
                 </button>
@@ -201,10 +181,11 @@ export function PostComposer({ currentUserName, onSubmit, disabled }: PostCompos
           ))}
           {pollOptions.length < 6 && (
             <button
+              type="button"
               onClick={() => setPollOptions((items) => [...items, ''])}
-              className="text-sm font-medium text-primary"
+              className="inline-flex min-h-9 items-center gap-1.5 rounded-sm border border-ink bg-white px-3 text-sm font-bold text-ink transition-colors hover:bg-[#f1dfc4] focus:outline-none focus:ring-2 focus:ring-ink/25 dark:bg-gray-800 dark:text-white"
             >
-              + Tambah pilihan
+              <PlusIcon className="h-4 w-4" /> Tambah pilihan
             </button>
           )}
         </div>
@@ -221,6 +202,7 @@ export function PostComposer({ currentUserName, onSubmit, disabled }: PostCompos
           className="hidden"
         />
         <button
+          type="button"
           onClick={() => fileInputRef.current?.click()}
           disabled={disabled || uploading || media.length >= 4}
           className="flex min-h-9 items-center gap-1.5 rounded-sm border border-ink px-3 py-1.5 text-sm font-semibold text-gray-600 transition hover:bg-[#f5efe4] hover:text-ink disabled:opacity-50 dark:border-gray-500 dark:text-gray-300 dark:hover:bg-gray-700"
@@ -229,12 +211,13 @@ export function PostComposer({ currentUserName, onSubmit, disabled }: PostCompos
           {uploading ? 'Mengunggah...' : 'Foto'}
         </button>
         <button
+          type="button"
           onClick={() => {
             setPollEnabled((value) => !value);
             if (!pollEnabled) setMedia([]);
           }}
           disabled={disabled}
-          className="flex min-h-9 items-center gap-1.5 rounded-sm border border-ink px-3 py-1.5 text-sm font-semibold text-gray-600 transition hover:bg-[#f5efe4] hover:text-ink disabled:opacity-50 dark:border-gray-500 dark:text-gray-300 dark:hover:bg-gray-700"
+          className={`flex min-h-9 items-center gap-1.5 rounded-sm border border-ink px-3 py-1.5 text-sm font-semibold transition disabled:opacity-50 dark:border-gray-500 dark:text-gray-300 dark:hover:bg-gray-700 ${pollEnabled ? 'bg-[#f1dfc4] font-bold text-ink shadow-[1px_1px_0_#171717]' : 'text-gray-600 hover:bg-[#f5efe4] hover:text-ink'}`}
         >
           <ChartBarIcon className="h-5 w-5" />
           Polling

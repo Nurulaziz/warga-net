@@ -57,11 +57,13 @@ export function SuaraWargaPage() {
     content: string,
     media: PostMediaItem[] = [],
     poll?: { question: string; options: string[] },
+    mentionedUserIds?: string[],
   ) {
     await createPost({
       content,
       ...(media.length ? { media } : {}),
       ...(poll ? { type: 'POLL', poll } : {}),
+      ...(mentionedUserIds?.length ? { mentionedUserIds } : {}),
     });
     setPage(1);
     await load();
@@ -122,7 +124,7 @@ export function SuaraWargaPage() {
           value={searchTag}
           onChange={(e) => setSearchTag(e.target.value)}
           placeholder="Cari berdasarkan #tag..."
-          className="min-h-[44px] w-full rounded-sm border-2 border-ink bg-white px-4 py-2 text-sm text-gray-800 outline-none focus:ring-2 focus:ring-brand-500/25 dark:border-gray-500 dark:bg-gray-800 dark:text-gray-100"
+          className="min-h-[44px] w-full rounded-sm border-2 border-ink bg-white px-4 py-2 text-sm text-gray-800 outline-none focus:ring-2 focus:ring-ink/25 dark:border-gray-500 dark:bg-gray-800 dark:text-gray-100"
         />
         <button
           type="submit"
@@ -134,7 +136,7 @@ export function SuaraWargaPage() {
       </form>
 
       {canCreate && (
-        <PostComposer currentUserName={currentUser?.fullName || 'Warga'} onSubmit={handleCreate} />
+        <PostComposer currentUserName={currentUser?.fullName || 'Warga'} currentUserAvatar={currentUser?.avatarUrl} onSubmit={handleCreate} />
       )}
 
       <div className="flex items-center justify-between border-b-2 border-ink pb-3 dark:border-gray-500">

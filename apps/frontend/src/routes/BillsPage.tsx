@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   PlusIcon,
   BanknotesIcon,
@@ -6,7 +7,6 @@ import {
   ClockIcon,
   CreditCardIcon,
   DocumentMagnifyingGlassIcon,
-  PencilIcon,
   NoSymbolIcon,
   ArrowPathIcon,
   Cog6ToothIcon,
@@ -37,6 +37,9 @@ import { Input } from '@/components/ui/Input';
 import { Modal, ModalFooter } from '@/components/ui/Modal';
 import { Card } from '@/components/ui/Card';
 import { Pagination } from '@/components/ui/Pagination';
+import { TableActionButton } from '@/components/ui/TableActionButton';
+import { FilterSelect } from '@/components/ui/FilterBar';
+import { FilterDatePicker } from '@/components/ui/FilterDatePicker';
 import { api } from '@/services/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSettings } from '@/hooks/useSettings';
@@ -114,6 +117,7 @@ interface Summary {
 }
 
 export function BillsPage() {
+  const navigate = useNavigate();
   const { isAdmin } = useAuth();
   const admin = isAdmin();
   const { settings } = useSettings();
@@ -1017,11 +1021,7 @@ export function BillsPage() {
             <Button
               variant="secondary"
               size="sm"
-              onClick={() => {
-                setFormError('');
-                setTypeView('list');
-                setTypeModal(true);
-              }}
+              onClick={() => navigate('/bill-types')}
             >
               <Cog6ToothIcon className="w-4 h-4 mr-1" /> Jenis Iuran
             </Button>
@@ -1094,14 +1094,15 @@ export function BillsPage() {
           <label className="mb-1 block text-xs font-bold text-gray-700 dark:text-gray-300">
             Periode
           </label>
-          <Input
-            type="month"
+          <FilterDatePicker
+            mode="month"
             value={periodFilter}
-            onChange={(e) => {
-              setPeriodFilter(e.target.value);
+            onChange={(nextValue) => {
+              setPeriodFilter(nextValue);
               setPage(1);
             }}
-            className="w-[220px] max-w-full pr-12 focus:border-ink focus:ring-ink/20"
+            className="w-[220px] max-w-full"
+            aria-label="Pilih periode iuran"
           />
           {periodFilter && (
             <p className="mt-1 whitespace-nowrap text-xs font-medium text-gray-700 dark:text-gray-300">
@@ -1113,13 +1114,14 @@ export function BillsPage() {
           <label className="mb-1 block text-xs font-bold text-gray-700 dark:text-gray-300">
             Jenis Iuran
           </label>
-          <select
+          <FilterSelect
             value={billTypeFilter}
             onChange={(e) => {
               setBillTypeFilter(e.target.value);
               setPage(1);
             }}
-            className="h-11 max-w-[200px] rounded-sm border-2 border-ink bg-white px-3 text-sm font-semibold text-ink focus:outline-none focus:ring-2 focus:ring-ink/20 dark:border-gray-500 dark:bg-gray-800 dark:text-gray-200"
+            className="w-[200px] max-w-full"
+            aria-label="Filter jenis iuran"
           >
             <option value="">Semua Jenis</option>
             {billTypes.map((t) => (
@@ -1127,7 +1129,7 @@ export function BillsPage() {
                 {t.name}
               </option>
             ))}
-          </select>
+          </FilterSelect>
         </div>
 
         {/* Pencarian nama keluarga (admin) */}
@@ -1171,9 +1173,9 @@ export function BillsPage() {
 
         {(periodFilter || billTypeFilter || search) && (
           <Button
-            variant="ghost"
+            variant="secondary"
             size="sm"
-            className="mt-5 h-11"
+            className="mt-5 h-11 gap-2 bg-[#f1dfc4] hover:bg-[#ead7b7]"
             onClick={() => {
               setPeriodFilter('');
               setBillTypeFilter('');
@@ -1182,6 +1184,7 @@ export function BillsPage() {
               setPage(1);
             }}
           >
+            <ArrowPathIcon className="h-4 w-4" />
             Reset filter
           </Button>
         )}
@@ -1237,7 +1240,7 @@ export function BillsPage() {
                       <input
                         type="checkbox"
                         aria-label="Pilih semua tagihan belum lunas"
-                        className="w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-primary-600 focus:ring-primary-500"
+                        className="h-4 w-4 rounded-sm border-2 border-ink text-primary-600 focus:ring-ink/25 dark:border-gray-400"
                         checked={allSelectableSelected}
                         disabled={selectableBills.length === 0}
                         onChange={toggleSelectAll}
@@ -1260,7 +1263,7 @@ export function BillsPage() {
                           <input
                             type="checkbox"
                             aria-label={`Pilih tagihan ${bill.family?.headOfFamily}`}
-                            className="w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-primary-600 focus:ring-primary-500"
+                            className="h-4 w-4 rounded-sm border-2 border-ink text-primary-600 focus:ring-ink/25 dark:border-gray-400"
                             checked={selectedIds.has(bill.id)}
                             onChange={() => toggleSelect(bill.id)}
                           />
@@ -1304,7 +1307,7 @@ export function BillsPage() {
                       <input
                         type="checkbox"
                         aria-label={`Pilih tagihan ${bill.family?.headOfFamily}`}
-                        className="mt-1 w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-primary-600 focus:ring-primary-500 flex-shrink-0"
+                        className="mt-1 h-4 w-4 flex-shrink-0 rounded-sm border-2 border-ink text-primary-600 focus:ring-ink/25 dark:border-gray-400"
                         checked={selectedIds.has(bill.id)}
                         onChange={() => toggleSelect(bill.id)}
                       />
@@ -1372,49 +1375,48 @@ export function BillsPage() {
               {billTypes.length === 0 ? (
                 <p className="text-center py-8 text-sm text-gray-500">Belum ada jenis iuran</p>
               ) : (
-                <div className="divide-y divide-gray-200 dark:divide-gray-700">
+                <div className="space-y-3">
                   {billTypes.map((t) => (
-                    <div key={t.id} className="flex items-center justify-between gap-3 py-3">
+                    <div key={t.id} className="flex items-center justify-between gap-3 rounded-sm border-2 border-ink bg-white p-3 shadow-[2px_2px_0_#171717] dark:border-gray-400 dark:bg-gray-800">
                       <div className="min-w-0">
                         <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
+                          <span className="truncate text-sm font-black text-ink dark:text-gray-100">
                             {t.name}
                           </span>
                           {!t.isActive && (
-                            <span className="text-xs px-1.5 py-0.5 rounded bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400">
+                            <span className="rounded-sm border border-ink bg-[#eee4d4] px-1.5 py-0.5 text-xs font-bold text-ink-secondary dark:border-gray-400 dark:bg-gray-700 dark:text-gray-200">
                               Nonaktif
                             </span>
                           )}
                         </div>
-                        <p className="text-xs text-gray-500">
+                        <p className="mt-0.5 text-xs font-medium text-ink-secondary dark:text-gray-300">
                           {formatCurrency(t.amount)} · {PERIOD_LABELS[t.period] || t.period}
                           {t.description ? ` · ${t.description}` : ''}
                         </p>
                         {t.period === 'monthly' && (
-                          <p className="text-xs text-gray-400 mt-0.5">
+                          <p className="mt-1 font-mono text-[11px] font-semibold text-ink-secondary dark:text-gray-300">
                             {t.autoGenerate
                               ? `Otomatis terbit tgl ${t.generateDay}, jatuh tempo tgl ${t.dueDay}`
                               : `Manual · jatuh tempo tgl ${t.dueDay}`}
                           </p>
                         )}
                       </div>
-                      <div className="flex gap-1 flex-shrink-0">
-                        <Button variant="ghost" size="sm" onClick={() => openEditType(t)}>
-                          <PencilIcon className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          loading={typeActionId === t.id}
+                      <div className="flex flex-shrink-0 gap-2">
+                        <TableActionButton action="edit" label={`Edit ${t.name}`} onClick={() => openEditType(t)} />
+                        <button
+                          type="button"
                           onClick={() => handleToggleTypeActive(t)}
                           title={t.isActive ? 'Nonaktifkan' : 'Aktifkan kembali'}
+                          aria-label={`${t.isActive ? 'Nonaktifkan' : 'Aktifkan'} ${t.name}`}
+                          disabled={typeActionId === t.id}
+                          className={`flex min-h-10 min-w-10 items-center justify-center rounded-sm border-2 border-ink shadow-[2px_2px_0_#171717] transition-transform hover:translate-x-px hover:translate-y-px hover:shadow-none disabled:opacity-50 dark:border-gray-300 ${t.isActive ? 'bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-950 dark:text-red-200' : 'bg-green-100 text-green-800 hover:bg-green-200 dark:bg-green-950 dark:text-green-200'}`}
                         >
                           {t.isActive ? (
                             <NoSymbolIcon className="w-4 h-4 text-red-600" />
                           ) : (
                             <ArrowPathIcon className="w-4 h-4 text-green-600" />
                           )}
-                        </Button>
+                        </button>
                       </div>
                     </div>
                   ))}
@@ -1436,7 +1438,7 @@ export function BillsPage() {
                   setFormError('');
                   setTypeView('list');
                 }}
-                className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-800 dark:hover:text-gray-200"
+                className="inline-flex min-h-10 items-center gap-1 rounded-sm border-2 border-ink bg-white px-3 text-sm font-bold text-ink shadow-[2px_2px_0_#171717] transition-transform hover:translate-x-px hover:translate-y-px hover:bg-[#f1dfc4] hover:shadow-none dark:border-gray-400 dark:bg-gray-800 dark:text-gray-100"
               >
                 <ChevronLeftIcon className="w-4 h-4" /> Kembali ke daftar
               </button>
@@ -1455,13 +1457,13 @@ export function BillsPage() {
                 placeholder="50000"
               />
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="mb-1.5 block text-sm font-bold text-ink dark:text-gray-200">
                   Periode
                 </label>
                 <select
                   value={typeForm.period}
                   onChange={(e) => setTypeForm({ ...typeForm, period: e.target.value })}
-                  className="w-full min-h-[44px] px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                  className="min-h-[44px] w-full rounded-sm border-2 border-ink bg-white px-4 py-2 font-semibold text-ink focus:outline-none focus:ring-2 focus:ring-ink/20 dark:border-gray-500 dark:bg-gray-800 dark:text-gray-100"
                 >
                   <option value="monthly">Bulanan</option>
                   <option value="yearly">Tahunan</option>
@@ -1476,15 +1478,15 @@ export function BillsPage() {
 
               {/* Penjadwalan otomatis — hanya untuk iuran bulanan */}
               {typeForm.period === 'monthly' && (
-                <div className="rounded-lg border border-gray-200 dark:border-gray-700 p-4 space-y-4">
+                <div className="space-y-4 rounded-sm border-2 border-ink bg-[#fff8ec] p-4 dark:border-gray-400 dark:bg-gray-900">
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input
                       type="checkbox"
                       checked={typeForm.autoGenerate}
                       onChange={(e) => setTypeForm({ ...typeForm, autoGenerate: e.target.checked })}
-                      className="w-4 h-4"
+                      className="h-5 w-5 rounded-sm border-2 border-ink text-brand-500 focus:ring-ink/25"
                     />
-                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    <span className="text-sm font-bold text-ink dark:text-gray-200">
                       Terbitkan tagihan otomatis tiap bulan
                     </span>
                   </label>
@@ -1542,15 +1544,15 @@ export function BillsPage() {
         size="md"
       >
         <div className="space-y-4">
-          <p className="text-sm text-gray-500">Buat tagihan untuk semua keluarga sekaligus.</p>
+          <p className="text-sm font-medium text-ink-secondary dark:text-gray-300">Buat tagihan untuk semua keluarga sekaligus.</p>
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label className="mb-1.5 block text-sm font-bold text-ink dark:text-gray-200">
               Jenis Iuran
             </label>
             <select
               value={generateForm.billTypeId}
               onChange={(e) => setGenerateForm({ ...generateForm, billTypeId: e.target.value })}
-              className="w-full min-h-[44px] px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+              className="min-h-[44px] w-full rounded-sm border-2 border-ink bg-white px-4 py-2 font-semibold text-ink focus:outline-none focus:ring-2 focus:ring-ink/20 dark:border-gray-500 dark:bg-gray-800 dark:text-gray-100"
             >
               <option value="">Pilih jenis iuran</option>
               {billTypes

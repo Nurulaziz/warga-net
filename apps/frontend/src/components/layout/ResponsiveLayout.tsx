@@ -7,6 +7,7 @@ import { DesktopNavigation } from './DesktopNavigation';
 import { Breadcrumb } from './Breadcrumb';
 import { ImpersonationBanner } from '@/components/ui/ImpersonationBanner';
 import { AnnouncementPopup } from '@/components/announcements/AnnouncementPopup';
+import { NotificationBell } from '@/components/notifications/NotificationBell';
 
 export function ResponsiveLayout() {
   const isMobile = useMediaQuery('(max-width: 768px)');
@@ -22,6 +23,7 @@ export function ResponsiveLayout() {
 
       {/* Popup pengumuman terbaru saat pertama membuka web */}
       <AnnouncementPopup />
+      <NotificationBell />
 
       {/* Desktop: Sidebar Navigation */}
       {!isMobile && (

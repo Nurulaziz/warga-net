@@ -202,7 +202,7 @@ export function AnnouncementsPage() {
     const opt = PRIORITY_OPTIONS.find((o) => o.value === p);
     return (
       <span
-        className={`inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded-full ${opt?.badge || 'bg-gray-100 text-gray-600'}`}
+        className={`inline-flex items-center gap-1 rounded-sm border border-ink px-2 py-0.5 text-xs font-bold ${opt?.badge || 'bg-gray-100 text-gray-700'}`}
       >
         <span className={`w-1.5 h-1.5 rounded-full ${opt?.dot || 'bg-gray-400'}`} />
         {opt?.label || p}
@@ -254,20 +254,22 @@ export function AnnouncementsPage() {
       ) : (
         <div className="space-y-4">
           {announcements.map((a) => (
-            <Card key={a.id} className="p-5">
+            <Card key={a.id} className="overflow-hidden bg-[#fffdf8] dark:bg-gray-800">
+              <div className="h-2 border-b-2 border-ink bg-[#f1dfc4] dark:border-gray-500 dark:bg-gray-700" />
+              <div className="p-5">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
+                  <div className="mb-2 flex flex-wrap items-center gap-2">
                     <button
                       type="button"
                       onClick={() => setDetailModal(a)}
-                      className="text-lg font-semibold text-gray-900 dark:text-gray-100 truncate text-left hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
+                      className="truncate text-left font-display text-lg font-black text-ink transition-colors hover:text-brand-600 dark:text-gray-100"
                     >
                       {a.title}
                     </button>
                     {priorityBadge(a.priority)}
                     {!a.isPublished && (
-                      <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded">
+                      <span className="rounded-sm border border-ink bg-gray-100 px-2 py-0.5 text-xs font-bold text-gray-700">
                         Draft
                       </span>
                     )}
@@ -275,7 +277,7 @@ export function AnnouncementsPage() {
                   <button
                     type="button"
                     onClick={() => setDetailModal(a)}
-                    className="block text-left text-sm text-gray-600 dark:text-gray-400 line-clamp-2 mb-2 hover:text-gray-800 dark:hover:text-gray-200"
+                    className="mb-3 block line-clamp-2 text-left text-sm font-medium leading-relaxed text-ink-secondary transition-colors hover:text-ink dark:text-gray-300 dark:hover:text-white"
                   >
                     {a.content
                       .replace(/<[^>]*>/g, ' ')
@@ -287,16 +289,16 @@ export function AnnouncementsPage() {
                     <button
                       type="button"
                       onClick={() => setDetailModal(a)}
-                      className="inline-flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500 hover:text-primary-600 dark:hover:text-primary-400 mb-2"
+                      className="mb-3 inline-flex items-center gap-1.5 rounded-sm border border-ink bg-white px-2 py-1 text-xs font-bold text-ink transition-colors hover:bg-[#f1dfc4] dark:bg-gray-900 dark:text-gray-200"
                     >
                       <PaperClipIcon className="w-3.5 h-3.5" />
                       Ada lampiran
                     </button>
                   )}
-                  <div className="flex items-center gap-2 text-xs text-gray-400">
+                  <div className="flex flex-wrap items-center gap-2 font-mono text-[11px] font-bold uppercase tracking-wide text-ink-secondary dark:text-gray-300">
                     <span>{formatDate(a.createdAt)}</span>
                     {a.targetScope && a.targetScope !== 'all' && (
-                      <span className="inline-flex items-center rounded-full bg-gray-100 dark:bg-gray-700 px-2 py-0.5 text-gray-600 dark:text-gray-300">
+                      <span className="inline-flex items-center rounded-sm border border-ink bg-gray-100 px-2 py-0.5 text-gray-700 dark:bg-gray-700 dark:text-gray-200">
                         {SCOPE_OPTIONS.find((s) => s.value === a.targetScope)?.label ||
                           a.targetScope}
                       </span>
@@ -304,21 +306,28 @@ export function AnnouncementsPage() {
                   </div>
                 </div>
                 {admin && (
-                  <div className="flex gap-1 flex-shrink-0">
+                  <div className="flex flex-shrink-0 gap-2">
                     <button
+                      type="button"
                       onClick={() => openEdit(a)}
-                      className="text-blue-600 hover:text-blue-800 min-h-[44px] min-w-[44px] flex items-center justify-center"
+                      aria-label={`Edit pengumuman ${a.title}`}
+                      title="Edit pengumuman"
+                      className="flex min-h-[40px] min-w-[40px] items-center justify-center rounded-sm border-2 border-ink bg-white text-brand-600 shadow-[2px_2px_0_#171717] transition-all hover:translate-x-0.5 hover:translate-y-0.5 hover:bg-[#f1dfc4] hover:shadow-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-offset-2"
                     >
                       <PencilIcon className="w-4 h-4" />
                     </button>
                     <button
+                      type="button"
                       onClick={() => setDeleteModal(a)}
-                      className="text-red-600 hover:text-red-800 min-h-[44px] min-w-[44px] flex items-center justify-center"
+                      aria-label={`Hapus pengumuman ${a.title}`}
+                      title="Hapus pengumuman"
+                      className="flex min-h-[40px] min-w-[40px] items-center justify-center rounded-sm border-2 border-ink bg-white text-red-600 shadow-[2px_2px_0_#171717] transition-all hover:translate-x-0.5 hover:translate-y-0.5 hover:bg-red-50 hover:shadow-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-offset-2"
                     >
                       <TrashIcon className="w-4 h-4" />
                     </button>
                   </div>
                 )}
+              </div>
               </div>
             </Card>
           ))}
@@ -495,13 +504,9 @@ export function AnnouncementsPage() {
           announcement={detailModal}
           onClose={() => setDetailModal(null)}
           footer={
-            <button
-              type="button"
-              onClick={() => setDetailModal(null)}
-              className="ml-auto px-4 h-10 rounded-lg bg-primary-600 text-white text-sm font-medium hover:bg-primary-700 transition-colors"
-            >
+            <Button type="button" onClick={() => setDetailModal(null)} className="ml-auto">
               Tutup
-            </button>
+            </Button>
           }
         />
       )}

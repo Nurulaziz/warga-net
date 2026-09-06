@@ -1,8 +1,13 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSettings } from '@/hooks/useSettings';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
+import { Modal, ModalFooter } from '@/components/ui/Modal';
+import { useToast } from '@/components/ui/Toast';
+import { api } from '@/services/api';
+import { UserAvatar } from '@/components/ui/UserAvatar';
 import { ProfilePostsSection } from '@/components/posts/ProfilePostsSection';
 import {
   UserCircleIcon,
@@ -33,9 +38,21 @@ function getRoleLabel(roleName?: string | null): string {
 }
 
 export function ProfilePage() {
-  const { user, logout, currentUser } = useAuth();
+  const { user, logout, currentUser, refreshCurrentUser } = useAuth();
+  const { showToast } = useToast();
   const { settings } = useSettings();
   const [copied, setCopied] = useState(false);
+  const [panel, setPanel] = useState<'profile' | 'security' | null>(null);
+  const [fullName, setFullName] = useState('');
+  const [email, setEmail] = useState('');
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    setFullName(currentUser?.fullName || '');
+    setEmail(currentUser?.email?.endsWith('@warganet.local') ? '' : currentUser?.email || '');
+  }, [currentUser]);
 
   const roleLabel = getRoleLabel(currentUser?.role.name);
 
@@ -59,11 +76,44 @@ export function ProfilePage() {
   }
 
   // Nama display — fallback jika hanya nomor HP
-  const displayName =
-    user?.name && !user.name.startsWith('+') ? user.name : `Warga ${settings.app_name}`;
+  const displayName = currentUser?.fullName ||
+    (user?.name && !user.name.startsWith('+') ? user.name : `Warga ${settings.app_name}`);
 
   // Cek apakah email real atau dummy
-  const isRealEmail = user?.email && !user.email.endsWith('@warganet.local');
+  const profileEmail = currentUser?.email || user?.email;
+  const isRealEmail = profileEmail && !profileEmail.endsWith('@warganet.local');
+
+  async function saveProfile() {
+    if (!fullName.trim()) return showToast('Nama lengkap wajib diisi', 'error');
+    setSavingProfile(true);
+    try {
+      await api.put('/users/me', { fullName: fullName.trim(), email: email.trim() || undefined });
+      await refreshCurrentUser();
+      setPanel(null);
+      showToast('Profil berhasil diperbarui');
+    } catch {
+      showToast('Profil gagal diperbarui', 'error');
+    } finally {
+      setSavingProfile(false);
+    }
+  }
+
+  async function uploadAvatar(file?: File) {
+    if (!file) return;
+    setUploadingAvatar(true);
+    try {
+      const form = new FormData();
+      form.append('file', file);
+      await api.post('/users/me/avatar', form, { headers: { 'Content-Type': 'multipart/form-data' } });
+      await refreshCurrentUser();
+      showToast('Foto profil berhasil diperbarui');
+    } catch {
+      showToast('Foto profil gagal diunggah. Gunakan JPG, PNG, atau WebP maksimal 2 MB.', 'error');
+    } finally {
+      setUploadingAvatar(false);
+      if (avatarInputRef.current) avatarInputRef.current.value = '';
+    }
+  }
 
   return (
     <div className="p-4 md:p-6 max-w-5xl mx-auto">
@@ -94,13 +144,14 @@ export function ProfilePage() {
             {/* Avatar */}
             <div className="flex flex-col items-center text-center">
               <div className="relative mb-4">
-                <div className="flex h-20 w-20 items-center justify-center rounded-sm border-2 border-ink bg-brand-100 shadow-[3px_3px_0_#171717] dark:border-gray-300 dark:bg-blue-950">
-                  <UserCircleIcon className="h-12 w-12 text-brand-700 dark:text-blue-300" />
-                </div>
+                <UserAvatar name={displayName} src={currentUser?.avatarUrl} size="lg" className="shadow-[3px_3px_0_#171717]" />
+                <input ref={avatarInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={(event) => void uploadAvatar(event.target.files?.[0])} />
                 <button
                   className="absolute -bottom-1 -right-1 flex h-8 w-8 items-center justify-center rounded-sm border-2 border-ink bg-white shadow-[2px_2px_0_#171717] transition-transform hover:-translate-y-0.5 dark:border-gray-300 dark:bg-gray-700"
                   title="Ubah foto"
                   aria-label="Ubah foto profil"
+                  disabled={uploadingAvatar}
+                  onClick={() => avatarInputRef.current?.click()}
                 >
                   <CameraIcon className="h-4 w-4 text-ink dark:text-gray-100" />
                 </button>
@@ -120,8 +171,7 @@ export function ProfilePage() {
 
             {/* Navigation tabs */}
             <div className="mt-6 space-y-2 border-t-2 border-ink pt-5 dark:border-gray-500">
-              <NavTab icon={<PencilSquareIcon className="w-4 h-4" />} label="Edit Profil" active />
-              <NavTab icon={<ShieldCheckIcon className="w-4 h-4" />} label="Keamanan Akun" />
+              <NavTab icon={<ShieldCheckIcon className="w-4 h-4" />} label="Keamanan Akun" onClick={() => setPanel('security')} />
             </div>
           </Card>
         </div>
@@ -134,7 +184,7 @@ export function ProfilePage() {
               <h3 className="text-base font-black text-ink dark:text-gray-100">
                 Informasi Pribadi
               </h3>
-              <button className="inline-flex min-h-[40px] items-center gap-1.5 rounded-sm border-2 border-ink bg-white px-3 text-sm font-bold text-ink transition-colors hover:bg-warm-100 dark:border-gray-400 dark:bg-gray-700 dark:text-gray-100">
+              <button onClick={() => setPanel('profile')} className="inline-flex min-h-[40px] items-center gap-1.5 rounded-sm border-2 border-ink bg-white px-3 text-sm font-bold text-ink transition-colors hover:bg-warm-100 dark:border-gray-400 dark:bg-gray-700 dark:text-gray-100">
                 <PencilSquareIcon className="w-3.5 h-3.5" />
                 Edit Informasi
               </button>
@@ -167,7 +217,7 @@ export function ProfilePage() {
               <InfoField
                 icon={<EnvelopeIcon className="w-4 h-4" />}
                 label="Email"
-                value={isRealEmail ? user?.email : null}
+                value={isRealEmail ? profileEmail : null}
                 placeholder="Belum diatur"
               />
               <InfoField
@@ -197,8 +247,8 @@ export function ProfilePage() {
               <InfoField
                 icon={<CalendarDaysIcon className="w-4 h-4" />}
                 label="Bergabung Sejak"
-                value={null}
-                placeholder="–"
+                value={currentUser?.createdAt ? new Date(currentUser.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : null}
+                placeholder="Belum tersedia"
               />
 
               {/* ID Sistem — truncated */}
@@ -228,6 +278,28 @@ export function ProfilePage() {
         </div>
       </div>
       {currentUser?.id && <ProfilePostsSection userId={currentUser.id} />}
+
+      <Modal isOpen={panel === 'profile'} onClose={() => setPanel(null)} title="Edit Profil">
+        <div className="space-y-4">
+          <Input label="Nama Lengkap" value={fullName} maxLength={100} onChange={(event) => setFullName(event.target.value)} />
+          <Input label="Email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="nama@email.com" helperText="Nomor HP tidak dapat diubah dari sini karena menjadi identitas login." />
+        </div>
+        <ModalFooter>
+          <Button variant="secondary" onClick={() => setPanel(null)}>Batal</Button>
+          <Button loading={savingProfile} onClick={() => void saveProfile()}>Simpan Profil</Button>
+        </ModalFooter>
+      </Modal>
+
+      <Modal isOpen={panel === 'security'} onClose={() => setPanel(null)} title="Keamanan Akun">
+        <div className="space-y-4">
+          <div className="rounded-sm border-2 border-ink bg-green-100 p-4 dark:border-gray-400 dark:bg-green-950">
+            <p className="font-bold text-ink dark:text-white">Nomor WhatsApp terverifikasi</p>
+            <p className="mt-1 text-sm font-medium text-ink-secondary dark:text-gray-200">{user?.phoneNumber || currentUser?.phoneNumber}</p>
+          </div>
+          <p className="text-sm font-medium leading-relaxed text-ink-secondary dark:text-gray-200">Akun menggunakan kode OTP WhatsApp, sehingga tidak menyimpan kata sandi. Jangan pernah membagikan kode OTP kepada siapa pun.</p>
+        </div>
+        <ModalFooter><Button variant="secondary" onClick={() => setPanel(null)}>Tutup</Button></ModalFooter>
+      </Modal>
     </div>
   );
 }
@@ -266,13 +338,17 @@ function NavTab({
   icon,
   label,
   active = false,
+  onClick,
 }: {
   icon: React.ReactNode;
   label: string;
   active?: boolean;
+  onClick?: () => void;
 }) {
   return (
     <button
+      type="button"
+      onClick={onClick}
       className={`flex min-h-[44px] w-full items-center gap-3 rounded-sm border-2 px-3 py-2.5 text-sm font-bold transition-colors ${
         active
           ? 'border-ink bg-brand-500 text-white shadow-[2px_2px_0_#171717] dark:border-gray-300 dark:bg-blue-600'

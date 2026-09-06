@@ -109,11 +109,28 @@ model User {
   submittedReports Report[]         @relation("submittedReports")
   resolvedReports  Report[]         @relation("resolvedReports")
   pollVotes        PollVote[]
+  notifications    Notification[]
 
   @@index([phoneNumber])
   @@index([roleId])
   @@index([familyId])
   @@map("users")
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  type      String
+  title     String
+  message   String
+  referenceType String? @map("reference_type")
+  referenceId String? @map("reference_id")
+  isRead    Boolean  @default(false) @map("is_read")
+  readAt    DateTime? @map("read_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId, isRead, createdAt])
+  @@map("notifications")
 }
 
 model Role {
@@ -500,10 +517,12 @@ model Mention {
   mentionedUserId String   @map("mentioned_user_id")
   createdAt       DateTime @default(now()) @map("created_at")
 
-  post          Post? @relation(fields: [postId], references: [id], onDelete: Cascade)
-  mentionedUser User  @relation("mentions", fields: [mentionedUserId], references: [id])
+  post          Post?    @relation(fields: [postId], references: [id], onDelete: Cascade)
+  comment       Comment? @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  mentionedUser User     @relation("mentions", fields: [mentionedUserId], references: [id])
 
   @@index([mentionedUserId])
+  @@index([commentId])
   @@map("mentions")
 }
 
@@ -534,11 +553,12 @@ model Comment {
   updatedAt DateTime  @updatedAt @map("updated_at")
   deletedAt DateTime? @map("deleted_at")
 
-  post    Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
-  author  User      @relation(fields: [authorId], references: [id])
-  parent  Comment?  @relation("commentReplies", fields: [parentId], references: [id])
-  replies Comment[] @relation("commentReplies")
-  reports Report[]
+  post     Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  author   User      @relation(fields: [authorId], references: [id])
+  parent   Comment?  @relation("commentReplies", fields: [parentId], references: [id])
+  replies  Comment[] @relation("commentReplies")
+  reports  Report[]
+  mentions Mention[]
 
   @@index([postId, createdAt])
   @@index([parentId])

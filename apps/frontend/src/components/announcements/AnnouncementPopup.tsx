@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '@/services/api';
 import { AnnouncementDetailDialog, type AnnouncementDetail } from './AnnouncementDetailDialog';
+import { Button } from '@/components/ui/Button';
 
 // Key localStorage untuk menandai pengumuman yang sudah dilihat via popup
 const SEEN_KEY = 'warganet_seen_announcement_id';
@@ -49,17 +50,13 @@ export function AnnouncementPopup() {
           <Link
             to="/announcements"
             onClick={handleClose}
-            className="text-sm text-primary-600 dark:text-primary-400 hover:underline"
+            className="text-sm font-bold text-brand-600 hover:underline"
           >
             Lihat semua pengumuman
           </Link>
-          <button
-            type="button"
-            onClick={handleClose}
-            className="px-4 h-10 rounded-lg bg-primary-600 text-white text-sm font-medium hover:bg-primary-700 transition-colors"
-          >
+          <Button type="button" onClick={handleClose}>
             Mengerti
-          </button>
+          </Button>
         </>
       }
     />

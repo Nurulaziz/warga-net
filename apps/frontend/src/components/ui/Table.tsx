@@ -20,7 +20,7 @@ interface TableHeaderProps extends HTMLAttributes<HTMLTableSectionElement> {
 
 export const TableHeader = ({ children, className = '', ...props }: TableHeaderProps) => {
   return (
-    <thead className={`bg-[#f3e8d0] dark:bg-[#2a241b] ${className}`} {...props}>
+    <thead className={`border-y-2 border-ink bg-[#ead7b7] dark:border-gray-400 dark:bg-[#382f22] ${className}`} {...props}>
       {children}
     </thead>
   );
@@ -60,7 +60,7 @@ interface TableHeadProps extends HTMLAttributes<HTMLTableCellElement> {
 export const TableHead = ({ children, className = '', ...props }: TableHeadProps) => {
   return (
     <th
-      className={`px-4 py-2.5 font-bold text-[11px] uppercase tracking-[0.07em] text-ink/80 dark:text-gray-300 text-left border-b-2 border-ink/30 dark:border-gray-600 ${className}`}
+      className={`border-b-0 px-4 py-3 text-left text-[11px] font-black uppercase tracking-[0.09em] text-ink dark:text-gray-100 ${className}`}
       {...props}
     >
       {children}

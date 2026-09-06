@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
-import { PlusIcon, ArrowUpIcon, ArrowDownIcon, WalletIcon } from '@heroicons/react/24/outline';
+import { PlusIcon, ArrowUpIcon, ArrowDownIcon, ArrowsUpDownIcon, TagIcon, WalletIcon } from '@heroicons/react/24/outline';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/Table';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Modal, ModalFooter } from '@/components/ui/Modal';
 import { Card } from '@/components/ui/Card';
 import { FilterBar, FilterSelect } from '@/components/ui/FilterBar';
+import { FilterDatePicker } from '@/components/ui/FilterDatePicker';
 import { Pagination } from '@/components/ui/Pagination';
 import { api } from '@/services/api';
 
@@ -175,6 +176,7 @@ export function CashPage() {
           value={typeFilter}
           onChange={(e) => { setTypeFilter(e.target.value); setCategoryFilter(''); setPage(1); }}
           aria-label="Filter tipe"
+          icon={<ArrowsUpDownIcon className="h-3.5 w-3.5" />}
         >
           <option value="">Semua Tipe</option>
           <option value="income">Pemasukan</option>
@@ -185,26 +187,25 @@ export function CashPage() {
           onChange={(e) => { setCategoryFilter(e.target.value); setPage(1); }}
           className="max-w-[200px]"
           aria-label="Filter kategori"
+          icon={<TagIcon className="h-3.5 w-3.5" />}
         >
           <option value="">Semua Kategori</option>
           {categories.filter((c) => !typeFilter || c.type === typeFilter).map((c) => (
             <option key={c.id} value={c.id}>{c.name}</option>
           ))}
         </FilterSelect>
-        <input
-          type="date"
+        <FilterDatePicker
           value={startDate}
-          onChange={(e) => { setStartDate(e.target.value); setPage(1); }}
+          onChange={(nextValue) => { setStartDate(nextValue); setPage(1); }}
           aria-label="Dari tanggal"
-          className="h-11 rounded-sm border-2 border-ink bg-white px-3 text-sm font-semibold text-ink focus:outline-none focus:ring-2 focus:ring-ink/20 dark:border-gray-500 dark:bg-gray-800 dark:text-gray-200"
+          placeholder="Dari tanggal"
         />
         <span className="text-sm font-bold text-ink/70 dark:text-gray-300">s/d</span>
-        <input
-          type="date"
+        <FilterDatePicker
           value={endDate}
-          onChange={(e) => { setEndDate(e.target.value); setPage(1); }}
+          onChange={(nextValue) => { setEndDate(nextValue); setPage(1); }}
           aria-label="Sampai tanggal"
-          className="h-11 rounded-sm border-2 border-ink bg-white px-3 text-sm font-semibold text-ink focus:outline-none focus:ring-2 focus:ring-ink/20 dark:border-gray-500 dark:bg-gray-800 dark:text-gray-200"
+          placeholder="Sampai tanggal"
         />
         {(typeFilter || categoryFilter || startDate || endDate) && (
           <Button variant="ghost" size="sm" onClick={() => { setTypeFilter(''); setCategoryFilter(''); setStartDate(''); setEndDate(''); setPage(1); }} className="h-11">
@@ -273,22 +274,25 @@ export function CashPage() {
       <Modal isOpen={txModal} onClose={() => setTxModal(false)} title="Tambah Transaksi" size="md">
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tipe</label>
-            <select value={txForm.type} onChange={(e) => setTxForm({ ...txForm, type: e.target.value, categoryId: '' })} className="w-full min-h-[44px] px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100">
+            <label className="mb-1.5 block text-sm font-bold text-ink dark:text-gray-200">Tipe</label>
+            <FilterSelect value={txForm.type} onChange={(e) => setTxForm({ ...txForm, type: e.target.value, categoryId: '' })} className="w-full" aria-label="Tipe transaksi" icon={<ArrowsUpDownIcon className="h-3.5 w-3.5" />}>
               <option value="income">Pemasukan</option>
               <option value="expense">Pengeluaran</option>
-            </select>
+            </FilterSelect>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Kategori</label>
-            <select value={txForm.categoryId} onChange={(e) => setTxForm({ ...txForm, categoryId: e.target.value })} className="w-full min-h-[44px] px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100">
+            <label className="mb-1.5 block text-sm font-bold text-ink dark:text-gray-200">Kategori</label>
+            <FilterSelect value={txForm.categoryId} onChange={(e) => setTxForm({ ...txForm, categoryId: e.target.value })} className="w-full" aria-label="Kategori transaksi" icon={<TagIcon className="h-3.5 w-3.5" />}>
               <option value="">Pilih kategori</option>
               {filteredCategories.map((c) => (<option key={c.id} value={c.id}>{c.name}</option>))}
-            </select>
+            </FilterSelect>
           </div>
           <Input label="Nominal (Rp)" type="number" value={txForm.amount} onChange={(e) => setTxForm({ ...txForm, amount: e.target.value })} />
           <Input label="Deskripsi" value={txForm.description} onChange={(e) => setTxForm({ ...txForm, description: e.target.value })} placeholder="Iuran bulan Januari, Beli sapu, dll" />
-          <Input label="Tanggal" type="date" value={txForm.date} onChange={(e) => setTxForm({ ...txForm, date: e.target.value })} />
+          <div>
+            <label className="mb-1.5 block text-sm font-bold text-ink dark:text-gray-200">Tanggal</label>
+            <FilterDatePicker value={txForm.date} onChange={(nextValue) => setTxForm({ ...txForm, date: nextValue })} className="w-full" aria-label="Tanggal transaksi" />
+          </div>
           {formError && <p className="text-sm text-red-600">{formError}</p>}
         </div>
         <ModalFooter>
@@ -302,11 +306,11 @@ export function CashPage() {
         <div className="space-y-4">
           <Input label="Nama Kategori" value={catForm.name} onChange={(e) => setCatForm({ ...catForm, name: e.target.value })} placeholder="Iuran Warga, Belanja, dll" />
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tipe</label>
-            <select value={catForm.type} onChange={(e) => setCatForm({ ...catForm, type: e.target.value })} className="w-full min-h-[44px] px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100">
+            <label className="mb-1.5 block text-sm font-bold text-ink dark:text-gray-200">Tipe</label>
+            <FilterSelect value={catForm.type} onChange={(e) => setCatForm({ ...catForm, type: e.target.value })} className="w-full" aria-label="Tipe kategori" icon={<ArrowsUpDownIcon className="h-3.5 w-3.5" />}>
               <option value="income">Pemasukan</option>
               <option value="expense">Pengeluaran</option>
-            </select>
+            </FilterSelect>
           </div>
           <Input label="Deskripsi (opsional)" value={catForm.description} onChange={(e) => setCatForm({ ...catForm, description: e.target.value })} />
           {formError && <p className="text-sm text-red-600">{formError}</p>}

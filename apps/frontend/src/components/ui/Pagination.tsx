@@ -27,6 +27,11 @@ export function Pagination({
   pageSizeOptions = PAGE_SIZE_OPTIONS,
   className = '',
 }: PaginationProps) {
+  const navClass = (enabled: boolean) =>
+    enabled
+      ? 'border-2 border-ink !bg-[#f1dfc4] font-bold !text-ink shadow-[2px_2px_0_#171717] transition-all hover:translate-x-0.5 hover:translate-y-0.5 hover:!bg-[#e6d2b5] hover:!text-ink hover:shadow-none dark:border-gray-300 dark:!bg-[#d8c4a6] dark:!text-ink'
+      : 'border-2 border-ink/50 !bg-[#eee4d4] font-bold !text-gray-700 opacity-100 shadow-none dark:border-gray-500 dark:!bg-gray-700 dark:!text-gray-200';
+
   return (
     <div
       className={`mt-4 flex flex-col gap-3 border-t-2 border-ink pt-4 dark:border-gray-400 sm:flex-row sm:items-center sm:justify-between ${className}`}
@@ -60,7 +65,7 @@ export function Pagination({
         <Button
           variant="utility"
           size="sm"
-          className="border-2 border-ink bg-white font-bold text-ink hover:bg-[#f1dfc4] disabled:border-ink disabled:bg-[#eee4d4] disabled:text-gray-700 disabled:opacity-100 dark:border-gray-300 dark:bg-gray-800 dark:text-gray-100 dark:disabled:bg-gray-700 dark:disabled:text-gray-300"
+          className={navClass(page > 1)}
           disabled={page <= 1}
           onClick={() => onPageChange(page - 1)}
         >
@@ -72,7 +77,7 @@ export function Pagination({
         <Button
           variant="utility"
           size="sm"
-          className="border-2 border-ink bg-white font-bold text-ink hover:bg-[#f1dfc4] disabled:border-ink disabled:bg-[#eee4d4] disabled:text-gray-700 disabled:opacity-100 dark:border-gray-300 dark:bg-gray-800 dark:text-gray-100 dark:disabled:bg-gray-700 dark:disabled:text-gray-300"
+          className={navClass(page < totalPages)}
           disabled={page >= totalPages}
           onClick={() => onPageChange(page + 1)}
         >

@@ -436,7 +436,7 @@ export function LettersPage() {
                 value={templateForm.content}
                 onChange={(e) => setTemplateForm({ ...templateForm, content: e.target.value })}
                 rows={16}
-                className="w-full px-4 py-3 border border-[#E2E8F0] dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-[#0F172A] dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#0054A6]/20 focus:border-[#0054A6] text-sm leading-[1.8]"
+                className="w-full rounded-sm border-2 border-ink bg-white px-4 py-3 text-sm leading-[1.8] text-ink focus:border-ink focus:outline-none focus:ring-2 focus:ring-ink/20 dark:border-gray-500 dark:bg-gray-800 dark:text-gray-100"
                 placeholder={"Yang bertanda tangan di bawah ini menerangkan bahwa:\n\nNama: {{nama}}\nNIK: {{nik}}\nAlamat: {{alamat}}\n\nAdalah benar warga RT {{rt}} / RW {{rw}}...\n\nSurat ini dibuat untuk keperluan: {{keperluan}}\n\nDemikian surat ini dibuat dengan sebenarnya."}
               />
               <Input label="Deskripsi (opsional)" value={templateForm.description} onChange={(e) => setTemplateForm({ ...templateForm, description: e.target.value })} className="mt-3" />

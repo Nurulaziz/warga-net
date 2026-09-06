@@ -8,6 +8,9 @@ import {
   Param,
   Query,
   NotFoundException,
+  UploadedFile,
+  UseInterceptors,
+  BadRequestException,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { Session, UserSession, Roles } from '@thallesp/nestjs-better-auth';
@@ -16,6 +19,15 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { QueryUserDto } from './dto/query-user.dto';
 import { PrismaService } from '../prisma/prisma.service';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+import { extname, join } from 'path';
+import { randomUUID } from 'crypto';
+import { getSessionPhoneNumber } from '../common/session.util';
+import { existsSync, mkdirSync } from 'fs';
+
+const AVATAR_UPLOAD_DIR = join(process.cwd(), 'uploads', 'avatars');
+if (!existsSync(AVATAR_UPLOAD_DIR)) mkdirSync(AVATAR_UPLOAD_DIR, { recursive: true });
 
 @ApiTags('Users')
 @ApiBearerAuth()
@@ -34,6 +46,33 @@ export class UsersController {
       throw new Error('Session tidak memiliki nomor telepon');
     }
     return this.usersService.findByPhoneNumber(phoneNumber);
+  }
+
+  @Put('me')
+  updateMe(
+    @Session() session: UserSession,
+    @Body() body: { fullName?: string; email?: string },
+  ) {
+    return this.usersService.updateOwnProfile(getSessionPhoneNumber(session), body);
+  }
+
+  @Post('me/avatar')
+  @UseInterceptors(FileInterceptor('file', {
+    storage: diskStorage({
+      destination: AVATAR_UPLOAD_DIR,
+      filename: (_request, file, callback) => callback(null, `${randomUUID()}${extname(file.originalname).toLowerCase()}`),
+    }),
+    limits: { fileSize: 2 * 1024 * 1024 },
+    fileFilter: (_request, file, callback) => {
+      const allowedMime = new Set(['image/jpeg', 'image/png', 'image/webp']);
+      callback(allowedMime.has(file.mimetype) ? null : new BadRequestException('Foto harus JPG, PNG, atau WebP'), allowedMime.has(file.mimetype));
+    },
+  }))
+  async uploadMyAvatar(@Session() session: UserSession, @UploadedFile() file?: Express.Multer.File) {
+    if (!file) throw new BadRequestException('File foto wajib dipilih');
+    const avatarUrl = `/uploads/avatars/${file.filename}`;
+    await this.usersService.updateOwnAvatar(getSessionPhoneNumber(session), avatarUrl);
+    return { avatarUrl };
   }
 
   @Get(':id/ba-id')

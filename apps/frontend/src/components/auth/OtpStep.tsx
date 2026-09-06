@@ -118,7 +118,7 @@ export function OtpStep({ phoneNumber, onBack, redirectTo }: OtpStepProps) {
           w-full h-11 sm:h-12 px-4 text-center text-2xl font-mono tracking-[0.5em]
           rounded-sm border-2 bg-white dark:bg-gray-800
           text-ink dark:text-gray-100
-          focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/25
+          focus:outline-none focus:border-ink focus:ring-2 focus:ring-ink/25
           transition-shadow duration-150
           ${errors.otp ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : 'border-edge-default dark:border-white/25'}
         `}
@@ -143,7 +143,7 @@ export function OtpStep({ phoneNumber, onBack, redirectTo }: OtpStepProps) {
       <button
         type="submit"
         disabled={isSubmitting}
-        className="btn-brutal btn-brutal-primary mt-5 w-full h-11 sm:h-12 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:ring-offset-2"
+        className="btn-brutal btn-brutal-primary mt-5 w-full h-11 sm:h-12 focus:outline-none focus:ring-2 focus:ring-ink/30 focus:ring-offset-2"
       >
         {isSubmitting ? (
           <>

@@ -9,6 +9,7 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { MidtransService, MidtransNotification } from '../midtrans/midtrans.service';
 import { SettingsService } from '../settings/settings.service';
+import { NotificationsService } from '../notifications/notifications.service';
 
 // Cek apakah sebuah payment dianggap benar-benar lunas (bukan pending/gagal).
 // Manual cash/transfer selalu dianggap sah; Midtrans hanya jika settlement/capture.
@@ -30,6 +31,7 @@ export class BillsService {
     private readonly prisma: PrismaService,
     private readonly midtransService: MidtransService,
     private readonly settingsService: SettingsService,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   // === Bill Types ===
@@ -147,7 +149,7 @@ export class BillsService {
 
     for (const family of families) {
       try {
-        await this.prisma.bill.create({
+        const createdBill = await this.prisma.bill.create({
           data: {
             billTypeId,
             familyId: family.id,
@@ -157,6 +159,7 @@ export class BillsService {
             status: 'unpaid',
           },
         });
+        void this.notificationsService.notifyFamily(family.id, { type: 'bill_created', title: 'Tagihan iuran baru', message: `Tagihan ${billType.name} periode ${period} sebesar Rp ${billType.amount.toLocaleString('id-ID')} telah dibuat.`, referenceType: 'bill', referenceId: createdBill.id });
         created++;
       } catch {
         // Skip jika tagihan sudah ada (unique constraint)
@@ -276,6 +279,7 @@ export class BillsService {
 
     // Pembayaran manual (cash/transfer) langsung dianggap sah -> catat ke Kas RT
     await this.recordBillPaymentToCash(payment.id);
+    void this.notificationsService.notifyFamily(bill.familyId, { type: 'payment_received', title: 'Pembayaran diterima', message: `Pembayaran iuran sebesar Rp ${data.amount.toLocaleString('id-ID')} telah dicatat.`, referenceType: 'payment', referenceId: payment.id });
 
     return payment;
   }

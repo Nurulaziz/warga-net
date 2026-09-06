@@ -24,12 +24,12 @@ export function extractHashtags(content: string): string[] {
 }
 
 export function extractMentions(content: string): string[] {
-  const matches = content.match(/@([\p{L}\p{N} .\-']+)/gu);
+  const matches = content.match(/@([\p{L}\p{N}_]+)/gu);
   if (!matches) return [];
   const seen = new Set<string>();
   const result: string[] = [];
   for (const m of matches) {
-    const name = m.slice(1).trim();
+    const name = m.slice(1).replaceAll('_', ' ').trim();
     if (name.length > 0 && !seen.has(name)) {
       seen.add(name);
       result.push(name);
