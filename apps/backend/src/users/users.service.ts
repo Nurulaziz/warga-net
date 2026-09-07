@@ -222,6 +222,14 @@ export class UsersService {
     return user;
   }
 
+  async isRegisteredPhone(phoneNumber: string): Promise<boolean> {
+    const user = await this.prisma.user.findFirst({
+      where: { phoneNumber, deletedAt: null, isActive: true },
+      select: { id: true },
+    });
+    return Boolean(user);
+  }
+
   async update(id: string, dto: UpdateUserDto) {
     await this.findOne(id);
 

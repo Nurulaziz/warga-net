@@ -1,6 +1,7 @@
 import { createContext, useContext, useCallback, useMemo, type ReactNode } from 'react';
 import { authClient } from '@/lib/auth-client';
 import { useCurrentUser, type CurrentUser, type UserPermissions } from '@/hooks/useCurrentUser';
+import { api } from '@/services/api';
 
 interface AuthUser {
   id: string;
@@ -57,6 +58,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Request OTP ke nomor telepon via Better Auth
   const requestOtp = useCallback(async (phoneNumber: string) => {
+    const { data: phoneStatus } = await api.get<{ registered: boolean }>('/users/phone-status', {
+      params: { phoneNumber },
+    });
+    if (!phoneStatus.registered) {
+      throw new Error('Nomor telepon belum terdaftar. Hubungi pengurus untuk membuat akun.');
+    }
     const result = await authClient.phoneNumber.sendOtp({ phoneNumber });
     if (result.error) {
       throw new Error(result.error.message || 'Gagal mengirim OTP');

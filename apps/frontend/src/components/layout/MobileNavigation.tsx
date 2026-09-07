@@ -82,8 +82,8 @@ export function MobileNavigation() {
               to={item.path}
               className={({ isActive }) =>
                 `flex flex-col items-center justify-center flex-1 h-full transition-all ${
-                  item.path === '/suara-warga'
-                    ? `relative -mt-3 mx-1 h-[4.5rem] rounded-sm border-2 border-ink bg-brand-500 px-1 text-white shadow-[3px_3px_0_#171717] ${isActive ? 'scale-105' : 'opacity-95'}`
+                  item.path === '/suara-warga' && isActive
+                    ? 'relative mx-1 h-full rounded-sm border-2 border-ink bg-brand-500 px-1 text-white shadow-[2px_2px_0_#171717] font-black'
                     : isActive ? 'border-t-4 border-brand-500 bg-[#f1dfc4] font-black text-ink dark:bg-gray-700 dark:text-white' : 'text-gray-600 dark:text-gray-400'
                 }`
               }

@@ -9,7 +9,7 @@ export function Breadcrumb() {
   const isDashboard = location.pathname === '/dashboard';
 
   return (
-    <nav aria-label="Breadcrumb" className="mb-5 overflow-hidden">
+    <nav aria-label="Breadcrumb" className="mb-5 hidden overflow-hidden md:block">
       <ol className="flex min-h-8 min-w-0 flex-wrap items-center gap-1 text-sm">
         <li className="flex items-center">
           {isDashboard ? (

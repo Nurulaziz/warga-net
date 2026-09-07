@@ -255,8 +255,8 @@ export function AnnouncementsPage() {
           {announcements.map((a) => (
             <Card key={a.id} className="overflow-hidden bg-[#fffdf8] dark:bg-gray-800">
               <div className="h-2 border-b-2 border-ink bg-[#f1dfc4] dark:border-gray-500 dark:bg-gray-700" />
-              <div className="p-5">
-              <div className="flex items-start justify-between gap-4">
+              <div className="p-4 sm:p-5">
+              <div className="flex items-start justify-between gap-3 sm:gap-4">
                 <div className="flex-1 min-w-0">
                   <div className="mb-2 flex flex-wrap items-center gap-2">
                     <button
@@ -288,13 +288,13 @@ export function AnnouncementsPage() {
                     <button
                       type="button"
                       onClick={() => setDetailModal(a)}
-                      className="mb-3 inline-flex items-center gap-1.5 rounded-sm border border-ink bg-white px-2 py-1 text-xs font-bold text-ink transition-colors hover:bg-[#f1dfc4] dark:bg-gray-900 dark:text-gray-200"
+                      className="mb-3 inline-flex items-center gap-1.5 rounded-sm border border-ink bg-[#fff8ec] px-2 py-1 text-xs font-bold text-ink transition-colors hover:bg-[#f1dfc4] dark:bg-gray-900 dark:text-gray-200"
                     >
                       <PaperClipIcon className="w-3.5 h-3.5" />
                       Ada lampiran
                     </button>
                   )}
-                  <div className="flex flex-wrap items-center gap-2 font-mono text-[11px] font-bold uppercase tracking-wide text-ink-secondary dark:text-gray-300">
+                  <div className="flex flex-wrap items-center gap-2 font-mono text-[11px] font-bold tracking-wide text-ink-secondary dark:text-gray-300">
                     <span>{formatDate(a.createdAt)}</span>
                     {a.targetScope && a.targetScope !== 'all' && (
                       <span className="inline-flex items-center rounded-sm border border-ink bg-gray-100 px-2 py-0.5 text-gray-700 dark:bg-gray-700 dark:text-gray-200">

@@ -886,7 +886,7 @@ export function BillsPage() {
     };
     return (
       <span
-        className={`inline-flex rounded-sm border border-ink px-2 py-0.5 text-xs font-bold shadow-[1px_1px_0_#171717] ${styles[status] || 'bg-gray-100 text-ink'}`}
+        className={`inline-flex whitespace-nowrap rounded-sm border border-ink px-2 py-0.5 text-[11px] font-bold shadow-[1px_1px_0_#171717] ${styles[status] || 'bg-gray-100 text-ink'}`}
       >
         {labels[status] || status}
       </span>
@@ -1017,10 +1017,11 @@ export function BillsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <h1 className="font-display text-2xl font-bold tracking-[-0.025em] text-gray-900 dark:text-gray-100">Iuran & Pembayaran</h1>
         {admin && (
-          <div className="flex gap-2">
+          <div className="flex w-full flex-wrap gap-2 sm:w-auto">
             <Button
               variant="secondary"
               size="sm"
+              className="flex-1 sm:flex-none"
               onClick={() => navigate('/bill-types')}
             >
               <Cog6ToothIcon className="w-4 h-4 mr-1" /> Jenis Iuran
@@ -1028,6 +1029,7 @@ export function BillsPage() {
             <Button
               variant="secondary"
               size="sm"
+              className="flex-1 sm:flex-none"
               onClick={() => {
                 setGenerateForm({ billTypeId: '', period: '', dueDate: '' });
                 setFormError('');
@@ -1039,6 +1041,7 @@ export function BillsPage() {
             <Button
               variant="primary"
               size="sm"
+              className="order-first w-full sm:order-none sm:w-auto"
               loading={generatingMonthly}
               onClick={handleGenerateMonthly}
               title="Buat tagihan untuk semua iuran bulanan aktif di bulan ini"
@@ -1051,40 +1054,21 @@ export function BillsPage() {
 
       {/* Summary Cards — sekaligus filter status (klik untuk menyaring) */}
       {summary && (
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-          <FilterStatCard
-            label="Total Tagihan"
-            value={formatCurrency(summary.totalAmount)}
-            icon={<BanknotesIcon className="w-5 h-5 text-ink dark:text-white" />}
-            iconBg="bg-[#f1dfc4] dark:bg-gray-700"
-            active={statusFilter === ''}
-            onClick={() => {
-              setStatusFilter('');
-              setPage(1);
-            }}
-          />
-          <FilterStatCard
-            label="Terbayar"
-            value={formatCurrency(summary.paidAmount)}
-            icon={<CheckCircleIcon className="w-5 h-5 text-ink dark:text-white" />}
-            iconBg="bg-[#f1dfc4] dark:bg-gray-700"
-            active={statusFilter === 'paid'}
-            onClick={() => {
-              setStatusFilter('paid');
-              setPage(1);
-            }}
-          />
-          <FilterStatCard
-            label="Belum Bayar"
-            value={formatCurrency(summary.unpaidAmount)}
-            icon={<ClockIcon className="w-5 h-5 text-ink dark:text-white" />}
-            iconBg="bg-[#f1dfc4] dark:bg-gray-700"
-            active={statusFilter === 'unpaid'}
-            onClick={() => {
-              setStatusFilter('unpaid');
-              setPage(1);
-            }}
-          />
+        <div className="mb-6 rounded-sm border-2 border-ink bg-[#fff8ec] p-4 shadow-[3px_3px_0_#171717] sm:grid sm:grid-cols-3 sm:gap-4 sm:border-0 sm:bg-transparent sm:p-0 sm:shadow-none">
+          <div className="border-b-2 border-ink/20 pb-3 sm:border-0 sm:pb-0">
+            <button type="button" onClick={() => { setStatusFilter(''); setPage(1); }} aria-pressed={statusFilter === ''} className="flex w-full items-center gap-3 text-left">
+              <span className="flex h-9 w-9 items-center justify-center rounded-sm border-2 border-ink bg-[#f1dfc4]"><BanknotesIcon className="h-5 w-5 text-ink" /></span>
+              <span><span className="block text-xs font-bold uppercase tracking-wide text-ink-secondary">Total Tagihan</span><span className="block text-xl font-black text-ink">{formatCurrency(summary.totalAmount)}</span></span>
+            </button>
+          </div>
+          <div className="mt-3 grid grid-cols-2 gap-3 sm:mt-0 sm:contents">
+            <button type="button" onClick={() => { setStatusFilter('paid'); setPage(1); }} aria-pressed={statusFilter === 'paid'} className="text-left sm:rounded-sm sm:border-2 sm:border-ink sm:bg-[#fff8ec] sm:p-4">
+              <span className="block text-xs font-bold uppercase tracking-wide text-ink-secondary">Terbayar</span><span className="block text-base font-black text-ink sm:text-lg">{formatCurrency(summary.paidAmount)}</span>
+            </button>
+            <button type="button" onClick={() => { setStatusFilter('unpaid'); setPage(1); }} aria-pressed={statusFilter === 'unpaid'} className="text-left sm:rounded-sm sm:border-2 sm:border-ink sm:bg-[#fff8ec] sm:p-4">
+              <span className="block text-xs font-bold uppercase tracking-wide text-ink-secondary">Belum Bayar</span><span className="block text-base font-black text-ink sm:text-lg">{formatCurrency(summary.unpaidAmount)}</span>
+            </button>
+          </div>
         </div>
       )}
 
@@ -1105,7 +1089,7 @@ export function BillsPage() {
             aria-label="Pilih periode iuran"
           />
           {periodFilter && (
-            <p className="mt-1 whitespace-nowrap text-xs font-medium text-gray-700 dark:text-gray-300">
+            <p className="mt-1 hidden whitespace-nowrap text-xs font-medium text-gray-700 sm:block dark:text-gray-300">
               Menampilkan: {formatPeriodId(periodFilter)}
             </p>
           )}
@@ -1281,7 +1265,7 @@ export function BillsPage() {
           {/* Mobile: kartu */}
           <div className="md:hidden space-y-3">
             {bills.map((bill) => (
-              <Card key={bill.id} className="p-4">
+              <Card key={bill.id} className="p-4 shadow-[2px_2px_0_#171717] sm:shadow-[4px_4px_0_#171717]">
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-start gap-2.5 min-w-0">
                     {admin && bill.status !== 'paid' && (
@@ -1297,9 +1281,7 @@ export function BillsPage() {
                       <p className="font-semibold text-gray-900 dark:text-gray-100 truncate">
                         {bill.family?.headOfFamily}
                       </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
-                        {bill.billType?.name} · {bill.period}
-                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">{bill.billType?.name}</p>
                     </div>
                   </div>
                   {statusBadge(bill.status)}
@@ -1989,43 +1971,6 @@ export function BillsPage() {
 }
 
 // Kartu ringkasan yang berfungsi sebagai filter status
-function FilterStatCard({
-  label,
-  value,
-  valueClass = 'text-gray-900 dark:text-gray-100',
-  icon,
-  iconBg,
-  active,
-  onClick,
-}: {
-  label: string;
-  value: string;
-  valueClass?: string;
-  icon: React.ReactNode;
-  iconBg: string;
-  active: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-pressed={active}
-      className="rounded-sm text-left transition-transform hover:-translate-y-0.5"
-    >
-      <Card className={`flex h-full items-center gap-4 p-4 ${active ? 'bg-[#fff8ec] dark:bg-gray-700' : ''}`}>
-        <div className={`flex h-10 w-10 items-center justify-center rounded-sm border-2 border-ink dark:border-gray-500 ${iconBg}`}>
-          {icon}
-        </div>
-        <div>
-          <p className="text-sm font-bold text-ink dark:text-gray-100">{label}</p>
-          <p className={`text-lg font-bold ${valueClass}`}>{value}</p>
-        </div>
-      </Card>
-    </button>
-  );
-}
-
 // Baris label-nilai untuk modal detail
 function DetailRow({ label, value }: { label: string; value: string }) {
   return (

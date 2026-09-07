@@ -19,7 +19,9 @@ api.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       // Session expired, redirect ke login
-      window.location.href = '/login';
+      // Login ditampilkan sebagai panel di landing page; tidak ada route
+      // standalone `/login`, jadi arahkan ke root agar tidak berakhir 404.
+      window.location.href = '/';
     }
     return Promise.reject(error);
   },

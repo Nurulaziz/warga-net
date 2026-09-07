@@ -13,7 +13,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
-import { Session, UserSession, Roles } from '@thallesp/nestjs-better-auth';
+import { AllowAnonymous, Session, UserSession, Roles } from '@thallesp/nestjs-better-auth';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -37,6 +37,16 @@ export class UsersController {
     private readonly usersService: UsersService,
     private readonly prisma: PrismaService,
   ) {}
+
+  @Get('phone-status')
+  @AllowAnonymous()
+  @ApiOperation({ summary: 'Check whether a phone number is registered' })
+  async phoneStatus(@Query('phoneNumber') phoneNumber?: string) {
+    if (!phoneNumber || !/^\+62\d{9,13}$/.test(phoneNumber)) {
+      throw new BadRequestException('Nomor telepon tidak valid');
+    }
+    return { registered: await this.usersService.isRegisteredPhone(phoneNumber) };
+  }
 
   @Get('me')
   @ApiOperation({ summary: 'Get current user profile with role and permissions' })
