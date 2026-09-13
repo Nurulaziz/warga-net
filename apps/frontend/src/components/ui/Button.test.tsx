@@ -33,7 +33,7 @@ describe('Button', () => {
   it('render variant primary sebagai default', () => {
     render(<Button>Teks</Button>);
     const button = screen.getByRole('button');
-    expect(button.className).toContain('bg-blue-600');
+    expect(button.className).toContain('bg-[var(--accent)]');
   });
 
   it('render variant danger', () => {

@@ -84,16 +84,17 @@ model Verification {
 // ============= Auth & Access =============
 
 model User {
-  id          String    @id @default(uuid())
-  phoneNumber String    @unique @map("phone_number")
-  fullName    String    @map("full_name")
-  roleId      String    @map("role_id")
-  familyId    String?   @map("family_id")
-  isActive    Boolean   @default(false) @map("is_active")
-  lastLoginAt DateTime? @map("last_login_at")
-  createdAt   DateTime  @default(now()) @map("created_at")
-  updatedAt   DateTime  @updatedAt @map("updated_at")
-  deletedAt   DateTime? @map("deleted_at")
+  id                    String    @id @default(uuid())
+  phoneNumber           String    @unique @map("phone_number")
+  fullName              String    @map("full_name")
+  roleId                String    @map("role_id")
+  familyId              String?   @map("family_id")
+  isActive              Boolean   @default(false) @map("is_active")
+  lastLoginAt           DateTime? @map("last_login_at")
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @updatedAt @map("updated_at")
+  deletedAt             DateTime? @map("deleted_at")
+  appearancePreferences Json?     @map("appearance_preferences")
 
   role             Role             @relation(fields: [roleId], references: [id])
   family           Family?          @relation(fields: [familyId], references: [id])
@@ -118,17 +119,18 @@ model User {
 }
 
 model Notification {
-  id        String   @id @default(uuid())
-  userId    String   @map("user_id")
-  type      String
-  title     String
-  message   String
-  referenceType String? @map("reference_type")
-  referenceId String? @map("reference_id")
-  isRead    Boolean  @default(false) @map("is_read")
-  readAt    DateTime? @map("read_at")
-  createdAt DateTime @default(now()) @map("created_at")
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id            String    @id @default(uuid())
+  userId        String    @map("user_id")
+  type          String
+  title         String
+  message       String
+  referenceType String?   @map("reference_type")
+  referenceId   String?   @map("reference_id")
+  isRead        Boolean   @default(false) @map("is_read")
+  readAt        DateTime? @map("read_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@index([userId, isRead, createdAt])
   @@map("notifications")
 }
@@ -622,14 +624,14 @@ model Report {
 }
 
 model Poll {
-  id        String    @id @default(uuid())
-  postId    String    @unique @map("post_id")
-  question  String
-  expiresAt DateTime? @map("expires_at")
-  voterVisibility String @default("SECRET") @map("voter_visibility")
-  resultVisibility String @default("AFTER_VOTE") @map("result_visibility")
-  createdAt DateTime  @default(now()) @map("created_at")
-  updatedAt DateTime  @updatedAt @map("updated_at")
+  id               String    @id @default(uuid())
+  postId           String    @unique @map("post_id")
+  question         String
+  expiresAt        DateTime? @map("expires_at")
+  voterVisibility  String    @default("SECRET") @map("voter_visibility")
+  resultVisibility String    @default("AFTER_VOTE") @map("result_visibility")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
 
   post    Post         @relation(fields: [postId], references: [id], onDelete: Cascade)
   options PollOption[]
@@ -695,6 +697,7 @@ model Letter {
   recipientName String    @map("recipient_name")
   content       String // rendered HTML
   purpose       String?
+  letterDate    DateTime  @default(now()) @map("letter_date")
   status        String    @default("draft") // draft, signed, archived
   issuedAt      DateTime? @map("issued_at")
   createdBy     String?   @map("created_by")

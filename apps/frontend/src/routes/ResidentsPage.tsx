@@ -1,6 +1,13 @@
 import { useState } from 'react';
 import { PlusIcon, ArrowDownTrayIcon } from '@heroicons/react/24/outline';
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/Table';
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from '@/components/ui/Table';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Modal, ModalFooter } from '@/components/ui/Modal';
@@ -34,11 +41,30 @@ export function ResidentsPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [deleteModal, setDeleteModal] = useState<Resident | null>(null);
   const [editing, setEditing] = useState<Resident | null>(null);
-  const [formData, setFormData] = useState({ fullName: '', idNumber: '', birthDate: '', gender: 'Laki-laki', relationship: '', familyId: '', createFamily: false, familyAddress: '' });
+  const [formData, setFormData] = useState({
+    fullName: '',
+    idNumber: '',
+    birthDate: '',
+    gender: 'Laki-laki',
+    relationship: '',
+    familyId: '',
+    createFamily: false,
+    familyAddress: '',
+  });
   const [formError, setFormError] = useState('');
   const [saving, setSaving] = useState(false);
 
-  const { data: residents, meta, loading, refetch } = usePaginatedApi<Resident>('/residents', { page, limit: pageSize, ...(search && { search }), ...(familyFilter && { familyId: familyFilter }) });
+  const {
+    data: residents,
+    meta,
+    loading,
+    refetch,
+  } = usePaginatedApi<Resident>('/residents', {
+    page,
+    limit: pageSize,
+    ...(search && { search }),
+    ...(familyFilter && { familyId: familyFilter }),
+  });
   const { data: families } = usePaginatedApi<Family>('/families', { limit: 100 });
 
   // Ubah jumlah per halaman & kembali ke halaman 1
@@ -54,20 +80,43 @@ export function ResidentsPage() {
 
   function openCreate() {
     setEditing(null);
-    setFormData({ fullName: '', idNumber: '', birthDate: '', gender: 'Laki-laki', relationship: '', familyId: '', createFamily: false, familyAddress: '' });
+    setFormData({
+      fullName: '',
+      idNumber: '',
+      birthDate: '',
+      gender: 'Laki-laki',
+      relationship: '',
+      familyId: '',
+      createFamily: false,
+      familyAddress: '',
+    });
     setFormError('');
     setModalOpen(true);
   }
 
   function openEdit(r: Resident) {
     setEditing(r);
-    setFormData({ fullName: r.fullName, idNumber: r.idNumber, birthDate: r.birthDate.split('T')[0], gender: r.gender, relationship: r.relationship, familyId: r.familyId, createFamily: false, familyAddress: '' });
+    setFormData({
+      fullName: r.fullName,
+      idNumber: r.idNumber,
+      birthDate: r.birthDate.split('T')[0],
+      gender: r.gender,
+      relationship: r.relationship,
+      familyId: r.familyId,
+      createFamily: false,
+      familyAddress: '',
+    });
     setFormError('');
     setModalOpen(true);
   }
 
   async function handleSave() {
-    if (!formData.fullName || !formData.idNumber || (!formData.familyId && !formData.createFamily) || !formData.birthDate) {
+    if (
+      !formData.fullName ||
+      !formData.idNumber ||
+      (!formData.familyId && !formData.createFamily) ||
+      !formData.birthDate
+    ) {
       setFormError('Field wajib belum lengkap');
       return;
     }
@@ -82,7 +131,9 @@ export function ResidentsPage() {
       setModalOpen(false);
       refetch();
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Gagal menyimpan data';
+      const msg =
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+        'Gagal menyimpan data';
       setFormError(msg);
     } finally {
       setSaving(false);
@@ -105,7 +156,11 @@ export function ResidentsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Warga</h1>
         <div className="flex gap-2">
-          <Button variant="secondary" size="sm" onClick={() => window.open('/api/v1/export/residents', '_blank')}>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => window.open('/api/v1/export/residents', '_blank')}
+          >
             <ArrowDownTrayIcon className="w-4 h-4 mr-1" /> Export
           </Button>
           <Button variant="primary" size="sm" onClick={openCreate}>
@@ -115,17 +170,33 @@ export function ResidentsPage() {
       </div>
 
       <FilterBar>
-        <SearchInput placeholder="Cari nama atau NIK..." value={searchInput} onChange={(e) => setSearchInput(e.target.value)} onSearch={handleSearch} />
-        <FilterSelect value={familyFilter} onChange={(e) => { setFamilyFilter(e.target.value); setPage(1); }} className="max-w-[220px]">
+        <SearchInput
+          placeholder="Cari nama atau NIK..."
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
+          onSearch={handleSearch}
+        />
+        <FilterSelect
+          value={familyFilter}
+          onChange={(e) => {
+            setFamilyFilter(e.target.value);
+            setPage(1);
+          }}
+          className="max-w-[220px]"
+        >
           <option value="">Semua Keluarga</option>
           {families.map((f) => (
-            <option key={f.id} value={f.id}>{f.headOfFamily}</option>
+            <option key={f.id} value={f.id}>
+              {f.headOfFamily}
+            </option>
           ))}
         </FilterSelect>
       </FilterBar>
 
       {loading ? (
-        <div className="flex justify-center py-12"><div className="animate-spin h-8 w-8 border-4 border-primary-600 border-t-transparent rounded-full" /></div>
+        <div className="flex justify-center py-12">
+          <div className="animate-spin h-8 w-8 border-4 border-primary-600 border-t-transparent rounded-full" />
+        </div>
       ) : (
         <>
           <Table>
@@ -141,7 +212,14 @@ export function ResidentsPage() {
             </TableHeader>
             <TableBody>
               {residents.length === 0 ? (
-                <TableRow><TableCell className="py-10 text-center font-semibold text-ink dark:text-gray-200" colSpan={6}>Belum ada data warga</TableCell></TableRow>
+                <TableRow>
+                  <TableCell
+                    className="py-10 text-center font-semibold text-ink dark:text-gray-200"
+                    colSpan={6}
+                  >
+                    Belum ada data warga
+                  </TableCell>
+                </TableRow>
               ) : (
                 residents.map((r) => (
                   <TableRow key={r.id}>
@@ -152,8 +230,16 @@ export function ResidentsPage() {
                     <TableCell>{r.family?.headOfFamily || '-'}</TableCell>
                     <TableCell>
                       <div className="flex gap-2">
-                        <TableActionButton action="edit" label={`Edit warga ${r.fullName}`} onClick={() => openEdit(r)} />
-                        <TableActionButton action="delete" label={`Hapus warga ${r.fullName}`} onClick={() => setDeleteModal(r)} />
+                        <TableActionButton
+                          action="edit"
+                          label={`Edit warga ${r.fullName}`}
+                          onClick={() => openEdit(r)}
+                        />
+                        <TableActionButton
+                          action="delete"
+                          label={`Hapus warga ${r.fullName}`}
+                          onClick={() => setDeleteModal(r)}
+                        />
                       </div>
                     </TableCell>
                   </TableRow>
@@ -176,23 +262,53 @@ export function ResidentsPage() {
         </>
       )}
 
-      <Modal isOpen={modalOpen} onClose={() => setModalOpen(false)} title={editing ? 'Edit Warga' : 'Tambah Warga'} size="lg">
+      <Modal
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
+        title={editing ? 'Edit Warga' : 'Tambah Warga'}
+        size="lg"
+      >
         <div className="space-y-4">
-          <Input label="Nama Lengkap" value={formData.fullName} onChange={(e) => setFormData({ ...formData, fullName: e.target.value })} />
-          <Input label="NIK" value={formData.idNumber} onChange={(e) => setFormData({ ...formData, idNumber: e.target.value })} />
+          <Input
+            label="Nama Lengkap"
+            value={formData.fullName}
+            onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+          />
+          <Input
+            label="NIK"
+            value={formData.idNumber}
+            onChange={(e) => setFormData({ ...formData, idNumber: e.target.value })}
+          />
           <div className="grid grid-cols-2 gap-4">
-            <Input label="Tanggal Lahir" type="date" value={formData.birthDate} onChange={(e) => setFormData({ ...formData, birthDate: e.target.value })} />
+            <Input
+              label="Tanggal Lahir"
+              type="date"
+              value={formData.birthDate}
+              onChange={(e) => setFormData({ ...formData, birthDate: e.target.value })}
+            />
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Jenis Kelamin</label>
-              <select value={formData.gender} onChange={(e) => setFormData({ ...formData, gender: e.target.value })} className="w-full min-h-[44px] px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Jenis Kelamin
+              </label>
+              <select
+                value={formData.gender}
+                onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
+                className="w-full min-h-[44px] px-4 py-2 border-2 border-ink dark:border-gray-400 rounded-sm bg-[#fffdf8] dark:bg-gray-800 text-ink dark:text-gray-100 outline-none focus:ring-2 focus:ring-ink/25"
+              >
                 <option value="Laki-laki">Laki-laki</option>
                 <option value="Perempuan">Perempuan</option>
               </select>
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Hubungan dalam Keluarga</label>
-            <select value={formData.relationship} onChange={(e) => setFormData({ ...formData, relationship: e.target.value })} className="w-full min-h-[44px] px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Hubungan dalam Keluarga
+            </label>
+            <select
+              value={formData.relationship}
+              onChange={(e) => setFormData({ ...formData, relationship: e.target.value })}
+              className="w-full min-h-[44px] px-4 py-2 border-2 border-ink dark:border-gray-400 rounded-sm bg-[#fffdf8] dark:bg-gray-800 text-ink dark:text-gray-100 outline-none focus:ring-2 focus:ring-ink/25"
+            >
               <option value="">Pilih hubungan</option>
               <option value="Kepala Keluarga">Kepala Keluarga</option>
               <option value="Istri">Istri</option>
@@ -204,29 +320,75 @@ export function ResidentsPage() {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Keluarga</label>
-            <select disabled={formData.createFamily} value={formData.familyId} onChange={(e) => setFormData({ ...formData, familyId: e.target.value })} className="w-full min-h-[44px] px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Keluarga
+            </label>
+            <select
+              disabled={formData.createFamily}
+              value={formData.familyId}
+              onChange={(e) => setFormData({ ...formData, familyId: e.target.value })}
+              className="w-full min-h-[44px] px-4 py-2 border-2 border-ink dark:border-gray-400 rounded-sm bg-[#fffdf8] dark:bg-gray-800 text-ink dark:text-gray-100 outline-none focus:ring-2 focus:ring-ink/25 disabled:cursor-not-allowed disabled:opacity-50"
+            >
               <option value="">Pilih Keluarga</option>
               {families.map((f) => (
-                <option key={f.id} value={f.id}>{f.headOfFamily}</option>
+                <option key={f.id} value={f.id}>
+                  {f.headOfFamily}
+                </option>
               ))}
             </select>
-            {!editing && <label className="mt-3 flex items-center gap-2 text-sm"><input type="checkbox" checked={formData.createFamily} onChange={(e) => setFormData({ ...formData, createFamily: e.target.checked, familyId: e.target.checked ? '' : formData.familyId })} /> Buat keluarga baru dari warga ini</label>}
-            {!editing && formData.createFamily && <Input label="Alamat Keluarga" value={formData.familyAddress} onChange={(e) => setFormData({ ...formData, familyAddress: e.target.value })} placeholder="Alamat tempat tinggal" />}
+            {!editing && (
+              <label className="mt-3 flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={formData.createFamily}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      createFamily: e.target.checked,
+                      familyId: e.target.checked ? '' : formData.familyId,
+                    })
+                  }
+                />{' '}
+                Buat keluarga baru dari warga ini
+              </label>
+            )}
+            {!editing && formData.createFamily && (
+              <Input
+                label="Alamat Keluarga"
+                value={formData.familyAddress}
+                onChange={(e) => setFormData({ ...formData, familyAddress: e.target.value })}
+                placeholder="Alamat tempat tinggal"
+              />
+            )}
           </div>
           {formError && <p className="text-sm text-red-600">{formError}</p>}
         </div>
         <ModalFooter>
-          <Button variant="secondary" size="sm" onClick={() => setModalOpen(false)}>Batal</Button>
-          <Button variant="primary" size="sm" loading={saving} onClick={handleSave}>{editing ? 'Simpan' : 'Tambah'}</Button>
+          <Button variant="secondary" size="sm" onClick={() => setModalOpen(false)}>
+            Batal
+          </Button>
+          <Button variant="primary" size="sm" loading={saving} onClick={handleSave}>
+            {editing ? 'Simpan' : 'Tambah'}
+          </Button>
         </ModalFooter>
       </Modal>
 
-      <Modal isOpen={!!deleteModal} onClose={() => setDeleteModal(null)} title="Hapus Warga" size="sm">
-        <p className="text-gray-600 dark:text-gray-400">Yakin ingin menghapus <strong>{deleteModal?.fullName}</strong>?</p>
+      <Modal
+        isOpen={!!deleteModal}
+        onClose={() => setDeleteModal(null)}
+        title="Hapus Warga"
+        size="sm"
+      >
+        <p className="text-gray-600 dark:text-gray-400">
+          Yakin ingin menghapus <strong>{deleteModal?.fullName}</strong>?
+        </p>
         <ModalFooter>
-          <Button variant="secondary" size="sm" onClick={() => setDeleteModal(null)}>Batal</Button>
-          <Button variant="danger" size="sm" onClick={handleDelete}>Hapus</Button>
+          <Button variant="secondary" size="sm" onClick={() => setDeleteModal(null)}>
+            Batal
+          </Button>
+          <Button variant="danger" size="sm" onClick={handleDelete}>
+            Hapus
+          </Button>
         </ModalFooter>
       </Modal>
     </div>

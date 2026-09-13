@@ -15,6 +15,8 @@ export interface SystemSettings {
   app_name: string;
   app_logo_url: string;
   gov_logo_url: string;
+  letter_number_format: string;
+  letter_number_padding: string;
 }
 
 const DEFAULTS: SystemSettings = {
@@ -31,6 +33,8 @@ const DEFAULTS: SystemSettings = {
   app_name: 'WargaNet',
   app_logo_url: '',
   gov_logo_url: '',
+  letter_number_format: '{seq}/RT{rt}/RW{rw}/{month}/{year}',
+  letter_number_padding: '3',
 };
 
 // Cache sederhana supaya tidak fetch berulang kali
@@ -72,6 +76,8 @@ export function useSettings() {
         app_name: map['app_name'] || DEFAULTS.app_name,
         app_logo_url: map['app_logo_url'] || DEFAULTS.app_logo_url,
         gov_logo_url: map['gov_logo_url'] || DEFAULTS.gov_logo_url,
+        letter_number_format: map['letter_number_format'] || DEFAULTS.letter_number_format,
+        letter_number_padding: map['letter_number_padding'] || DEFAULTS.letter_number_padding,
       };
 
       cachedSettings = resolved;

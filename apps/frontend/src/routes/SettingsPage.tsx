@@ -1,4 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
+import { PaintBrushIcon } from '@heroicons/react/24/outline';
+import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Card } from '@/components/ui/Card';
@@ -69,7 +71,12 @@ const FINANCE_SETTINGS = [
   },
 ];
 
-const ALL_SETTINGS = [...RT_INFO_SETTINGS, ...BRANDING_SETTINGS, ...FINANCE_SETTINGS];
+const LETTER_SETTINGS = [
+  { key: 'letter_number_format', label: 'Format nomor surat', group: 'letter', default: '{seq}/RT{rt}/RW{rw}/{month}/{year}' },
+  { key: 'letter_number_padding', label: 'Panjang nomor urut', group: 'letter', default: '3' },
+];
+
+const ALL_SETTINGS = [...RT_INFO_SETTINGS, ...BRANDING_SETTINGS, ...FINANCE_SETTINGS, ...LETTER_SETTINGS];
 
 export function SettingsPage() {
   const { currentUser } = useAuth();
@@ -210,10 +217,16 @@ export function SettingsPage() {
   }
 
   return (
-    <div className="p-6 max-w-3xl">
-      <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6">
-        Pengaturan Sistem
-      </h1>
+    <div className="max-w-3xl p-6">
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <p className="font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-brand-600">Pengaturan</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Pengaturan Sistem</h1>
+        </div>
+        <Link to="/settings/appearance" className="inline-flex min-h-10 items-center gap-2 rounded-sm border-2 border-ink bg-[var(--surface-card)] px-3 text-sm font-black shadow-[var(--shadow-small)] hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus:ring-ink/30">
+          <PaintBrushIcon className="h-4 w-4" /> Tampilan
+        </Link>
+      </div>
 
       {/* Branding */}
       <Card className="p-6 mb-6">
@@ -349,6 +362,18 @@ export function SettingsPage() {
               onChange={(e) => setSettings({ ...settings, [d.key]: e.target.value })}
             />
           ))}
+        </div>
+      </Card>
+
+      {/* Keuangan / Iuran */}
+      <Card className="mb-6 p-6">
+        <h2 className="mb-1 text-lg font-semibold text-gray-900 dark:text-gray-100">Penomoran Surat</h2>
+        <p className="mb-4 text-sm text-gray-500 dark:text-gray-400">
+          Gunakan token {'{seq}'}, {'{rt}'}, {'{rw}'}, {'{month}'}, dan {'{year}'}. Contoh: {'{seq}/RT{rt}/RW{rw}/{month}/{year}'}
+        </p>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <Input label="Format nomor surat" value={settings.letter_number_format || ''} onChange={(e) => setSettings({ ...settings, letter_number_format: e.target.value })} />
+          <Input label="Panjang nomor urut" type="number" min={1} max={6} value={settings.letter_number_padding || '3'} onChange={(e) => setSettings({ ...settings, letter_number_padding: e.target.value.replace(/\D/g, '').slice(0, 1) || '3' })} helperText="Contoh 3 menghasilkan 001." />
         </div>
       </Card>
 

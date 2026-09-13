@@ -1,6 +1,20 @@
 import { useState, useEffect } from 'react';
-import { PlusIcon, ArrowUpIcon, ArrowDownIcon, ArrowsUpDownIcon, TagIcon, WalletIcon } from '@heroicons/react/24/outline';
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/Table';
+import {
+  PlusIcon,
+  ArrowUpIcon,
+  ArrowDownIcon,
+  ArrowsUpDownIcon,
+  TagIcon,
+  WalletIcon,
+} from '@heroicons/react/24/outline';
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from '@/components/ui/Table';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Modal, ModalFooter } from '@/components/ui/Modal';
@@ -10,6 +24,7 @@ import { FilterDatePicker } from '@/components/ui/FilterDatePicker';
 import { Pagination } from '@/components/ui/Pagination';
 import { TableActionButton } from '@/components/ui/TableActionButton';
 import { api } from '@/services/api';
+import { useToast } from '@/components/ui/Toast';
 
 interface CashCategory {
   id: string;
@@ -36,6 +51,7 @@ interface CashSummary {
 }
 
 export function CashPage() {
+  const { showToast } = useToast();
   const [transactions, setTransactions] = useState<CashTransaction[]>([]);
   const [categories, setCategories] = useState<CashCategory[]>([]);
   const [summary, setSummary] = useState<CashSummary | null>(null);
@@ -53,12 +69,20 @@ export function CashPage() {
   const [catModal, setCatModal] = useState(false);
 
   // Forms
-  const [txForm, setTxForm] = useState({ categoryId: '', type: 'income', amount: '', description: '', date: new Date().toISOString().split('T')[0] });
+  const [txForm, setTxForm] = useState({
+    categoryId: '',
+    type: 'income',
+    amount: '',
+    description: '',
+    date: new Date().toISOString().split('T')[0],
+  });
   const [catForm, setCatForm] = useState({ name: '', type: 'income', description: '' });
   const [formError, setFormError] = useState('');
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => { fetchData(); }, [page, pageSize, typeFilter, categoryFilter, startDate, endDate]);
+  useEffect(() => {
+    fetchData();
+  }, [page, pageSize, typeFilter, categoryFilter, startDate, endDate]);
 
   // Ubah jumlah per halaman & kembali ke halaman 1
   function handlePageSizeChange(size: number) {
@@ -66,9 +90,15 @@ export function CashPage() {
     setPage(1);
   }
   useEffect(() => {
-    api.get('/cash/categories').then((res) => setCategories(res.data)).catch(() => {});
-    api.get('/cash/summary').then((res) => setSummary(res.data)).catch(() => {});
-  }, []);
+    void Promise.all([api.get('/cash/categories'), api.get('/cash/summary')])
+      .then(([categoryResponse, summaryResponse]) => {
+        setCategories(categoryResponse.data);
+        setSummary(summaryResponse.data);
+      })
+      .catch(() =>
+        showToast('Ringkasan dan kategori kas gagal dimuat. Silakan coba lagi.', 'error'),
+      );
+  }, [showToast]);
 
   async function fetchData() {
     setLoading(true);
@@ -82,31 +112,41 @@ export function CashPage() {
       setTransactions(data.data);
       setMeta(data.meta);
     } catch {
-      // silent
+      setTransactions([]);
+      showToast('Daftar transaksi gagal dimuat. Periksa koneksi lalu coba lagi.', 'error');
     } finally {
       setLoading(false);
     }
   }
 
   async function handleCreateTx() {
-    if (!txForm.categoryId || !txForm.amount || !txForm.description) { setFormError('Semua field wajib diisi'); return; }
+    if (!txForm.categoryId || !txForm.amount || !txForm.description) {
+      setFormError('Semua field wajib diisi');
+      return;
+    }
     setSaving(true);
     setFormError('');
     try {
       await api.post('/cash/transactions', { ...txForm, amount: parseFloat(txForm.amount) });
       setTxModal(false);
-      fetchData();
+      void fetchData();
       const res = await api.get('/cash/summary');
       setSummary(res.data);
     } catch (err: unknown) {
-      setFormError((err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Gagal menyimpan');
+      setFormError(
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+          'Gagal menyimpan',
+      );
     } finally {
       setSaving(false);
     }
   }
 
   async function handleCreateCat() {
-    if (!catForm.name) { setFormError('Nama kategori wajib diisi'); return; }
+    if (!catForm.name) {
+      setFormError('Nama kategori wajib diisi');
+      return;
+    }
     setSaving(true);
     setFormError('');
     try {
@@ -115,7 +155,10 @@ export function CashPage() {
       const res = await api.get('/cash/categories');
       setCategories(res.data);
     } catch (err: unknown) {
-      setFormError((err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Gagal menyimpan');
+      setFormError(
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+          'Gagal menyimpan',
+      );
     } finally {
       setSaving(false);
     }
@@ -124,30 +167,62 @@ export function CashPage() {
   async function handleDeleteTx(id: string) {
     if (!confirm('Hapus transaksi ini?')) return;
     await api.delete(`/cash/transactions/${id}`);
-    fetchData();
+    void fetchData();
     const res = await api.get('/cash/summary');
     setSummary(res.data);
   }
 
   function formatCurrency(amount: number) {
-    return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(amount);
+    return new Intl.NumberFormat('id-ID', {
+      style: 'currency',
+      currency: 'IDR',
+      minimumFractionDigits: 0,
+    }).format(amount);
   }
 
   function formatDate(d: string) {
-    return new Date(d).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+    return new Date(d).toLocaleDateString('id-ID', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    });
   }
 
-  const filteredCategories = txForm.type ? categories.filter((c) => c.type === txForm.type) : categories;
+  const filteredCategories = txForm.type
+    ? categories.filter((c) => c.type === txForm.type)
+    : categories;
 
   return (
     <div className="p-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Kas RT</h1>
         <div className="flex gap-2">
-          <Button variant="secondary" size="sm" onClick={() => { setCatForm({ name: '', type: 'income', description: '' }); setFormError(''); setCatModal(true); }}>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => {
+              setCatForm({ name: '', type: 'income', description: '' });
+              setFormError('');
+              setCatModal(true);
+            }}
+          >
             <PlusIcon className="w-4 h-4 mr-1" /> Kategori
           </Button>
-          <Button variant="primary" size="sm" onClick={() => { setTxForm({ categoryId: '', type: 'income', amount: '', description: '', date: new Date().toISOString().split('T')[0] }); setFormError(''); setTxModal(true); }}>
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={() => {
+              setTxForm({
+                categoryId: '',
+                type: 'income',
+                amount: '',
+                description: '',
+                date: new Date().toISOString().split('T')[0],
+              });
+              setFormError('');
+              setTxModal(true);
+            }}
+          >
             <PlusIcon className="w-4 h-4 mr-1" /> Transaksi
           </Button>
         </div>
@@ -157,16 +232,41 @@ export function CashPage() {
       {summary && (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
           <Card className="p-4 flex items-center gap-4">
-            <div className="flex h-10 w-10 items-center justify-center rounded-sm border-2 border-ink bg-[#f1dfc4] dark:border-gray-500 dark:bg-gray-700"><ArrowUpIcon className="h-5 w-5 text-ink dark:text-white" /></div>
-            <div><p className="text-xs font-semibold text-gray-700 dark:text-gray-300">Total Pemasukan</p><p className="text-lg font-bold text-ink dark:text-white">{formatCurrency(summary.totalIncome)}</p></div>
+            <div className="flex h-10 w-10 items-center justify-center rounded-sm border-2 border-ink bg-[#f1dfc4] dark:border-gray-500 dark:bg-gray-700">
+              <ArrowUpIcon className="h-5 w-5 text-ink dark:text-white" />
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-gray-700 dark:text-gray-300">
+                Total Pemasukan
+              </p>
+              <p className="text-lg font-bold text-ink dark:text-white">
+                {formatCurrency(summary.totalIncome)}
+              </p>
+            </div>
           </Card>
           <Card className="p-4 flex items-center gap-4">
-            <div className="flex h-10 w-10 items-center justify-center rounded-sm border-2 border-ink bg-[#f1dfc4] dark:border-gray-500 dark:bg-gray-700"><ArrowDownIcon className="h-5 w-5 text-ink dark:text-white" /></div>
-            <div><p className="text-xs font-semibold text-gray-700 dark:text-gray-300">Total Pengeluaran</p><p className="text-lg font-bold text-ink dark:text-white">{formatCurrency(summary.totalExpense)}</p></div>
+            <div className="flex h-10 w-10 items-center justify-center rounded-sm border-2 border-ink bg-[#f1dfc4] dark:border-gray-500 dark:bg-gray-700">
+              <ArrowDownIcon className="h-5 w-5 text-ink dark:text-white" />
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-gray-700 dark:text-gray-300">
+                Total Pengeluaran
+              </p>
+              <p className="text-lg font-bold text-ink dark:text-white">
+                {formatCurrency(summary.totalExpense)}
+              </p>
+            </div>
           </Card>
           <Card className="p-4 flex items-center gap-4">
-            <div className="flex h-10 w-10 items-center justify-center rounded-sm border-2 border-ink bg-[#f1dfc4] dark:border-gray-500 dark:bg-gray-700"><WalletIcon className="h-5 w-5 text-ink dark:text-white" /></div>
-            <div><p className="text-xs font-semibold text-gray-700 dark:text-gray-300">Saldo</p><p className="text-lg font-bold text-ink dark:text-white">{formatCurrency(summary.balance)}</p></div>
+            <div className="flex h-10 w-10 items-center justify-center rounded-sm border-2 border-ink bg-[#f1dfc4] dark:border-gray-500 dark:bg-gray-700">
+              <WalletIcon className="h-5 w-5 text-ink dark:text-white" />
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-gray-700 dark:text-gray-300">Saldo</p>
+              <p className="text-lg font-bold text-ink dark:text-white">
+                {formatCurrency(summary.balance)}
+              </p>
+            </div>
           </Card>
         </div>
       )}
@@ -175,7 +275,11 @@ export function CashPage() {
       <FilterBar>
         <FilterSelect
           value={typeFilter}
-          onChange={(e) => { setTypeFilter(e.target.value); setCategoryFilter(''); setPage(1); }}
+          onChange={(e) => {
+            setTypeFilter(e.target.value);
+            setCategoryFilter('');
+            setPage(1);
+          }}
           aria-label="Filter tipe"
           icon={<ArrowsUpDownIcon className="h-3.5 w-3.5" />}
         >
@@ -185,31 +289,55 @@ export function CashPage() {
         </FilterSelect>
         <FilterSelect
           value={categoryFilter}
-          onChange={(e) => { setCategoryFilter(e.target.value); setPage(1); }}
+          onChange={(e) => {
+            setCategoryFilter(e.target.value);
+            setPage(1);
+          }}
           className="max-w-[200px]"
           aria-label="Filter kategori"
           icon={<TagIcon className="h-3.5 w-3.5" />}
         >
           <option value="">Semua Kategori</option>
-          {categories.filter((c) => !typeFilter || c.type === typeFilter).map((c) => (
-            <option key={c.id} value={c.id}>{c.name}</option>
-          ))}
+          {categories
+            .filter((c) => !typeFilter || c.type === typeFilter)
+            .map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
         </FilterSelect>
         <FilterDatePicker
           value={startDate}
-          onChange={(nextValue) => { setStartDate(nextValue); setPage(1); }}
+          onChange={(nextValue) => {
+            setStartDate(nextValue);
+            setPage(1);
+          }}
           aria-label="Dari tanggal"
           placeholder="Dari tanggal"
         />
         <span className="text-sm font-bold text-ink/70 dark:text-gray-300">s/d</span>
         <FilterDatePicker
           value={endDate}
-          onChange={(nextValue) => { setEndDate(nextValue); setPage(1); }}
+          onChange={(nextValue) => {
+            setEndDate(nextValue);
+            setPage(1);
+          }}
           aria-label="Sampai tanggal"
           placeholder="Sampai tanggal"
         />
         {(typeFilter || categoryFilter || startDate || endDate) && (
-          <Button variant="ghost" size="sm" onClick={() => { setTypeFilter(''); setCategoryFilter(''); setStartDate(''); setEndDate(''); setPage(1); }} className="h-11">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              setTypeFilter('');
+              setCategoryFilter('');
+              setStartDate('');
+              setEndDate('');
+              setPage(1);
+            }}
+            className="h-11"
+          >
             Reset
           </Button>
         )}
@@ -217,7 +345,9 @@ export function CashPage() {
 
       {/* Table */}
       {loading ? (
-        <div className="flex justify-center py-12"><div className="animate-spin h-8 w-8 border-4 border-primary-600 border-t-transparent rounded-full" /></div>
+        <div className="flex justify-center py-12">
+          <div className="animate-spin h-8 w-8 border-4 border-primary-600 border-t-transparent rounded-full" />
+        </div>
       ) : (
         <>
           <Table className="border-2 border-ink dark:border-gray-500">
@@ -233,23 +363,36 @@ export function CashPage() {
             </TableHeader>
             <TableBody>
               {transactions.length === 0 ? (
-                <TableRow><TableCell className="text-center py-8 text-gray-500" colSpan={6}>Belum ada transaksi</TableCell></TableRow>
+                <TableRow>
+                  <TableCell className="text-center py-8 text-gray-500" colSpan={6}>
+                    Belum ada transaksi
+                  </TableCell>
+                </TableRow>
               ) : (
                 transactions.map((tx) => (
                   <TableRow key={tx.id}>
                     <TableCell className="whitespace-nowrap">{formatDate(tx.date)}</TableCell>
                     <TableCell>
-                      <span className={`inline-flex rounded-sm border border-ink px-2 py-1 text-xs font-bold text-ink shadow-[1px_1px_0_#171717] dark:border-gray-400 dark:text-white ${tx.type === 'income' ? 'bg-green-100 dark:bg-green-900/40' : 'bg-red-100 dark:bg-red-900/40'}`}>
+                      <span
+                        className={`inline-flex rounded-sm border border-ink px-2 py-1 text-xs font-bold text-ink shadow-[1px_1px_0_#171717] dark:border-gray-400 dark:text-white ${tx.type === 'income' ? 'bg-green-100 dark:bg-green-900/40' : 'bg-red-100 dark:bg-red-900/40'}`}
+                      >
                         {tx.type === 'income' ? 'Masuk' : 'Keluar'}
                       </span>
                     </TableCell>
                     <TableCell>{tx.category?.name}</TableCell>
                     <TableCell>{tx.description}</TableCell>
-                    <TableCell className={`font-medium ${tx.type === 'income' ? 'text-green-600' : 'text-red-600'}`}>
-                      {tx.type === 'income' ? '+' : '-'}{formatCurrency(tx.amount)}
+                    <TableCell
+                      className={`font-medium ${tx.type === 'income' ? 'text-green-600' : 'text-red-600'}`}
+                    >
+                      {tx.type === 'income' ? '+' : '-'}
+                      {formatCurrency(tx.amount)}
                     </TableCell>
                     <TableCell>
-                      <TableActionButton action="delete" label={`Hapus transaksi ${tx.description}`} onClick={() => handleDeleteTx(tx.id)} />
+                      <TableActionButton
+                        action="delete"
+                        label={`Hapus transaksi ${tx.description}`}
+                        onClick={() => handleDeleteTx(tx.id)}
+                      />
                     </TableCell>
                   </TableRow>
                 ))
@@ -275,50 +418,112 @@ export function CashPage() {
       <Modal isOpen={txModal} onClose={() => setTxModal(false)} title="Tambah Transaksi" size="md">
         <div className="space-y-4">
           <div>
-            <label className="mb-1.5 block text-sm font-bold text-ink dark:text-gray-200">Tipe</label>
-            <FilterSelect value={txForm.type} onChange={(e) => setTxForm({ ...txForm, type: e.target.value, categoryId: '' })} className="w-full" aria-label="Tipe transaksi" icon={<ArrowsUpDownIcon className="h-3.5 w-3.5" />}>
+            <label className="mb-1.5 block text-sm font-bold text-ink dark:text-gray-200">
+              Tipe
+            </label>
+            <FilterSelect
+              value={txForm.type}
+              onChange={(e) => setTxForm({ ...txForm, type: e.target.value, categoryId: '' })}
+              className="w-full"
+              aria-label="Tipe transaksi"
+              icon={<ArrowsUpDownIcon className="h-3.5 w-3.5" />}
+            >
               <option value="income">Pemasukan</option>
               <option value="expense">Pengeluaran</option>
             </FilterSelect>
           </div>
           <div>
-            <label className="mb-1.5 block text-sm font-bold text-ink dark:text-gray-200">Kategori</label>
-            <FilterSelect value={txForm.categoryId} onChange={(e) => setTxForm({ ...txForm, categoryId: e.target.value })} className="w-full" aria-label="Kategori transaksi" icon={<TagIcon className="h-3.5 w-3.5" />}>
+            <label className="mb-1.5 block text-sm font-bold text-ink dark:text-gray-200">
+              Kategori
+            </label>
+            <FilterSelect
+              value={txForm.categoryId}
+              onChange={(e) => setTxForm({ ...txForm, categoryId: e.target.value })}
+              className="w-full"
+              aria-label="Kategori transaksi"
+              icon={<TagIcon className="h-3.5 w-3.5" />}
+            >
               <option value="">Pilih kategori</option>
-              {filteredCategories.map((c) => (<option key={c.id} value={c.id}>{c.name}</option>))}
+              {filteredCategories.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
             </FilterSelect>
           </div>
-          <Input label="Nominal (Rp)" type="number" value={txForm.amount} onChange={(e) => setTxForm({ ...txForm, amount: e.target.value })} />
-          <Input label="Deskripsi" value={txForm.description} onChange={(e) => setTxForm({ ...txForm, description: e.target.value })} placeholder="Iuran bulan Januari, Beli sapu, dll" />
+          <Input
+            label="Nominal (Rp)"
+            type="number"
+            value={txForm.amount}
+            onChange={(e) => setTxForm({ ...txForm, amount: e.target.value })}
+          />
+          <Input
+            label="Deskripsi"
+            value={txForm.description}
+            onChange={(e) => setTxForm({ ...txForm, description: e.target.value })}
+            placeholder="Iuran bulan Januari, Beli sapu, dll"
+          />
           <div>
-            <label className="mb-1.5 block text-sm font-bold text-ink dark:text-gray-200">Tanggal</label>
-            <FilterDatePicker value={txForm.date} onChange={(nextValue) => setTxForm({ ...txForm, date: nextValue })} className="w-full" aria-label="Tanggal transaksi" />
+            <label className="mb-1.5 block text-sm font-bold text-ink dark:text-gray-200">
+              Tanggal
+            </label>
+            <FilterDatePicker
+              value={txForm.date}
+              onChange={(nextValue) => setTxForm({ ...txForm, date: nextValue })}
+              className="w-full"
+              aria-label="Tanggal transaksi"
+            />
           </div>
           {formError && <p className="text-sm text-red-600">{formError}</p>}
         </div>
         <ModalFooter>
-          <Button variant="secondary" size="sm" onClick={() => setTxModal(false)}>Batal</Button>
-          <Button variant="primary" size="sm" loading={saving} onClick={handleCreateTx}>Simpan</Button>
+          <Button variant="secondary" size="sm" onClick={() => setTxModal(false)}>
+            Batal
+          </Button>
+          <Button variant="primary" size="sm" loading={saving} onClick={handleCreateTx}>
+            Simpan
+          </Button>
         </ModalFooter>
       </Modal>
 
       {/* Create Category Modal */}
       <Modal isOpen={catModal} onClose={() => setCatModal(false)} title="Tambah Kategori" size="sm">
         <div className="space-y-4">
-          <Input label="Nama Kategori" value={catForm.name} onChange={(e) => setCatForm({ ...catForm, name: e.target.value })} placeholder="Iuran Warga, Belanja, dll" />
+          <Input
+            label="Nama Kategori"
+            value={catForm.name}
+            onChange={(e) => setCatForm({ ...catForm, name: e.target.value })}
+            placeholder="Iuran Warga, Belanja, dll"
+          />
           <div>
-            <label className="mb-1.5 block text-sm font-bold text-ink dark:text-gray-200">Tipe</label>
-            <FilterSelect value={catForm.type} onChange={(e) => setCatForm({ ...catForm, type: e.target.value })} className="w-full" aria-label="Tipe kategori" icon={<ArrowsUpDownIcon className="h-3.5 w-3.5" />}>
+            <label className="mb-1.5 block text-sm font-bold text-ink dark:text-gray-200">
+              Tipe
+            </label>
+            <FilterSelect
+              value={catForm.type}
+              onChange={(e) => setCatForm({ ...catForm, type: e.target.value })}
+              className="w-full"
+              aria-label="Tipe kategori"
+              icon={<ArrowsUpDownIcon className="h-3.5 w-3.5" />}
+            >
               <option value="income">Pemasukan</option>
               <option value="expense">Pengeluaran</option>
             </FilterSelect>
           </div>
-          <Input label="Deskripsi (opsional)" value={catForm.description} onChange={(e) => setCatForm({ ...catForm, description: e.target.value })} />
+          <Input
+            label="Deskripsi (opsional)"
+            value={catForm.description}
+            onChange={(e) => setCatForm({ ...catForm, description: e.target.value })}
+          />
           {formError && <p className="text-sm text-red-600">{formError}</p>}
         </div>
         <ModalFooter>
-          <Button variant="secondary" size="sm" onClick={() => setCatModal(false)}>Batal</Button>
-          <Button variant="primary" size="sm" loading={saving} onClick={handleCreateCat}>Simpan</Button>
+          <Button variant="secondary" size="sm" onClick={() => setCatModal(false)}>
+            Batal
+          </Button>
+          <Button variant="primary" size="sm" loading={saving} onClick={handleCreateCat}>
+            Simpan
+          </Button>
         </ModalFooter>
       </Modal>
     </div>

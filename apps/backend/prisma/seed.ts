@@ -409,7 +409,15 @@ async function main() {
     testUsers.map((user) =>
       prisma.user.upsert({
         where: { phoneNumber: user.phoneNumber },
-        update: {},
+        // Akun seed harus selalu kembali ke role yang didefinisikan di atas.
+        // Sebelumnya update kosong membuat akun Super Admin lama tetap ber-role WARGA.
+        update: {
+          fullName: user.fullName,
+          roleId: user.roleId,
+          familyId: user.familyId ?? null,
+          isActive: user.isActive,
+          deletedAt: null,
+        },
         create: user,
       }),
     ),

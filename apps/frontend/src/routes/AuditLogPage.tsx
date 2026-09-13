@@ -6,7 +6,7 @@ import { usePaginatedApi } from '@/hooks/useApi';
 import { api } from '@/services/api';
 import { Button } from '@/components/ui/Button';
 import { ExclamationTriangleIcon, ClipboardDocumentListIcon } from '@heroicons/react/24/outline';
-import { humanizeAuditAction } from '@/lib/auditLogHumanize';
+import { humanizeAuditAction, humanizeAuditResource, humanizeAuditSource } from '@/lib/auditLogHumanize';
 
 interface AuditLog {
   id: string;
@@ -50,7 +50,7 @@ export function AuditLogPage() {
         <FilterSelect value={actionFilter} onChange={(e) => { setActionFilter(e.target.value); setPage(1); }}>
           <option value="">Semua Aksi</option>
           {actions.map((a) => (
-            <option key={a} value={a}>{a}</option>
+            <option key={a} value={a}>{humanizeAuditAction(a, a.split('.')[0] || null)}</option>
           ))}
         </FilterSelect>
       </FilterBar>
@@ -72,8 +72,8 @@ export function AuditLogPage() {
                 <TableHead>Waktu</TableHead>
                 <TableHead>User</TableHead>
                 <TableHead>Aksi</TableHead>
-                <TableHead>Resource</TableHead>
-                <TableHead>IP Address</TableHead>
+                <TableHead>Area</TableHead>
+                <TableHead>Sumber Akses</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -95,8 +95,8 @@ export function AuditLogPage() {
                         {humanizeAuditAction(log.action, log.resource)}
                       </span>
                     </TableCell>
-                    <TableCell>{log.resource || '-'}</TableCell>
-                    <TableCell className="text-sm font-mono">{log.ipAddress}</TableCell>
+                    <TableCell>{humanizeAuditResource(log.resource)}</TableCell>
+                    <TableCell className="text-sm" title={log.ipAddress}>{humanizeAuditSource(log.ipAddress)}</TableCell>
                   </TableRow>
                 ))
               )}

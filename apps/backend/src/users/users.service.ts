@@ -1,9 +1,16 @@
-import { Injectable, NotFoundException, ConflictException, Logger } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+  ConflictException,
+  Logger,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { QueryUserDto } from './dto/query-user.dto';
 import { mapAppRoleToBetterAuth } from '../common/role-mapping';
+import { UpdateAppearancePreferencesDto } from './dto/update-appearance-preferences.dto';
 
 @Injectable()
 export class UsersService {
@@ -118,6 +125,59 @@ export class UsersService {
     });
     if (!result.count) throw new NotFoundException('Akun login tidak ditemukan');
     return this.findByPhoneNumber(phoneNumber);
+  }
+
+  async getAppearancePreferences(phoneNumber: string) {
+    const user = await this.prisma.user.findFirst({
+      where: { phoneNumber, deletedAt: null },
+      select: { appearancePreferences: true },
+    });
+    if (!user) throw new NotFoundException('User tidak ditemukan');
+    return user.appearancePreferences;
+  }
+
+  async updateAppearancePreferences(
+    phoneNumber: string,
+    preferences: UpdateAppearancePreferencesDto,
+  ) {
+    if (
+      preferences.accent === 'custom' &&
+      (!preferences.customAccent || !this.hasAccessibleWhiteText(preferences.customAccent))
+    ) {
+      throw new BadRequestException(
+        'Warna aksen harus memiliki rasio kontras minimal 4,5:1 terhadap teks putih',
+      );
+    }
+    const user = await this.prisma.user.findFirst({
+      where: { phoneNumber, deletedAt: null },
+      select: { id: true },
+    });
+    if (!user) throw new NotFoundException('User tidak ditemukan');
+    const updated = await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        appearancePreferences: {
+          mode: preferences.mode,
+          accent: preferences.accent,
+          ...(preferences.customAccent ? { customAccent: preferences.customAccent } : {}),
+          font: preferences.font,
+          textSize: preferences.textSize,
+          radius: preferences.radius,
+          density: preferences.density,
+        },
+      },
+      select: { appearancePreferences: true },
+    });
+    return updated.appearancePreferences;
+  }
+
+  private hasAccessibleWhiteText(hex: string) {
+    const channels = [1, 3, 5].map((index) => {
+      const value = parseInt(hex.slice(index, index + 2), 16) / 255;
+      return value <= 0.03928 ? value / 12.92 : Math.pow((value + 0.055) / 1.055, 2.4);
+    });
+    const luminance = 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2];
+    return 1.05 / (luminance + 0.05) >= 4.5;
   }
 
   // Resolusi user aplikasi (id, role, familyId) dari nomor telepon session.

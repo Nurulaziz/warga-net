@@ -25,9 +25,9 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           ref={ref}
           id={inputId}
           className={`
-            w-full min-h-[44px] px-4 py-2 text-base font-body
-            border-2 rounded-sm
-            bg-white dark:bg-gray-800
+            w-full min-h-[var(--control-height)] px-[var(--control-padding-x)] py-2 text-base font-body
+            border-2 rounded-[var(--radius-control)]
+            bg-[var(--surface-card)]
             text-gray-900 dark:text-gray-100
             focus:outline-none focus:ring-2 focus:ring-ink/20 focus:border-ink
             disabled:bg-gray-100 dark:disabled:bg-gray-900 disabled:cursor-not-allowed

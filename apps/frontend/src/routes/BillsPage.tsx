@@ -3,8 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import {
   PlusIcon,
   BanknotesIcon,
-  CheckCircleIcon,
-  ClockIcon,
   CreditCardIcon,
   DocumentMagnifyingGlassIcon,
   NoSymbolIcon,
@@ -13,13 +11,9 @@ import {
   CalendarDaysIcon,
   ChevronLeftIcon,
   ChevronDownIcon,
-  XMarkIcon,
-  ExclamationTriangleIcon,
-  ExclamationCircleIcon,
   PaperClipIcon,
   ArrowDownTrayIcon,
   EyeIcon,
-  TrashIcon,
   ShieldCheckIcon,
   LockClosedIcon,
 } from '@heroicons/react/24/outline';
@@ -43,6 +37,7 @@ import { api } from '@/services/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSettings } from '@/hooks/useSettings';
 import { useDismissibleLayer } from '@/hooks/useDismissibleLayer';
+import { useToast } from '@/components/ui/Toast';
 
 interface BillType {
   id: string;
@@ -117,6 +112,7 @@ interface Summary {
 }
 
 export function BillsPage() {
+  const { showToast: showGlobalToast } = useToast();
   const navigate = useNavigate();
   const { isAdmin } = useAuth();
   const admin = isAdmin();
@@ -172,30 +168,15 @@ export function BillsPage() {
   const [uploadingProof, setUploadingProof] = useState(false);
   const proofFileInput = useRef<HTMLInputElement | null>(null);
 
-  // Notifikasi inline (pengganti alert)
-  const [toast, setToast] = useState<{
-    type: 'success' | 'error' | 'info';
-    message: string;
-  } | null>(null);
-  const toastTimer = useRef<number | null>(null);
   // Konfirmasi sebelum membuka pembayaran online (Midtrans Snap)
   const [confirmPay, setConfirmPay] = useState<Bill | null>(null);
   // Modal pembayaran Snap embedded (di dalam halaman, bukan popup)
   const [snapBill, setSnapBill] = useState<Bill | null>(null);
 
-  // Tampilkan toast, auto-hilang setelah 4 detik
-  const showToast = useCallback((type: 'success' | 'error' | 'info', message: string) => {
-    setToast({ type, message });
-    if (toastTimer.current) window.clearTimeout(toastTimer.current);
-    toastTimer.current = window.setTimeout(() => setToast(null), 4000);
-  }, []);
-
-  // Bersihkan timer toast saat unmount
-  useEffect(() => {
-    return () => {
-      if (toastTimer.current) window.clearTimeout(toastTimer.current);
-    };
-  }, []);
+  const showToast = useCallback(
+    (type: 'success' | 'error' | 'info', message: string) => showGlobalToast(message, type),
+    [showGlobalToast],
+  );
 
   // Load Midtrans Snap.js
   useEffect(() => {
@@ -227,7 +208,7 @@ export function BillsPage() {
   // Tutup modal pembayaran embedded & bersihkan instance Snap
   const closeSnapModal = useCallback(() => {
     try {
-      (window as any).snap?.hide?.();
+      window.snap?.hide?.();
     } catch {
       // abaikan
     }
@@ -264,7 +245,7 @@ export function BillsPage() {
 
         // Tunggu container ter-render pada DOM
         setTimeout(() => {
-          const snap = (window as any).snap;
+          const snap = window.snap;
           const container = document.getElementById(SNAP_CONTAINER_ID);
           if (!snap?.embed || !container) {
             closeSnapModal();
@@ -966,7 +947,12 @@ export function BillsPage() {
   const renderBillActions = (bill: Bill) => {
     if (bill.status === 'paid') {
       return (
-        <Button variant="secondary" size="sm" className="min-w-[128px] gap-1" onClick={() => setDetailModal(bill)}>
+        <Button
+          variant="secondary"
+          size="sm"
+          className="min-w-[128px] gap-1"
+          onClick={() => setDetailModal(bill)}
+        >
           <DocumentMagnifyingGlassIcon className="w-4 h-4 mr-1" /> Detail
         </Button>
       );
@@ -1004,18 +990,21 @@ export function BillsPage() {
           </span>
         );
       }
-      return <span className="text-xs font-medium text-gray-700 dark:text-gray-300">Jatuh tempo {formatDate(bill.dueDate)}</span>;
+      return (
+        <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
+          Jatuh tempo {formatDate(bill.dueDate)}
+        </span>
+      );
     }
     return null;
   };
 
   return (
     <div className="p-6">
-      {/* Toast notifikasi */}
-      {toast && <Toast toast={toast} onClose={() => setToast(null)} />}
-
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-        <h1 className="font-display text-2xl font-bold tracking-[-0.025em] text-gray-900 dark:text-gray-100">Iuran & Pembayaran</h1>
+        <h1 className="font-display text-2xl font-bold tracking-[-0.025em] text-gray-900 dark:text-gray-100">
+          Iuran & Pembayaran
+        </h1>
         {admin && (
           <div className="flex w-full flex-wrap gap-2 sm:w-auto">
             <Button
@@ -1054,21 +1043,54 @@ export function BillsPage() {
 
       {/* Summary Cards — sekaligus filter status (klik untuk menyaring) */}
       {summary && (
-        <div className="mb-6 rounded-sm border-2 border-ink bg-[#fff8ec] p-4 shadow-[3px_3px_0_#171717] sm:grid sm:grid-cols-3 sm:gap-4 sm:border-0 sm:bg-transparent sm:p-0 sm:shadow-none">
-          <div className="border-b-2 border-ink/20 pb-3 sm:border-0 sm:pb-0">
-            <button type="button" onClick={() => { setStatusFilter(''); setPage(1); }} aria-pressed={statusFilter === ''} className="flex w-full items-center gap-3 text-left">
-              <span className="flex h-9 w-9 items-center justify-center rounded-sm border-2 border-ink bg-[#f1dfc4]"><BanknotesIcon className="h-5 w-5 text-ink" /></span>
-              <span><span className="block text-xs font-bold uppercase tracking-wide text-ink-secondary">Total Tagihan</span><span className="block text-xl font-black text-ink">{formatCurrency(summary.totalAmount)}</span></span>
-            </button>
-          </div>
-          <div className="mt-3 grid grid-cols-2 gap-3 sm:mt-0 sm:contents">
-            <button type="button" onClick={() => { setStatusFilter('paid'); setPage(1); }} aria-pressed={statusFilter === 'paid'} className="text-left sm:rounded-sm sm:border-2 sm:border-ink sm:bg-[#fff8ec] sm:p-4">
-              <span className="block text-xs font-bold uppercase tracking-wide text-ink-secondary">Terbayar</span><span className="block text-base font-black text-ink sm:text-lg">{formatCurrency(summary.paidAmount)}</span>
-            </button>
-            <button type="button" onClick={() => { setStatusFilter('unpaid'); setPage(1); }} aria-pressed={statusFilter === 'unpaid'} className="text-left sm:rounded-sm sm:border-2 sm:border-ink sm:bg-[#fff8ec] sm:p-4">
-              <span className="block text-xs font-bold uppercase tracking-wide text-ink-secondary">Belum Bayar</span><span className="block text-base font-black text-ink sm:text-lg">{formatCurrency(summary.unpaidAmount)}</span>
-            </button>
-          </div>
+        <div className="mb-6 grid overflow-hidden rounded-[var(--radius-control)] border-2 border-ink bg-[var(--surface-card)] shadow-[var(--shadow-card)] sm:grid-cols-3 dark:border-gray-400">
+          {[
+            {
+              label: 'Total Tagihan',
+              value: summary.totalAmount,
+              count: `${summary.totalBills} tagihan`,
+              filter: '',
+            },
+            {
+              label: 'Terbayar',
+              value: summary.paidAmount,
+              count: `${summary.paidBills} pembayaran`,
+              filter: 'paid',
+            },
+            {
+              label: 'Belum Bayar',
+              value: summary.unpaidAmount,
+              count: `${summary.unpaidBills} tagihan`,
+              filter: 'unpaid',
+            },
+          ].map((item) => {
+            const active = statusFilter === item.filter;
+            return (
+              <button
+                key={item.label}
+                type="button"
+                onClick={() => {
+                  setStatusFilter(item.filter);
+                  setPage(1);
+                }}
+                aria-pressed={active}
+                className={`min-h-[108px] border-b-2 border-ink px-5 py-4 text-left transition-colors last:border-b-0 hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus:ring-inset focus:ring-ink/30 sm:border-b-0 sm:border-r-2 sm:last:border-r-0 ${
+                  active ? 'bg-[var(--surface-selected)]' : ''
+                }`}
+              >
+                <span className="block text-xs font-black uppercase tracking-[0.08em] text-ink-secondary">
+                  {item.label}
+                </span>
+                <span className="mt-1 block font-display text-xl font-black text-ink dark:text-gray-100">
+                  {formatCurrency(item.value)}
+                </span>
+                <span className="mt-1 block text-xs font-medium text-ink-secondary dark:text-gray-300">
+                  {item.count}
+                  {active ? ' · Filter aktif' : ''}
+                </span>
+              </button>
+            );
+          })}
         </div>
       )}
 
@@ -1265,7 +1287,10 @@ export function BillsPage() {
           {/* Mobile: kartu */}
           <div className="md:hidden space-y-3">
             {bills.map((bill) => (
-              <Card key={bill.id} className="p-4 shadow-[2px_2px_0_#171717] sm:shadow-[4px_4px_0_#171717]">
+              <Card
+                key={bill.id}
+                className="p-4 shadow-[2px_2px_0_#171717] sm:shadow-[4px_4px_0_#171717]"
+              >
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-start gap-2.5 min-w-0">
                     {admin && bill.status !== 'paid' && (
@@ -1281,7 +1306,9 @@ export function BillsPage() {
                       <p className="font-semibold text-gray-900 dark:text-gray-100 truncate">
                         {bill.family?.headOfFamily}
                       </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">{bill.billType?.name}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        {bill.billType?.name}
+                      </p>
                     </div>
                   </div>
                   {statusBadge(bill.status)}
@@ -1340,7 +1367,10 @@ export function BillsPage() {
               ) : (
                 <div className="space-y-3">
                   {billTypes.map((t) => (
-                    <div key={t.id} className="flex items-center justify-between gap-3 rounded-sm border-2 border-ink bg-white p-3 shadow-[2px_2px_0_#171717] dark:border-gray-400 dark:bg-gray-800">
+                    <div
+                      key={t.id}
+                      className="flex items-center justify-between gap-3 rounded-sm border-2 border-ink bg-white p-3 shadow-[2px_2px_0_#171717] dark:border-gray-400 dark:bg-gray-800"
+                    >
                       <div className="min-w-0">
                         <div className="flex items-center gap-2">
                           <span className="truncate text-sm font-black text-ink dark:text-gray-100">
@@ -1365,7 +1395,11 @@ export function BillsPage() {
                         )}
                       </div>
                       <div className="flex flex-shrink-0 gap-2">
-                        <TableActionButton action="edit" label={`Edit ${t.name}`} onClick={() => openEditType(t)} />
+                        <TableActionButton
+                          action="edit"
+                          label={`Edit ${t.name}`}
+                          onClick={() => openEditType(t)}
+                        />
                         <button
                           type="button"
                           onClick={() => handleToggleTypeActive(t)}
@@ -1507,7 +1541,9 @@ export function BillsPage() {
         size="md"
       >
         <div className="space-y-4">
-          <p className="text-sm font-medium text-ink-secondary dark:text-gray-300">Buat tagihan untuk semua keluarga sekaligus.</p>
+          <p className="text-sm font-medium text-ink-secondary dark:text-gray-300">
+            Buat tagihan untuk semua keluarga sekaligus.
+          </p>
           <div>
             <label className="mb-1.5 block text-sm font-bold text-ink dark:text-gray-200">
               Jenis Iuran
@@ -1614,7 +1650,7 @@ export function BillsPage() {
                     aria-pressed={active}
                     className={`flex min-h-[48px] items-center justify-center gap-2 rounded-sm border-2 border-ink text-sm font-bold shadow-[2px_2px_0_#171717] transition-transform hover:translate-x-px hover:translate-y-px hover:shadow-none dark:border-gray-300 ${
                       active
-                        ? 'bg-brand-500 text-white dark:bg-blue-600'
+                        ? 'bg-brand-500 text-white'
                         : 'bg-white text-ink hover:bg-[#f1dfc4] dark:bg-gray-800 dark:text-gray-100 dark:hover:bg-gray-700'
                     }`}
                   >
@@ -1652,19 +1688,6 @@ export function BillsPage() {
         }}
         title="Detail Pembayaran"
         size="md"
-        headerExtra={
-          admin && detailModal && getSettledPayment(detailModal) ? (
-            <button
-              type="button"
-              onClick={() => setConfirmDeletePayment((v) => !v)}
-              title={confirmDeletePayment ? 'Batalkan hapus' : 'Hapus Transaksi'}
-              aria-label="Hapus Transaksi"
-              className="flex h-8 w-8 items-center justify-center rounded-lg text-rose-500 transition-colors hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-900/20 dark:hover:text-rose-400 focus:outline-none focus:ring-2 focus:ring-rose-500"
-            >
-              <TrashIcon className="h-5 w-5" aria-hidden="true" />
-            </button>
-          ) : undefined
-        }
       >
         {detailModal &&
           (() => {
@@ -1673,28 +1696,24 @@ export function BillsPage() {
             return (
               <div className="space-y-4">
                 {/* Header status */}
-                <div
-                    className={`flex flex-col items-center text-center rounded-sm border-2 border-ink py-5 shadow-[2px_2px_0_#171717] dark:border-gray-300 ${
-                    isPaid ? 'bg-[#e7f5e9] dark:bg-green-900/25' : 'bg-[#fff1cf] dark:bg-amber-900/25'
-                  }`}
-                >
-                  {isPaid ? (
-                    <CheckCircleIcon className="w-10 h-10 text-green-600 dark:text-green-400 mb-2" />
-                  ) : (
-                    <ClockIcon className="w-10 h-10 text-amber-500 dark:text-amber-400 mb-2" />
-                  )}
-                  <p
-                    className={`text-sm font-semibold ${
-                      isPaid
-                        ? 'text-green-900 dark:text-green-200'
-                        : 'text-amber-950 dark:text-amber-200'
-                    }`}
-                  >
-                    {isPaid ? 'Pembayaran Lunas' : 'Belum Dibayar'}
+                <div className="rounded-[var(--radius-control)] border-2 border-ink bg-[var(--surface-card)] px-4 py-4 shadow-[var(--shadow-small)] dark:border-gray-300">
+                  <p className="text-xs font-black uppercase tracking-[0.1em] text-ink-secondary">
+                    Status pembayaran
                   </p>
-                  <p className="mt-1 text-2xl font-black text-ink dark:text-white">
-                    {formatCurrency(detailModal.amount)}
-                  </p>
+                  <div className="mt-2 flex items-end justify-between gap-4">
+                    <span
+                      className={`text-sm font-black ${
+                        isPaid
+                          ? 'text-green-700 dark:text-green-300'
+                          : 'text-amber-700 dark:text-amber-300'
+                      }`}
+                    >
+                      {isPaid ? 'Lunas' : 'Belum dibayar'}
+                    </span>
+                    <span className="font-display text-2xl font-black text-ink dark:text-white">
+                      {formatCurrency(detailModal.amount)}
+                    </span>
+                  </div>
                 </div>
 
                 {/* Rincian */}
@@ -1722,7 +1741,9 @@ export function BillsPage() {
                           <>
                             <button
                               type="button"
-                              onClick={() => { if (settled.proofUrl) setProofPreview(settled.proofUrl); }}
+                              onClick={() => {
+                                if (settled.proofUrl) setProofPreview(settled.proofUrl);
+                              }}
                               className="flex items-center gap-1.5 font-bold text-brand-700 hover:text-brand-800 dark:text-blue-300"
                             >
                               <img
@@ -1745,7 +1766,9 @@ export function BillsPage() {
                           </>
                         ) : (
                           <>
-                            <span className="font-medium text-ink-muted dark:text-gray-300">Belum ada</span>
+                            <span className="font-medium text-ink-muted dark:text-gray-300">
+                              Belum ada
+                            </span>
                             {admin && (
                               <button
                                 type="button"
@@ -1794,6 +1817,16 @@ export function BillsPage() {
             const isPaid = detailModal.status === 'paid';
             return (
               <ModalFooter>
+                {admin && settled && !confirmDeletePayment && (
+                  <Button
+                    variant="danger"
+                    size="sm"
+                    className="mr-auto"
+                    onClick={() => setConfirmDeletePayment(true)}
+                  >
+                    Hapus pembayaran
+                  </Button>
+                )}
                 <Button
                   variant="secondary"
                   size="sm"
@@ -2048,8 +2081,12 @@ function PayActions({
           >
             <CreditCardIcon className="mt-0.5 h-4 w-4 flex-shrink-0 text-ink dark:text-gray-100" />
             <span>
-              <span className="block text-sm font-bold text-ink dark:text-gray-100">Bayar Online</span>
-              <span className="block text-xs font-medium text-gray-700 dark:text-gray-300">QRIS, transfer, e-wallet</span>
+              <span className="block text-sm font-bold text-ink dark:text-gray-100">
+                Bayar Online
+              </span>
+              <span className="block text-xs font-medium text-gray-700 dark:text-gray-300">
+                QRIS, transfer, e-wallet
+              </span>
             </span>
           </button>
           <button
@@ -2063,56 +2100,16 @@ function PayActions({
           >
             <BanknotesIcon className="mt-0.5 h-4 w-4 flex-shrink-0 text-ink dark:text-gray-100" />
             <span>
-              <span className="block text-sm font-bold text-ink dark:text-gray-100">Catat Tunai</span>
-              <span className="block text-xs font-medium text-gray-700 dark:text-gray-300">Pembayaran diterima langsung</span>
+              <span className="block text-sm font-bold text-ink dark:text-gray-100">
+                Catat Tunai
+              </span>
+              <span className="block text-xs font-medium text-gray-700 dark:text-gray-300">
+                Pembayaran diterima langsung
+              </span>
             </span>
           </button>
         </div>
       )}
-    </div>
-  );
-}
-
-// Notifikasi toast (pojok kanan atas)
-function Toast({
-  toast,
-  onClose,
-}: {
-  toast: { type: 'success' | 'error' | 'info'; message: string };
-  onClose: () => void;
-}) {
-  const config = {
-    success: {
-      icon: <CheckCircleIcon className="w-5 h-5 text-green-600 dark:text-green-400" />,
-      ring: 'border-green-200 dark:border-green-800/50',
-    },
-    error: {
-      icon: <ExclamationCircleIcon className="w-5 h-5 text-red-600 dark:text-red-400" />,
-      ring: 'border-red-200 dark:border-red-800/50',
-    },
-    info: {
-      icon: <ExclamationTriangleIcon className="w-5 h-5 text-amber-500 dark:text-amber-400" />,
-      ring: 'border-amber-200 dark:border-amber-800/50',
-    },
-  }[toast.type];
-
-  return (
-    <div className="fixed top-4 right-4 z-[60]">
-      <div
-        role="status"
-        aria-live="polite"
-        className={`flex items-start gap-3 max-w-sm px-4 py-3 rounded-lg shadow-lg border bg-white dark:bg-gray-800 ${config.ring}`}
-      >
-        <span className="flex-shrink-0 mt-0.5">{config.icon}</span>
-        <p className="text-sm text-gray-800 dark:text-gray-100 flex-1">{toast.message}</p>
-        <button
-          onClick={onClose}
-          aria-label="Tutup notifikasi"
-          className="flex-shrink-0 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
-        >
-          <XMarkIcon className="w-4 h-4" />
-        </button>
-      </div>
     </div>
   );
 }

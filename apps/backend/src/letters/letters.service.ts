@@ -1,13 +1,15 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { SettingsService } from '../settings/settings.service';
 import { sanitizeHtml, escapeHtml } from '../common/sanitize';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class LettersService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly settingsService: SettingsService,
+    private readonly notifications: NotificationsService,
   ) {}
 
   // Helper: ambil info RT/RW dari settings
@@ -27,6 +29,16 @@ export class LettersService {
       housing_complex: map['housing_complex'] || '',
       ketua_rt: map['ketua_rt'] || '',
       app_name: map['app_name'] || 'WargaNet',
+      gov_logo_url: map['gov_logo_url'] || '',
+    };
+  }
+
+  private async getLetterNumberSettings() {
+    const rows = await this.settingsService.findAll('letter');
+    const map = Object.fromEntries(rows.map((row) => [row.key, row.value]));
+    return {
+      format: map.letter_number_format || '{seq}/RT{rt}/RW{rw}/{month}/{year}',
+      padding: Math.min(6, Math.max(1, Number(map.letter_number_padding || 3))),
     };
   }
 
@@ -146,6 +158,7 @@ export class LettersService {
     residentId?: string;
     recipientName: string;
     purpose?: string;
+    letterDate?: string;
     variables?: Record<string, string>;
     createdBy?: string;
   }) {
@@ -155,17 +168,32 @@ export class LettersService {
     if (!template) throw new NotFoundException('Template tidak ditemukan');
 
     const rtInfo = await this.getRtInfo();
+    const numberSettings = await this.getLetterNumberSettings();
 
     // Generate nomor surat: XXX/RT##/RW###/BULAN/TAHUN
     const now = new Date();
+    const selectedDate = data.letterDate ? new Date(`${data.letterDate}T00:00:00`) : now;
+    if (Number.isNaN(selectedDate.getTime())) {
+      throw new BadRequestException('Tanggal surat tidak valid');
+    }
     const count = await this.prisma.letter.count({
-      where: { createdAt: { gte: new Date(now.getFullYear(), now.getMonth(), 1) } },
+      where: {
+        letterDate: {
+          gte: new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1),
+          lt: new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 1),
+        },
+      },
     });
-    const num = String(count + 1).padStart(3, '0');
-    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const num = String(count + 1).padStart(numberSettings.padding, '0');
+    const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
     const rtNum = rtInfo.rt_name.replace(/\D/g, '').padStart(2, '0');
     const rwNum = rtInfo.rw_name.replace(/\D/g, '').padStart(3, '0');
-    const letterNumber = `${num}/RT${rtNum}/RW${rwNum}/${month}/${now.getFullYear()}`;
+    const letterNumber = numberSettings.format
+      .replace(/\{seq\}/g, num)
+      .replace(/\{rt\}/g, rtNum)
+      .replace(/\{rw\}/g, rwNum)
+      .replace(/\{month\}/g, month)
+      .replace(/\{year\}/g, String(selectedDate.getFullYear()));
 
     // Render content dari template
     let renderedContent = template.content;
@@ -173,7 +201,7 @@ export class LettersService {
     vars.nama = vars.nama || data.recipientName;
     vars.tanggal =
       vars.tanggal ||
-      now.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+      selectedDate.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
     vars.nomor_surat = letterNumber;
     vars.keperluan = data.purpose || '-';
 
@@ -185,7 +213,7 @@ export class LettersService {
       );
     }
 
-    return this.prisma.letter.create({
+    const letter = await this.prisma.letter.create({
       data: {
         templateId: data.templateId,
         letterNumber,
@@ -193,11 +221,27 @@ export class LettersService {
         recipientName: data.recipientName,
         content: renderedContent,
         purpose: data.purpose,
+        letterDate: selectedDate,
         status: 'draft',
         createdBy: data.createdBy,
       },
       include: { template: true },
     });
+    const familyId = await this.getResidentFamilyId(letter.residentId);
+    if (familyId) {
+      try {
+        await this.notifications.notifyFamily(familyId, {
+          type: 'letter_created',
+          title: 'Surat dibuat',
+          message: `${template.name} untuk ${letter.recipientName} telah dibuat.`,
+          referenceType: 'letter',
+          referenceId: letter.id,
+        });
+      } catch {
+        // Notifikasi tidak boleh menggagalkan pembuatan surat.
+      }
+    }
+    return letter;
   }
 
   async updateLetterStatus(id: string, status: string) {
@@ -209,7 +253,24 @@ export class LettersService {
       updateData.issuedAt = new Date();
     }
 
-    return this.prisma.letter.update({ where: { id }, data: updateData });
+    const updated = await this.prisma.letter.update({ where: { id }, data: updateData });
+    if (status === 'signed') {
+      const familyId = await this.getResidentFamilyId(updated.residentId);
+      if (familyId) {
+        try {
+          await this.notifications.notifyFamily(familyId, {
+            type: 'letter_signed',
+            title: 'Surat siap digunakan',
+            message: `Surat ${updated.letterNumber} telah ditandatangani.`,
+            referenceType: 'letter',
+            referenceId: updated.id,
+          });
+        } catch {
+          // Notifikasi tidak boleh menggagalkan pembaruan surat.
+        }
+      }
+    }
+    return updated;
   }
 
   async deleteLetter(id: string) {
@@ -232,6 +293,9 @@ export class LettersService {
       ? `<h3>Perumahan ${escapeHtml(rtInfo.housing_complex)}</h3>`
       : '';
     const signerTitle = rtInfo.ketua_rt ? escapeHtml(rtInfo.ketua_rt) : `Ketua ${rtInfo.rt_name}`;
+    const governmentLogo = rtInfo.gov_logo_url
+      ? `<div class="header-logo"><img src="${escapeHtml(rtInfo.gov_logo_url)}" alt="Logo pemerintah atau lingkungan"></div>`
+      : '<div class="header-logo"></div>';
 
     // Wrap content dalam HTML template untuk cetak
     return `<!DOCTYPE html>
@@ -240,7 +304,10 @@ export class LettersService {
   <meta charset="utf-8">
   <style>
     body { font-family: 'Times New Roman', serif; font-size: 12pt; line-height: 1.6; margin: 40px; }
-    .header { text-align: center; border-bottom: 3px double #000; padding-bottom: 10px; margin-bottom: 20px; }
+    .header { display: grid; grid-template-columns: 72px 1fr 72px; align-items: center; text-align: center; border-bottom: 3px double #000; padding-bottom: 10px; margin-bottom: 20px; }
+    .header-logo { width: 72px; display: flex; align-items: center; justify-content: center; }
+    .header-logo img { display: block; max-width: 64px; max-height: 64px; object-fit: contain; }
+    .header-copy { min-width: 0; }
     .header h2 { margin: 0; font-size: 14pt; }
     .header h3 { margin: 5px 0; font-size: 12pt; font-weight: normal; }
     .letter-number { text-align: center; margin: 20px 0; }
@@ -252,9 +319,13 @@ export class LettersService {
 </head>
 <body>
   <div class="header">
-    <h2>${headerTitle}</h2>
-    <h3>${headerSubtitle}</h3>
-    ${headerComplex}
+    ${governmentLogo}
+    <div class="header-copy">
+      <h2>${headerTitle}</h2>
+      <h3>${headerSubtitle}</h3>
+      ${headerComplex}
+    </div>
+    <div class="header-logo"></div>
   </div>
   <div class="letter-number">
     <strong>${letter.template.name.toUpperCase()}</strong><br>
@@ -265,7 +336,7 @@ export class LettersService {
   </div>
   <div class="footer">
     <div class="signature">
-      <p>${escapeHtml(rtInfo.kabupaten)}, ${new Date(letter.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+      <p>${escapeHtml(rtInfo.kabupaten)}, ${new Date(letter.letterDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
       <p>${signerTitle}</p>
       <br><br><br>
       <p>____________________</p>

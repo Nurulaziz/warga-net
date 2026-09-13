@@ -25,17 +25,15 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 
     // Base styles - minimum 44x44px touch target
     const baseStyles = isUtility
-      ? 'inline-flex items-center justify-center font-medium tracking-normal rounded-sm border border-edge-subtle dark:border-gray-600 shadow-none transition-[background-color,border-color] duration-150 hover:bg-warm-100 hover:border-ink focus:outline-none focus:ring-2 focus:ring-ink/30 focus:ring-offset-2 disabled:opacity-45 disabled:cursor-not-allowed'
-      : 'inline-flex items-center justify-center font-bold uppercase tracking-[0.04em] rounded-sm border-2 border-ink dark:border-gray-300 shadow-[3px_3px_0_#171717] dark:shadow-[3px_3px_0_#d4d4d4] transition-[transform,box-shadow,background-color] duration-150 hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-[2px_2px_0_#171717] active:translate-x-[3px] active:translate-y-[3px] active:shadow-none focus:outline-none focus:ring-2 focus:ring-ink/30 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none';
+      ? 'inline-flex items-center justify-center font-medium tracking-normal rounded-[var(--radius-control)] border border-edge-subtle dark:border-gray-600 shadow-none transition-[background-color,border-color] duration-150 hover:bg-warm-100 hover:border-ink focus:outline-none focus:ring-2 focus:ring-ink/30 focus:ring-offset-2 disabled:opacity-45 disabled:cursor-not-allowed'
+      : 'inline-flex items-center justify-center font-bold uppercase tracking-[0.04em] rounded-[var(--radius-control)] border-2 border-ink dark:border-gray-300 shadow-[var(--shadow-small)] transition-[transform,box-shadow,background-color] duration-150 hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none active:translate-x-[2px] active:translate-y-[2px] active:shadow-none focus:outline-none focus:ring-2 focus:ring-ink/30 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none';
 
     // Variant styles dengan high contrast dan dark mode support
     const variantStyles = {
-      primary:
-        'bg-brand-500 text-white hover:bg-brand-600 dark:bg-blue-500 dark:hover:bg-blue-600',
+      primary: 'bg-[var(--accent)] text-white hover:brightness-90',
       secondary:
         'bg-white text-ink hover:bg-warm-100 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600',
-      danger:
-        'bg-red-600 text-white hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600',
+      danger: 'bg-red-600 text-white hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600',
       ghost:
         'bg-transparent text-gray-700 shadow-none border-transparent hover:border-ink hover:bg-white dark:text-gray-200 dark:hover:bg-gray-800',
       utility:
@@ -50,8 +48,8 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
           lg: 'h-10 px-5 text-sm',
         }
       : {
-          sm: 'min-h-[44px] px-4 py-2 text-sm',
-          md: 'min-h-[44px] px-6 py-3 text-base',
+          sm: 'min-h-[var(--control-height)] px-[var(--control-padding-x)] py-2 text-sm',
+          md: 'min-h-[var(--control-height)] px-[calc(var(--control-padding-x)*1.5)] py-2 text-base',
           lg: 'min-h-[48px] px-8 py-4 text-lg',
         };
 

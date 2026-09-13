@@ -1,8 +1,14 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { BookmarkIcon, MegaphoneIcon, ShieldCheckIcon } from '@heroicons/react/24/outline';
+import {
+  BookmarkIcon,
+  ChatBubbleLeftRightIcon,
+  MegaphoneIcon,
+  ShieldCheckIcon,
+} from '@heroicons/react/24/outline';
 import { useAuth } from '@/contexts/AuthContext';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { Button } from '@/components/ui/Button';
 import { Pagination } from '@/components/ui/Pagination';
 import { PostCard } from '@/components/posts/PostCard';
 import { PostComposer } from '@/components/posts/PostComposer';
@@ -32,11 +38,13 @@ export function SuaraWargaPage() {
   const [pageSize, setPageSize] = useState(10);
   const [sort, setSort] = useState<SortKey>('latest');
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
   const [deleteTarget, setDeleteTarget] = useState<Post | null>(null);
   const [searchTag, setSearchTag] = useState('');
 
   const load = useCallback(async () => {
     setLoading(true);
+    setLoadError('');
     try {
       const params: FeedParams = { page, limit: pageSize, sort };
       const res = await fetchPosts(params);
@@ -44,6 +52,7 @@ export function SuaraWargaPage() {
       setMeta(res.meta);
     } catch {
       setPosts([]);
+      setLoadError('Posting belum dapat dimuat. Periksa koneksi atau coba beberapa saat lagi.');
     } finally {
       setLoading(false);
     }
@@ -56,7 +65,13 @@ export function SuaraWargaPage() {
   async function handleCreate(
     content: string,
     media: PostMediaItem[] = [],
-    poll?: { question: string; options: string[]; expiresAt?: string; voterVisibility?: 'SECRET' | 'VISIBLE'; resultVisibility?: 'ALWAYS' | 'AFTER_VOTE' | 'AFTER_END' },
+    poll?: {
+      question: string;
+      options: string[];
+      expiresAt?: string;
+      voterVisibility?: 'SECRET' | 'VISIBLE';
+      resultVisibility?: 'ALWAYS' | 'AFTER_VOTE' | 'AFTER_END';
+    },
     mentionedUserIds?: string[],
   ) {
     await createPost({
@@ -102,24 +117,43 @@ export function SuaraWargaPage() {
     <div className="mx-auto max-w-3xl space-y-5 py-2">
       <div className="border-b-2 border-ink pb-5 dark:border-gray-500 sm:flex sm:items-end sm:justify-between">
         <div>
-          <p className="mb-2 font-mono text-[11px] font-bold uppercase tracking-[0.16em] text-brand-600">Ruang komunitas</p>
+          <p className="mb-2 font-mono text-[11px] font-bold uppercase tracking-[0.16em] text-brand-600">
+            Ruang komunitas
+          </p>
           <div className="flex items-center gap-3">
             <span className="flex h-10 w-10 items-center justify-center rounded-sm border-2 border-ink bg-brand-500 text-white shadow-[2px_2px_0_#171717]">
               <MegaphoneIcon className="h-5 w-5" />
             </span>
-            <h1 className="font-display text-3xl font-extrabold tracking-[-0.04em] text-ink dark:text-white">Suara Warga</h1>
+            <h1 className="font-display text-3xl font-extrabold tracking-[-0.04em] text-ink dark:text-white">
+              Suara Warga
+            </h1>
           </div>
-          <p className="mt-3 max-w-lg text-sm text-gray-600 dark:text-gray-300">Berbagi kabar, ide, dan aspirasi dengan tetangga dalam satu ruang bersama.</p>
+          <p className="mt-3 max-w-lg text-sm text-gray-600 dark:text-gray-300">
+            Berbagi kabar, ide, dan aspirasi dengan tetangga dalam satu ruang bersama.
+          </p>
         </div>
         <div className="mt-4 flex gap-2 sm:mt-0">
-          <Link to="/suara-warga/tersimpan" className="inline-flex min-h-10 items-center gap-2 rounded-sm border-2 border-ink bg-white px-3 text-xs font-bold uppercase tracking-wide text-ink hover:bg-[#f5efe4] dark:bg-gray-800 dark:text-white">
+          <Link
+            to="/suara-warga/tersimpan"
+            className="inline-flex min-h-10 items-center gap-2 rounded-sm border-2 border-ink bg-white px-3 text-xs font-bold uppercase tracking-wide text-ink hover:bg-[#f5efe4] dark:bg-gray-800 dark:text-white"
+          >
             <BookmarkIcon className="h-4 w-4" /> Tersimpan
           </Link>
-          {canModerate && <Link to="/suara-warga/moderasi" className="inline-flex min-h-10 items-center gap-2 rounded-sm border-2 border-ink bg-white px-3 text-xs font-bold uppercase tracking-wide text-ink hover:bg-[#f5efe4] dark:bg-gray-800 dark:text-white"><ShieldCheckIcon className="h-4 w-4" /> Moderasi</Link>}
+          {canModerate && (
+            <Link
+              to="/suara-warga/moderasi"
+              className="inline-flex min-h-10 items-center gap-2 rounded-sm border-2 border-ink bg-white px-3 text-xs font-bold uppercase tracking-wide text-ink hover:bg-[#f5efe4] dark:bg-gray-800 dark:text-white"
+            >
+              <ShieldCheckIcon className="h-4 w-4" /> Moderasi
+            </Link>
+          )}
         </div>
       </div>
 
-      <form onSubmit={handleSearchSubmit} className="grid w-full grid-cols-[minmax(0,1fr)_104px] gap-2">
+      <form
+        onSubmit={handleSearchSubmit}
+        className="grid w-full grid-cols-[minmax(0,1fr)_104px] gap-2"
+      >
         <input
           value={searchTag}
           onChange={(e) => setSearchTag(e.target.value)}
@@ -136,7 +170,11 @@ export function SuaraWargaPage() {
       </form>
 
       {canCreate && (
-        <PostComposer currentUserName={currentUser?.fullName || 'Warga'} currentUserAvatar={currentUser?.avatarUrl} onSubmit={handleCreate} />
+        <PostComposer
+          currentUserName={currentUser?.fullName || 'Warga'}
+          currentUserAvatar={currentUser?.avatarUrl}
+          onSubmit={handleCreate}
+        />
       )}
 
       <div className="flex items-center justify-between border-b-2 border-ink pb-3 dark:border-gray-500">
@@ -165,6 +203,22 @@ export function SuaraWargaPage() {
               className="h-40 animate-pulse rounded-2xl border border-gray-200 bg-gray-100 dark:border-gray-700 dark:bg-gray-800"
             />
           ))}
+        </div>
+      ) : loadError ? (
+        <div
+          role="alert"
+          className="rounded-[var(--radius-control)] border-2 border-ink bg-[var(--surface-card)] px-6 py-10 text-center shadow-[var(--shadow-card)] dark:border-gray-400"
+        >
+          <ChatBubbleLeftRightIcon className="mx-auto h-9 w-9 text-[var(--accent)]" />
+          <h2 className="mt-3 font-display text-lg font-black text-ink dark:text-white">
+            Posting gagal dimuat
+          </h2>
+          <p className="mx-auto mt-1 max-w-md text-sm text-ink-secondary dark:text-gray-300">
+            {loadError}
+          </p>
+          <Button className="mt-5" size="sm" onClick={() => void load()}>
+            Coba lagi
+          </Button>
         </div>
       ) : posts.length === 0 ? (
         <EmptyState />

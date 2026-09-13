@@ -1,3 +1,4 @@
+import { lazy, Suspense, type ReactNode } from 'react';
 import { createBrowserRouter, Navigate, RouteObject } from 'react-router-dom';
 import { ResponsiveLayout } from '@/components/layout/ResponsiveLayout';
 import { ProtectedRoute } from '@/components/layout/ProtectedRoute';
@@ -8,19 +9,48 @@ import { FamiliesPage } from './FamiliesPage';
 import { FamilyDetailPage } from './FamilyDetailPage';
 import { ResidentsPage } from './ResidentsPage';
 import { RolesPage } from './RolesPage';
-import { AuditLogPage } from './AuditLogPage';
-import { ReportsPage } from './ReportsPage';
-import { BillTypesPage } from './BillTypesPage';
-import { BillsPage } from './BillsPage';
-import { CashPage } from './CashPage';
-import { AnnouncementsPage } from './AnnouncementsPage';
-import { SuaraWargaPage } from './SuaraWargaPage';
-import { PostDetailPage } from './PostDetailPage';
-import { SavedPostsPage } from './SavedPostsPage';
-import { HashtagPostsPage } from './HashtagPostsPage';
-import { ModerationQueuePage } from './ModerationQueuePage';
-import { LettersPage } from './LettersPage';
-import { SettingsPage } from './SettingsPage';
+const AuditLogPage = lazy(() =>
+  import('./AuditLogPage').then((module) => ({ default: module.AuditLogPage })),
+);
+const ReportsPage = lazy(() =>
+  import('./ReportsPage').then((module) => ({ default: module.ReportsPage })),
+);
+const BillTypesPage = lazy(() =>
+  import('./BillTypesPage').then((module) => ({ default: module.BillTypesPage })),
+);
+const BillsPage = lazy(() =>
+  import('./BillsPage').then((module) => ({ default: module.BillsPage })),
+);
+const CashPage = lazy(() => import('./CashPage').then((module) => ({ default: module.CashPage })));
+const AnnouncementsPage = lazy(() =>
+  import('./AnnouncementsPage').then((module) => ({ default: module.AnnouncementsPage })),
+);
+const SuaraWargaPage = lazy(() =>
+  import('./SuaraWargaPage').then((module) => ({ default: module.SuaraWargaPage })),
+);
+const PostDetailPage = lazy(() =>
+  import('./PostDetailPage').then((module) => ({ default: module.PostDetailPage })),
+);
+const SavedPostsPage = lazy(() =>
+  import('./SavedPostsPage').then((module) => ({ default: module.SavedPostsPage })),
+);
+const HashtagPostsPage = lazy(() =>
+  import('./HashtagPostsPage').then((module) => ({ default: module.HashtagPostsPage })),
+);
+const ModerationQueuePage = lazy(() =>
+  import('./ModerationQueuePage').then((module) => ({ default: module.ModerationQueuePage })),
+);
+const LettersPage = lazy(() =>
+  import('./LettersPage').then((module) => ({ default: module.LettersPage })),
+);
+const SettingsPage = lazy(() =>
+  import('./SettingsPage').then((module) => ({ default: module.SettingsPage })),
+);
+const AppearanceSettingsPage = lazy(() =>
+  import('./AppearanceSettingsPage').then((module) => ({
+    default: module.AppearanceSettingsPage,
+  })),
+);
 import { ProfilePage } from './ProfilePage';
 import { LandingPage } from './LandingPage';
 
@@ -53,6 +83,18 @@ const NotFoundPage = () => (
     </div>
   </div>
 );
+
+const RouteLoading = () => (
+  <div
+    className="flex min-h-[40vh] items-center justify-center"
+    role="status"
+    aria-label="Memuat halaman"
+  >
+    <div className="h-9 w-9 animate-spin rounded-full border-4 border-ink border-t-brand-500" />
+  </div>
+);
+
+const loadRoute = (page: ReactNode) => <Suspense fallback={<RouteLoading />}>{page}</Suspense>;
 
 const routes: RouteObject[] = [
   {
@@ -107,47 +149,43 @@ const routes: RouteObject[] = [
       },
       {
         path: 'bills',
-        element: <BillsPage />,
+        element: loadRoute(<BillsPage />),
       },
       {
         path: 'cash',
-        element: (
-          <ProtectedRoute adminOnly>
-            <CashPage />
-          </ProtectedRoute>
-        ),
+        element: <ProtectedRoute adminOnly>{loadRoute(<CashPage />)}</ProtectedRoute>,
       },
       {
         path: 'announcements',
-        element: <AnnouncementsPage />,
+        element: loadRoute(<AnnouncementsPage />),
       },
       {
         path: 'suara-warga',
-        element: <SuaraWargaPage />,
+        element: loadRoute(<SuaraWargaPage />),
       },
       {
         path: 'suara-warga/moderasi',
         element: (
           <ProtectedRoute requirePermission={{ feature: 'posts', action: 'moderate' }}>
-            <ModerationQueuePage />
+            {loadRoute(<ModerationQueuePage />)}
           </ProtectedRoute>
         ),
       },
       {
         path: 'suara-warga/:id',
-        element: <PostDetailPage />,
+        element: loadRoute(<PostDetailPage />),
       },
       {
         path: 'suara-warga/tersimpan',
-        element: <SavedPostsPage />,
+        element: loadRoute(<SavedPostsPage />),
       },
       {
         path: 'suara-warga/hashtag/:tag',
-        element: <HashtagPostsPage />,
+        element: loadRoute(<HashtagPostsPage />),
       },
       {
         path: 'letters',
-        element: <LettersPage />,
+        element: loadRoute(<LettersPage />),
       },
       {
         path: 'roles',
@@ -159,35 +197,23 @@ const routes: RouteObject[] = [
       },
       {
         path: 'audit-log',
-        element: (
-          <ProtectedRoute adminOnly>
-            <AuditLogPage />
-          </ProtectedRoute>
-        ),
+        element: <ProtectedRoute adminOnly>{loadRoute(<AuditLogPage />)}</ProtectedRoute>,
       },
       {
         path: 'reports',
-        element: (
-          <ProtectedRoute adminOnly>
-            <ReportsPage />
-          </ProtectedRoute>
-        ),
+        element: <ProtectedRoute adminOnly>{loadRoute(<ReportsPage />)}</ProtectedRoute>,
       },
       {
         path: 'bill-types',
-        element: (
-          <ProtectedRoute adminOnly>
-            <BillTypesPage />
-          </ProtectedRoute>
-        ),
+        element: <ProtectedRoute adminOnly>{loadRoute(<BillTypesPage />)}</ProtectedRoute>,
       },
       {
         path: 'settings',
-        element: (
-          <ProtectedRoute adminOnly>
-            <SettingsPage />
-          </ProtectedRoute>
-        ),
+        element: <ProtectedRoute adminOnly>{loadRoute(<SettingsPage />)}</ProtectedRoute>,
+      },
+      {
+        path: 'settings/appearance',
+        element: loadRoute(<AppearanceSettingsPage />),
       },
       {
         path: 'profile',

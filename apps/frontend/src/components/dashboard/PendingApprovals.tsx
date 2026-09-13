@@ -1,12 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Card } from '../ui/Card';
-import {
-  BanknotesIcon,
-  DocumentTextIcon,
-  ChevronRightIcon,
-  CheckCircleIcon,
-} from '@heroicons/react/24/outline';
+import { BanknotesIcon, DocumentTextIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import { api } from '@/services/api';
 import { formatCurrency } from '@/lib/format';
 
@@ -23,7 +18,11 @@ interface PendingData {
 }
 
 export function PendingApprovals() {
-  const [data, setData] = useState<PendingData>({ unpaidBills: 0, unpaidAmount: 0, pendingLetters: 0 });
+  const [data, setData] = useState<PendingData>({
+    unpaidBills: 0,
+    unpaidAmount: 0,
+    pendingLetters: 0,
+  });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -51,8 +50,12 @@ export function PendingApprovals() {
 
   return (
     <Card className="p-6">
-      <h3 className="mb-1 font-display text-lg font-bold text-ink dark:text-gray-100">Menunggu Persetujuan</h3>
-      <p className="mb-5 text-sm font-medium text-gray-700 dark:text-gray-300">Item yang butuh tindakan Anda</p>
+      <h3 className="mb-1 font-display text-lg font-bold text-ink dark:text-gray-100">
+        Menunggu Persetujuan
+      </h3>
+      <p className="mb-5 text-sm font-medium text-gray-700 dark:text-gray-300">
+        Item yang butuh tindakan Anda
+      </p>
 
       {loading ? (
         <div className="space-y-3">
@@ -60,9 +63,11 @@ export function PendingApprovals() {
           <div className="h-16 bg-gray-100 dark:bg-gray-800 rounded-lg animate-pulse" />
         </div>
       ) : nothingPending ? (
-        <div className="flex flex-col items-center justify-center py-8 text-center">
-          <CheckCircleIcon className="w-10 h-10 text-green-500 mb-2" />
-          <p className="text-sm text-gray-500 dark:text-gray-400">Tidak ada item yang menunggu tindakan</p>
+        <div className="mt-5 border-t-2 border-ink/20 py-6 dark:border-gray-600">
+          <p className="text-sm font-bold text-ink dark:text-gray-100">Semua sudah ditangani</p>
+          <p className="mt-1 text-sm text-ink-secondary dark:text-gray-300">
+            Belum ada iuran atau surat yang perlu ditindaklanjuti.
+          </p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -98,9 +103,11 @@ function PendingItem({
   return (
     <Link
       to={to}
-      className="flex min-h-[44px] items-center gap-3 rounded-sm border-2 border-ink p-3 transition-colors hover:bg-[#f5efe4] dark:border-gray-500 dark:hover:bg-gray-700"
+      className="flex min-h-[44px] items-center gap-3 rounded-[var(--radius-control)] border-2 border-ink bg-[var(--surface-card)] p-3 transition-colors hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus:ring-ink/30 focus:ring-offset-2 dark:border-gray-400"
     >
-      <div className="rounded-sm border-2 border-ink bg-[#f1dfc4] p-2 text-ink dark:border-gray-500 dark:bg-gray-700 dark:text-white">{icon}</div>
+      <div className="rounded-[var(--radius-control)] border-2 border-ink bg-[var(--surface-selected)] p-2 text-ink dark:border-gray-400">
+        {icon}
+      </div>
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{title}</p>
         <p className="truncate text-xs font-medium text-gray-700 dark:text-gray-300">{subtitle}</p>

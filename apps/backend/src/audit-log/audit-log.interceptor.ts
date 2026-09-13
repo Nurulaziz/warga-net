@@ -1,6 +1,7 @@
 import { Injectable, NestInterceptor, ExecutionContext, CallHandler, Logger } from '@nestjs/common';
 import { Observable, tap } from 'rxjs';
 import { PrismaService } from '../prisma/prisma.service';
+import { getClientIp } from '../common/client-ip.util';
 
 // Map HTTP method ke action yang readable
 const METHOD_ACTION_MAP: Record<string, string> = {
@@ -38,7 +39,7 @@ export class AuditLogInterceptor implements NestInterceptor {
     // Ambil resource dari URL path
     const resource = this.extractResource(path);
     const action = METHOD_ACTION_MAP[method];
-    const ipAddress = request.ip || request.headers['x-forwarded-for'] || 'unknown';
+    const ipAddress = getClientIp(request);
     const userAgent = request.headers['user-agent'] || 'unknown';
 
     // ID Better Auth berbeda dari ID tabel users WargaNet. Nomor telepon menjadi

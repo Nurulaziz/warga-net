@@ -1,39 +1,14 @@
-import { useEffect, useState } from 'react';
+import { useAppearance } from '@/contexts/AppearanceContext';
 
-type Theme = 'light' | 'dark';
+export type Theme = 'light' | 'dark';
 
-const THEME_STORAGE_KEY = 'warganet-theme';
-
+/** Compatibility hook for charts and older components while appearance tokens are adopted. */
 export const useTheme = () => {
-  const [theme, setTheme] = useState<Theme>(() => {
-    // Check localStorage
-    const stored = localStorage.getItem(THEME_STORAGE_KEY) as Theme | null;
-    if (stored === 'light' || stored === 'dark') {
-      return stored;
-    }
-
-    // Check system preference
-    if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-      return 'dark';
-    }
-
-    return 'light';
-  });
-
-  useEffect(() => {
-    const root = document.documentElement;
-
-    if (theme === 'dark') {
-      root.classList.add('dark');
-    } else {
-      root.classList.remove('dark');
-    }
-
-    localStorage.setItem(THEME_STORAGE_KEY, theme);
-  }, [theme]);
+  const { preferences, save } = useAppearance();
+  const theme: Theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
 
   const toggleTheme = () => {
-    setTheme((prev) => (prev === 'light' ? 'dark' : 'light'));
+    void save({ ...preferences, mode: theme === 'dark' ? 'light' : 'dark' });
   };
 
   return { theme, toggleTheme };

@@ -5,6 +5,7 @@ import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
 import { ToastProvider } from '@/components/ui/Toast';
 import { useSettings } from '@/hooks/useSettings';
 import { router } from './routes';
+import { AppearanceProvider } from '@/contexts/AppearanceContext';
 
 // Judul dasar (fallback) untuk halaman non-layout.
 // Halaman ber-layout menimpanya lewat useDocumentTitle (judul per-halaman).
@@ -23,8 +24,10 @@ function App() {
     <ErrorBoundary>
       <ToastProvider>
         <AuthProvider>
-          <DynamicTitle />
-          <RouterProvider router={router} />
+          <AppearanceProvider>
+            <DynamicTitle />
+            <RouterProvider router={router} />
+          </AppearanceProvider>
         </AuthProvider>
       </ToastProvider>
     </ErrorBoundary>

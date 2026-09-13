@@ -22,6 +22,7 @@ export const PAGE_META: Record<string, PageMeta> = {
   '/letters': { title: 'Surat', group: 'Komunikasi' },
   '/audit-log': { title: 'Audit Log', group: 'Sistem' },
   '/settings': { title: 'Pengaturan', group: 'Sistem' },
+  '/settings/appearance': { title: 'Tampilan', group: 'Pengaturan' },
   '/profile': { title: 'Profil Saya' },
 };
 

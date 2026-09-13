@@ -7,6 +7,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { Request } from 'express';
+import { getClientIp } from '../common/client-ip.util';
 import { RateLimitService } from './rate-limit.service';
 
 @Injectable()
@@ -25,7 +26,7 @@ export class RateLimitGuard implements CanActivate {
     }
 
     // Extract IP address dari request
-    const ipAddress = this.getClientIp(request);
+    const ipAddress = getClientIp(request);
 
     // Check phone rate limit
     const phoneLimit = await this.rateLimitService.checkOtpRateLimitByPhone(phoneNumber);
@@ -64,22 +65,4 @@ export class RateLimitGuard implements CanActivate {
     return true;
   }
 
-  // Extract client IP dari request
-  private getClientIp(request: Request): string {
-    // Check X-Forwarded-For header (untuk proxy/load balancer)
-    const forwardedFor = request.headers['x-forwarded-for'];
-    if (forwardedFor) {
-      const ips = Array.isArray(forwardedFor) ? forwardedFor[0] : forwardedFor.split(',')[0];
-      return ips.trim();
-    }
-
-    // Check X-Real-IP header
-    const realIp = request.headers['x-real-ip'];
-    if (realIp) {
-      return Array.isArray(realIp) ? realIp[0] : realIp;
-    }
-
-    // Fallback ke request.ip
-    return request.ip || 'unknown';
-  }
 }

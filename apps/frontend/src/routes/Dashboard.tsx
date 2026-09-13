@@ -23,23 +23,25 @@ export function Dashboard() {
       <div className="space-y-6">
         {/* Header */}
         <div className="mb-6">
-          <h1 className="font-display text-3xl font-bold tracking-[-0.03em] text-ink dark:text-gray-100">Dashboard</h1>
+          <h1 className="font-display text-3xl font-bold tracking-[-0.03em] text-ink dark:text-gray-100">
+            Dashboard
+          </h1>
           <p className="mt-1 font-medium text-gray-700 dark:text-gray-300">
-            Selamat datang di {settings.app_name}
+            Ringkasan operasional lingkungan · {settings.app_name}
           </p>
         </div>
 
         {/* Metric ringkas: 4 kartu operasional utama */}
         <TopMetrics />
 
-        {/* Kiri: grafik keuangan + pengumuman · Kanan: panel aksi & aktivitas */}
+        {/* Prioritaskan pekerjaan yang membutuhkan tindakan admin. */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="space-y-6">
+            <PendingApprovals />
             <CashFlowChart />
-            <RecentAnnouncements limit={5} />
           </div>
           <div className="space-y-6">
-            <PendingApprovals />
+            <RecentAnnouncements limit={5} />
             <RecentAuditLog />
           </div>
         </div>

@@ -15,6 +15,7 @@ import { RecentAnnouncements } from '@/components/dashboard';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSettings } from '@/hooks/useSettings';
 import { api } from '@/services/api';
+import { useToast } from '@/components/ui/Toast';
 
 interface Bill {
   id: string;
@@ -37,6 +38,7 @@ interface Summary {
 export function WargaDashboard() {
   const { user } = useAuth();
   const { settings } = useSettings();
+  const { showToast } = useToast();
   const [summary, setSummary] = useState<Summary | null>(null);
   const [bills, setBills] = useState<Bill[]>([]);
   const [loading, setLoading] = useState(true);
@@ -111,12 +113,12 @@ export function WargaDashboard() {
         const msg =
           (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
           'Gagal memproses pembayaran';
-        alert(msg);
+        showToast(msg, 'error');
       } finally {
         setPayingOnline(null);
       }
     },
-    [fetchData],
+    [fetchData, showToast],
   );
 
   function formatCurrency(amount: number) {
@@ -155,8 +157,8 @@ export function WargaDashboard() {
             {summary && (
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <Card className="p-4 flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-lg bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center">
-                    <BanknotesIcon className="w-5 h-5 text-blue-600" />
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--accent)_10%,var(--surface-card))]">
+                    <BanknotesIcon className="h-5 w-5 text-[var(--accent)]" />
                   </div>
                   <div>
                     <p className="text-xs text-gray-500">Total Tagihan</p>
@@ -259,7 +261,7 @@ function QuickLink({ to, icon, label }: { to: string; icon: React.ReactNode; lab
       to={to}
       className="flex items-center gap-3 p-4 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:border-primary-400 hover:shadow-sm transition-all"
     >
-      <div className="w-10 h-10 rounded-lg bg-[#E8F0FF] dark:bg-[#0054A6]/15 flex items-center justify-center text-[#0054A6] dark:text-blue-400">
+      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--accent)_10%,var(--surface-card))] text-[var(--accent)]">
         {icon}
       </div>
       <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{label}</span>

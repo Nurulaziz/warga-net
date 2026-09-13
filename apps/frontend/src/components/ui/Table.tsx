@@ -6,7 +6,9 @@ interface TableProps extends HTMLAttributes<HTMLTableElement> {
 
 export const Table = ({ children, className = '', ...props }: TableProps) => {
   return (
-    <div className={`w-full overflow-x-auto rounded-sm border-2 border-ink bg-white dark:border-gray-500 dark:bg-gray-800 ${className}`}>
+    <div
+      className={`w-full overflow-x-auto rounded-[var(--radius-control)] border-2 border-ink bg-[var(--surface-card)] dark:border-gray-500 ${className}`}
+    >
       <table className="w-full border-collapse text-left text-sm" {...props}>
         {children}
       </table>
@@ -20,7 +22,10 @@ interface TableHeaderProps extends HTMLAttributes<HTMLTableSectionElement> {
 
 export const TableHeader = ({ children, className = '', ...props }: TableHeaderProps) => {
   return (
-    <thead className={`border-y-2 border-ink bg-[#ead7b7] dark:border-gray-400 dark:bg-[#382f22] ${className}`} {...props}>
+    <thead
+      className={`border-y-2 border-ink bg-[var(--surface-selected)] dark:border-gray-400 ${className}`}
+      {...props}
+    >
       {children}
     </thead>
   );

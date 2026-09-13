@@ -20,6 +20,7 @@ import { usePaginatedApi, apiPost, apiPut, apiDelete } from '@/hooks/useApi';
 import { useToast } from '@/components/ui/Toast';
 import { api } from '@/services/api';
 import { TableActionButton } from '@/components/ui/TableActionButton';
+import { normalizeIndonesianPhone } from '@/lib/phone';
 
 interface User {
   id: string;
@@ -322,6 +323,10 @@ export function UsersPage() {
             label="Nomor Telepon"
             value={formData.phoneNumber}
             onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
+            onBlur={(e) => {
+              const normalized = normalizeIndonesianPhone(e.target.value);
+              if (normalized) setFormData((current) => ({ ...current, phoneNumber: normalized }));
+            }}
             placeholder="+628xxxxxxxxxx"
           />
           <div>

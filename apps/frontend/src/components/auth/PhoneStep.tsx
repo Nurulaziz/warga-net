@@ -4,21 +4,14 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useAuth } from '@/contexts/AuthContext';
 import { phoneSchema, type PhoneFormData } from '@/lib/validations/auth';
 import { ArrowRightIcon } from '@heroicons/react/24/outline';
+import {
+  formatIndonesianLocalPhone,
+  getIndonesianLocalDigits,
+  isValidIndonesianLocalPhone,
+} from '@/lib/phone';
 
 interface PhoneStepProps {
   onSubmitted: (phoneNumber: string) => void;
-}
-
-function formatPhoneDisplay(raw: string): string {
-  const digits = raw.replace(/\D/g, '');
-  if (digits.length <= 3) return digits;
-  if (digits.length <= 7) return `${digits.slice(0, 3)} ${digits.slice(3)}`;
-  return `${digits.slice(0, 3)} ${digits.slice(3, 7)} ${digits.slice(7, 11)}`;
-}
-
-function isPhoneValid(raw: string): boolean {
-  const digits = raw.replace(/\D/g, '');
-  return digits.length >= 9 && digits.length <= 13;
 }
 
 export function PhoneStep({ onSubmitted }: PhoneStepProps) {
@@ -36,17 +29,11 @@ export function PhoneStep({ onSubmitted }: PhoneStepProps) {
     defaultValues: { phoneNumber: '+62' },
   });
 
-  const phoneValid = isPhoneValid(rawDigits);
+  const phoneValid = isValidIndonesianLocalPhone(rawDigits);
 
   const handlePhoneChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      let digits = e.target.value.replace(/\D/g, '');
-      if (digits.startsWith('62')) {
-        digits = digits.slice(2);
-      } else if (digits.startsWith('0')) {
-        digits = digits.replace(/^0+/, '');
-      }
-      digits = digits.slice(0, 13);
+      const digits = getIndonesianLocalDigits(e.target.value);
       setRawDigits(digits);
       setValue('phoneNumber', `+62${digits}`, { shouldValidate: digits.length >= 9 });
     },
@@ -103,7 +90,7 @@ export function PhoneStep({ onSubmitted }: PhoneStepProps) {
           id="phone-input"
           type="tel"
           inputMode="numeric"
-          value={formatPhoneDisplay(rawDigits)}
+          value={formatIndonesianLocalPhone(rawDigits)}
           onChange={handlePhoneChange}
           placeholder="812 3456 7890"
           className="flex-1 h-full px-3 font-mono text-[15px] font-semibold tracking-tight bg-transparent text-ink dark:text-gray-100 placeholder:font-normal placeholder:text-ink-muted dark:placeholder:text-gray-500 focus:outline-none"

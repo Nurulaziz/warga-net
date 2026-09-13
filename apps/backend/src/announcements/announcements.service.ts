@@ -1,10 +1,14 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { sanitizeHtml } from '../common/sanitize';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class AnnouncementsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notifications: NotificationsService,
+  ) {}
 
   async findAll(query: { page?: number; limit?: number; published?: boolean; scope?: string }) {
     const { page = 1, limit = 20, published, scope } = query;
@@ -43,7 +47,7 @@ export class AnnouncementsService {
     isPublished?: boolean;
     createdBy?: string;
   }) {
-    return this.prisma.announcement.create({
+    const announcement = await this.prisma.announcement.create({
       data: {
         ...data,
         title: sanitizeHtml(data.title),
@@ -51,6 +55,10 @@ export class AnnouncementsService {
         publishedAt: data.isPublished !== false ? new Date() : null,
       },
     });
+    if (announcement.isPublished) {
+      await this.notifyPublished(announcement);
+    }
+    return announcement;
   }
 
   async update(
@@ -74,7 +82,28 @@ export class AnnouncementsService {
       updateData.publishedAt = new Date();
     }
 
-    return this.prisma.announcement.update({ where: { id }, data: updateData });
+    const announcement = await this.prisma.announcement.update({ where: { id }, data: updateData });
+    if (data.isPublished === true) {
+      await this.notifyPublished(announcement);
+    }
+    return announcement;
+  }
+
+  private async notifyPublished(announcement: { id: string; title: string; targetScope: string }) {
+    try {
+      await this.notifications.notifyAudience(
+        {
+          type: 'announcement_published',
+          title: 'Pengumuman baru',
+          message: announcement.title,
+          referenceType: 'announcement',
+          referenceId: announcement.id,
+        },
+        announcement.targetScope === 'pengurus',
+      );
+    } catch {
+      // Notifikasi tidak boleh menggagalkan penerbitan pengumuman.
+    }
   }
 
   async remove(id: string) {

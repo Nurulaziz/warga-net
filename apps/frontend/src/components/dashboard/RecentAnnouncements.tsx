@@ -13,20 +13,39 @@ interface Announcement {
 }
 
 // Metadata prioritas untuk badge
-const PRIORITY_META: Record<string, { label: string; badge: string; dot: string }> = {
-  low: { label: 'Rendah', badge: 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300', dot: 'bg-gray-400' },
-  normal: { label: 'Normal', badge: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400', dot: 'bg-blue-500' },
-  high: { label: 'Penting', badge: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400', dot: 'bg-orange-500' },
-  urgent: { label: 'Urgent', badge: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400', dot: 'bg-red-500' },
+const PRIORITY_META: Record<string, { label: string; className: string }> = {
+  low: {
+    label: 'Rendah',
+    className: 'text-ink-secondary dark:text-gray-400',
+  },
+  normal: {
+    label: 'Normal',
+    className: 'text-ink-secondary dark:text-gray-400',
+  },
+  high: {
+    label: 'Penting',
+    className: 'font-bold text-orange-700 dark:text-orange-300',
+  },
+  urgent: {
+    label: 'Mendesak',
+    className: 'font-bold text-red-700 dark:text-red-300',
+  },
 };
 
 // Buang tag HTML untuk ringkasan teks
 function stripHtml(html: string): string {
-  return html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+  return html
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 function formatDate(d: string): string {
-  return new Date(d).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+  return new Date(d).toLocaleDateString('id-ID', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  });
 }
 
 export function RecentAnnouncements({ limit = 5 }: { limit?: number }) {
@@ -52,10 +71,17 @@ export function RecentAnnouncements({ limit = 5 }: { limit?: number }) {
     <Card className="p-6">
       <div className="flex items-center justify-between mb-5">
         <div>
-          <h3 className="font-display text-lg font-bold text-ink dark:text-gray-100">Pengumuman Terbaru</h3>
-          <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Info terkini dari pengurus RT</p>
+          <h3 className="font-display text-lg font-bold text-ink dark:text-gray-100">
+            Pengumuman Terbaru
+          </h3>
+          <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+            Info terkini dari pengurus RT
+          </p>
         </div>
-        <Link to="/announcements" className="text-sm font-bold text-ink underline-offset-4 hover:underline dark:text-gray-200">
+        <Link
+          to="/announcements"
+          className="text-sm font-bold text-ink underline-offset-4 hover:underline dark:text-gray-200"
+        >
           Lihat semua
         </Link>
       </div>
@@ -68,27 +94,40 @@ export function RecentAnnouncements({ limit = 5 }: { limit?: number }) {
         </div>
       ) : items.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-8 text-center">
-          <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-sm border-2 border-ink bg-[#f1dfc4] dark:border-gray-500 dark:bg-gray-700"><MegaphoneIcon className="h-7 w-7 text-ink dark:text-white" /></div>
-          <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">Belum ada pengumuman</p>
+          <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-[var(--radius-control)] border-2 border-ink bg-[var(--surface-selected)]">
+            <MegaphoneIcon className="h-7 w-7 text-ink" />
+          </div>
+          <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+            Belum ada pengumuman
+          </p>
         </div>
       ) : (
         <ul className="space-y-3">
           {items.map((a) => {
             const meta = PRIORITY_META[a.priority] || PRIORITY_META.normal;
             return (
-              <li key={a.id} className="border-b-2 border-ink/20 pb-3 last:border-0 last:pb-0 dark:border-gray-600">
+              <li
+                key={a.id}
+                className="border-b-2 border-ink/20 pb-3 last:border-0 last:pb-0 dark:border-gray-600"
+              >
                 <Link to="/announcements" className="block group">
                   <div className="flex items-center gap-2 mb-0.5">
-                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded-full ${meta.badge}`}>
-                      <span className={`w-1.5 h-1.5 rounded-full ${meta.dot}`} />
-                      {meta.label}
-                    </span>
                     <span className="text-xs text-gray-400">{formatDate(a.createdAt)}</span>
+                    {a.priority !== 'normal' && (
+                      <>
+                        <span className="text-xs text-ink-secondary" aria-hidden="true">
+                          ·
+                        </span>
+                        <span className={`text-xs ${meta.className}`}>{meta.label}</span>
+                      </>
+                    )}
                   </div>
                   <p className="text-sm font-medium text-gray-900 dark:text-gray-100 group-hover:text-primary-600 dark:group-hover:text-primary-400 truncate">
                     {a.title}
                   </p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-1">{stripHtml(a.content)}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-1">
+                    {stripHtml(a.content)}
+                  </p>
                 </Link>
               </li>
             );

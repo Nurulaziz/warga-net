@@ -11,7 +11,12 @@ import {
   type InputHTMLAttributes,
   forwardRef,
 } from 'react';
-import { CheckIcon, ChevronDownIcon, MagnifyingGlassIcon, QueueListIcon } from '@heroicons/react/24/outline';
+import {
+  CheckIcon,
+  ChevronDownIcon,
+  MagnifyingGlassIcon,
+  QueueListIcon,
+} from '@heroicons/react/24/outline';
 import { useDismissibleLayer } from '@/hooks/useDismissibleLayer';
 
 // Toolbar pembungkus search + filter agar sejajar & rapi
@@ -34,7 +39,9 @@ interface SearchInputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, '
 export const SearchInput = forwardRef<HTMLInputElement, SearchInputProps>(
   ({ onSearch, onKeyDown, className = '', ...props }, ref) => {
     return (
-      <div className={`relative flex h-11 overflow-hidden rounded-sm border-2 border-ink bg-white text-ink shadow-[2px_2px_0_#171717] transition-colors focus-within:bg-[#fff8ec] focus-within:ring-2 focus-within:ring-ink/20 dark:border-gray-500 dark:bg-gray-800 dark:text-gray-100 dark:shadow-[2px_2px_0_#a3a3a3] ${className || 'w-full sm:w-72'}`}>
+      <div
+        className={`relative flex h-[var(--control-height)] overflow-hidden rounded-[var(--radius-control)] border-2 border-ink bg-[var(--surface-card)] text-ink shadow-[var(--shadow-small)] transition-colors focus-within:bg-[var(--surface-hover)] focus-within:ring-2 focus-within:ring-ink/20 dark:border-gray-500 dark:text-gray-100 ${className || 'w-full sm:w-72'}`}
+      >
         <MagnifyingGlassIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-muted dark:text-gray-400" />
         <input
           ref={ref}
@@ -69,7 +76,21 @@ interface FilterSelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
 }
 
 export const FilterSelect = forwardRef<HTMLSelectElement, FilterSelectProps>(
-  ({ children, className = '', value, defaultValue, onChange, disabled, id, name, icon, 'aria-label': ariaLabel }, forwardedRef) => {
+  (
+    {
+      children,
+      className = '',
+      value,
+      defaultValue,
+      onChange,
+      disabled,
+      id,
+      name,
+      icon,
+      'aria-label': ariaLabel,
+    },
+    forwardedRef,
+  ) => {
     const selectRef = useRef<HTMLSelectElement>(null);
     const [open, setOpen] = useState(false);
     const { rootRef, triggerRef } = useDismissibleLayer(open, () => setOpen(false));
@@ -115,7 +136,17 @@ export const FilterSelect = forwardRef<HTMLSelectElement, FilterSelectProps>(
 
     return (
       <div ref={rootRef} className={`relative min-w-[168px] ${className}`}>
-        <select ref={selectRef} id={id} name={name} value={selectedValue} onChange={onChange} disabled={disabled} tabIndex={-1} aria-hidden="true" className="sr-only">
+        <select
+          ref={selectRef}
+          id={id}
+          name={name}
+          value={selectedValue}
+          onChange={onChange}
+          disabled={disabled}
+          tabIndex={-1}
+          aria-hidden="true"
+          className="sr-only"
+        >
           {children}
         </select>
         <button
@@ -126,20 +157,31 @@ export const FilterSelect = forwardRef<HTMLSelectElement, FilterSelectProps>(
           aria-expanded={open}
           disabled={disabled}
           onClick={() => {
-            setActiveIndex(Math.max(0, options.findIndex((option) => option.value === selectedValue)));
+            setActiveIndex(
+              Math.max(
+                0,
+                options.findIndex((option) => option.value === selectedValue),
+              ),
+            );
             setOpen((current) => !current);
           }}
           onKeyDown={handleKeyDown}
-          className={`flex h-11 w-full items-center gap-2 rounded-sm border-2 border-ink bg-white px-3 text-left text-sm font-bold text-ink transition-all focus:outline-none focus:ring-2 focus:ring-ink/25 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-500 dark:bg-gray-800 dark:text-gray-100 ${open ? 'translate-x-0.5 translate-y-0.5 bg-[#fff8ec] shadow-none' : 'shadow-[2px_2px_0_#171717] hover:bg-[#fff8ec]'}`}
+          className={`flex h-[var(--control-height)] w-full items-center gap-2 rounded-[var(--radius-control)] border-2 border-ink bg-[var(--surface-card)] px-[var(--control-padding-x)] text-left text-sm font-bold text-ink transition-all focus:outline-none focus:ring-2 focus:ring-ink/25 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-500 dark:text-gray-100 ${open ? 'translate-x-0.5 translate-y-0.5 bg-[var(--surface-hover)] shadow-none' : 'shadow-[var(--shadow-small)] hover:bg-[var(--surface-hover)]'}`}
         >
-          <span className="flex h-6 w-6 flex-none items-center justify-center rounded-sm border border-ink bg-[#f1dfc4] text-ink">
+          <span className="flex h-6 w-6 flex-none items-center justify-center rounded-[var(--radius-control)] border border-ink bg-[var(--surface-selected)] text-ink">
             {icon || <QueueListIcon className="h-3.5 w-3.5" />}
           </span>
           <span className="min-w-0 flex-1 truncate">{selected?.label}</span>
-          <ChevronDownIcon className={`h-4 w-4 flex-none transition-transform ${open ? 'rotate-180' : ''}`} />
+          <ChevronDownIcon
+            className={`h-4 w-4 flex-none transition-transform ${open ? 'rotate-180' : ''}`}
+          />
         </button>
         {open && (
-          <div role="listbox" aria-label={ariaLabel || 'Pilihan filter'} className="absolute left-0 z-50 mt-2 max-h-64 min-w-full overflow-y-auto rounded-sm border-2 border-ink bg-[#fffdf8] p-1 shadow-[4px_4px_0_#171717] dark:border-gray-500 dark:bg-gray-800">
+          <div
+            role="listbox"
+            aria-label={ariaLabel || 'Pilihan filter'}
+            className="absolute left-0 z-50 mt-2 max-h-64 min-w-full overflow-y-auto rounded-[var(--radius-control)] border-2 border-ink bg-[var(--surface-card)] p-1 shadow-[var(--shadow-card)] dark:border-gray-500"
+          >
             {options.map((option, index) => {
               const isSelected = option.value === selectedValue;
               return (
@@ -151,7 +193,7 @@ export const FilterSelect = forwardRef<HTMLSelectElement, FilterSelectProps>(
                   disabled={option.disabled}
                   onMouseEnter={() => setActiveIndex(index)}
                   onClick={() => selectOption(option.value)}
-                  className={`flex min-h-10 w-full items-center gap-2 rounded-sm border px-3 text-left text-sm font-semibold transition-colors disabled:opacity-40 ${isSelected ? 'border-ink bg-[#f1dfc4] font-black text-ink shadow-[1px_1px_0_#171717]' : index === activeIndex ? 'border-transparent bg-[#fff8ec] text-ink dark:bg-gray-700 dark:text-white' : 'border-transparent text-ink hover:bg-[#fff8ec] dark:text-gray-100 dark:hover:bg-gray-700'}`}
+                  className={`flex min-h-10 w-full items-center gap-2 rounded-[var(--radius-control)] border px-3 text-left text-sm font-semibold transition-colors disabled:opacity-40 ${isSelected ? 'border-ink bg-[var(--surface-selected)] font-black text-ink shadow-[var(--shadow-small)]' : index === activeIndex ? 'border-transparent bg-[var(--surface-hover)] text-ink dark:text-white' : 'border-transparent text-ink hover:bg-[var(--surface-hover)] dark:text-gray-100'}`}
                 >
                   <span className="min-w-0 flex-1 truncate">{option.label}</span>
                   {isSelected && <CheckIcon className="h-4 w-4 flex-none" />}

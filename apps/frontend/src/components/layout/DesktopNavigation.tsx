@@ -34,23 +34,20 @@ interface NavSection {
   adminOnly?: boolean;
 }
 
-// Urutan grup: operasional harian di atas, konfigurasi di bawah.
-// KEUANGAN & KOMUNIKASI dipakai warga juga; sisanya khusus admin.
+// Urutan mengikuti frekuensi kerja: ringkasan, transaksi, komunikasi,
+// data master, lalu administrasi yang lebih jarang digunakan.
 const mainNavSections: NavSection[] = [
+  {
+    group: 'UTAMA',
+    adminOnly: true,
+    items: [{ path: '/dashboard', label: 'Dashboard', icon: ChartBarIcon, adminOnly: true }],
+  },
   {
     group: 'KEUANGAN',
     items: [
       { path: '/bills', label: 'Iuran', icon: BanknotesIcon },
       { path: '/cash', label: 'Kas RT', icon: WalletIcon, adminOnly: true },
       { path: '/reports', label: 'Laporan', icon: DocumentTextIcon, adminOnly: true },
-    ],
-  },
-  {
-    group: 'DATA WARGA',
-    adminOnly: true,
-    items: [
-      { path: '/families', label: 'Keluarga', icon: UserGroupIcon, adminOnly: true },
-      { path: '/residents', label: 'Warga', icon: IdentificationIcon, adminOnly: true },
     ],
   },
   {
@@ -62,26 +59,23 @@ const mainNavSections: NavSection[] = [
     ],
   },
   {
-    group: 'PENGGUNA & AKSES',
+    group: 'DATA WARGA',
     adminOnly: true,
     items: [
-      { path: '/users', label: 'Pengguna Sistem', icon: UserIcon, adminOnly: true },
-      { path: '/roles', label: 'Role & Permission', icon: LockClosedIcon, adminOnly: true },
+      { path: '/residents', label: 'Warga', icon: IdentificationIcon, adminOnly: true },
+      { path: '/families', label: 'Keluarga', icon: UserGroupIcon, adminOnly: true },
     ],
   },
   {
-    group: 'SISTEM',
+    group: 'ADMINISTRASI',
     adminOnly: true,
     items: [
-      { path: '/audit-log', label: 'Audit Log', icon: ClipboardDocumentListIcon, adminOnly: true },
+      { path: '/users', label: 'Akun Pengguna', icon: UserIcon, adminOnly: true },
+      { path: '/roles', label: 'Peran & Akses', icon: LockClosedIcon, adminOnly: true },
+      { path: '/audit-log', label: 'Riwayat Aktivitas', icon: ClipboardDocumentListIcon, adminOnly: true },
     ],
   },
 ];
-
-const bottomNavItems: NavItem[] = [
-  { path: '/settings', label: 'Pengaturan', icon: Cog6ToothIcon, adminOnly: true },
-];
-
 
 // --- Component ---
 
@@ -105,12 +99,18 @@ export function DesktopNavigation({ collapsed, onToggle }: DesktopNavigationProp
     }))
     .filter((section) => section.items.length > 0);
 
-  const visibleBottomItems = bottomNavItems.filter((item) => !item.adminOnly || admin);
+  // Satu pintu Pengaturan: admin masuk ke pengaturan sistem, warga langsung ke tampilan.
+  // NavLink /settings tetap aktif pada halaman turunannya, termasuk /settings/appearance.
+  const settingsItem: NavItem = {
+    path: admin ? '/settings' : '/settings/appearance',
+    label: 'Pengaturan',
+    icon: Cog6ToothIcon,
+  };
 
   return (
     <aside
       className={`fixed left-0 top-0 z-40 flex h-screen flex-col border-r-[3px] border-ink bg-[#FFF9EF] transition-all duration-300 dark:border-gray-400 dark:bg-gray-800 ${
-        collapsed ? 'w-[68px]' : 'w-[230px]'
+        collapsed ? 'w-[68px]' : 'w-[248px]'
       }`}
       role="navigation"
       aria-label="Sidebar navigation"
@@ -123,7 +123,9 @@ export function DesktopNavigation({ collapsed, onToggle }: DesktopNavigationProp
       >
         {!collapsed && (
           <span className="flex min-w-0 items-center gap-2 font-display text-[1.4rem] font-extrabold tracking-[-0.035em] text-ink dark:text-white whitespace-nowrap">
-            {settings.app_logo_url && <img src={settings.app_logo_url} alt="" className="h-8 w-8 shrink-0 object-contain" />}
+            {settings.app_logo_url && (
+              <img src={settings.app_logo_url} alt="" className="h-8 w-8 shrink-0 object-contain" />
+            )}
             <span className="truncate">{settings.app_name}</span>
           </span>
         )}
@@ -134,23 +136,20 @@ export function DesktopNavigation({ collapsed, onToggle }: DesktopNavigationProp
           title={collapsed ? 'Perbesar sidebar' : 'Perkecil sidebar'}
           aria-label={collapsed ? 'Perbesar sidebar' : 'Perkecil sidebar'}
         >
-          <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+          <svg
+            viewBox="0 0 24 24"
+            className="h-5 w-5"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            aria-hidden="true"
+          >
             <rect x="3" y="4" width="18" height="16" rx="2" />
             <path d="M9 4v16" />
             <path d={collapsed ? 'm6 10 2 2-2 2' : 'm7 10-2 2 2 2'} />
           </svg>
         </button>
       </div>
-
-      {/* Dashboard — hanya untuk admin; warga tidak punya dashboard */}
-      {admin && (
-        <div className={`px-2 pt-3 pb-1 ${collapsed ? 'px-2' : 'px-3'}`}>
-          <SidebarLink
-            item={{ path: '/dashboard', label: 'Dashboard', icon: ChartBarIcon }}
-            collapsed={collapsed}
-          />
-        </div>
-      )}
 
       {/* Main navigation sections */}
       <nav
@@ -159,7 +158,7 @@ export function DesktopNavigation({ collapsed, onToggle }: DesktopNavigationProp
         style={{ scrollbarWidth: 'none' }}
       >
         {visibleSections.map((section) => (
-          <div key={section.group} className="mt-4 first:mt-2">
+          <div key={section.group} className="mt-3.5 first:mt-2">
             {/* Group label — disembunyikan untuk warga agar daftar menu lebih ringkas */}
             {!collapsed && admin && (
               <div className="px-2 pb-1.5">
@@ -182,14 +181,13 @@ export function DesktopNavigation({ collapsed, onToggle }: DesktopNavigationProp
       <div className="flex-shrink-0 border-t-2 border-ink dark:border-gray-500 px-2 py-2">
         <div className={`flex items-center gap-1 ${collapsed ? 'flex-col' : ''}`}>
           <div className="min-w-0 flex-1">
-            {visibleBottomItems.map((item) => (
-              <SidebarLink key={item.path} item={item} collapsed={collapsed} />
-            ))}
+            <SidebarLink item={settingsItem} collapsed={collapsed} />
           </div>
-          <div className="flex-shrink-0 pr-1"><ThemeToggle /></div>
+          <div className="flex-shrink-0 pr-1">
+            <ThemeToggle />
+          </div>
         </div>
       </div>
-
     </aside>
   );
 }
@@ -216,9 +214,7 @@ function SidebarLink({ item, collapsed }: { item: NavItem; collapsed: boolean })
         <>
           {/* Active indicator */}
           <item.icon
-            className={`w-[18px] h-[18px] flex-shrink-0 ${
-              isActive ? 'text-white' : ''
-            }`}
+            className={`w-[18px] h-[18px] flex-shrink-0 ${isActive ? 'text-white' : ''}`}
             aria-hidden="true"
           />
           {!collapsed && <span className="text-[13px] font-bold truncate">{item.label}</span>}

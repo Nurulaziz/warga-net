@@ -6,7 +6,7 @@ interface ModalProps {
   onClose: () => void;
   title?: string;
   children: ReactNode;
-  size?: 'sm' | 'md' | 'lg' | 'xl';
+  size?: 'sm' | 'md' | 'lg' | 'xl' | 'full';
   headerExtra?: ReactNode;
   panelClassName?: string;
   contentClassName?: string;
@@ -46,6 +46,7 @@ export const Modal = ({
     md: 'max-w-md',
     lg: 'max-w-lg',
     xl: 'max-w-xl',
+    full: 'max-w-[min(96vw,1100px)]',
   };
 
   return (
@@ -57,12 +58,15 @@ export const Modal = ({
       aria-labelledby={title ? 'modal-title' : undefined}
     >
       <div
-        className={`flex w-full ${sizeStyles[size]} max-h-[90dvh] flex-col overflow-hidden rounded-sm border-2 border-ink bg-[#fffdf8] shadow-[7px_7px_0_#171717] dark:border-gray-300 dark:bg-gray-800 dark:shadow-[7px_7px_0_#a3a3a3] ${panelClassName}`}
+        className={`flex w-full ${sizeStyles[size]} max-h-[90dvh] flex-col overflow-hidden rounded-[var(--radius-control)] border-2 border-ink bg-[var(--surface-card)] shadow-[var(--shadow-modal)] dark:border-gray-300 ${panelClassName}`}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between border-b-2 border-ink bg-[#fff8ec] px-6 py-4 dark:border-gray-500 dark:bg-gray-900">
+        <div className="flex items-center justify-between border-b-2 border-ink bg-[var(--surface-hover)] px-[var(--space-card)] py-4 dark:border-gray-500">
           {title ? (
-            <h2 id="modal-title" className="font-display text-xl font-bold text-gray-900 dark:text-gray-100">
+            <h2
+              id="modal-title"
+              className="font-display text-xl font-bold text-gray-900 dark:text-gray-100"
+            >
               {title}
             </h2>
           ) : (
@@ -80,7 +84,11 @@ export const Modal = ({
             </button>
           </div>
         </div>
-        <div className={`min-h-0 flex-1 overflow-y-auto px-6 py-4 text-ink dark:text-gray-100 ${contentClassName}`}>{children}</div>
+        <div
+          className={`min-h-0 flex-1 overflow-y-auto px-6 py-4 text-ink dark:text-gray-100 ${contentClassName}`}
+        >
+          {children}
+        </div>
       </div>
     </div>
   );

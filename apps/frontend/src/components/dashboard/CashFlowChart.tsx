@@ -89,10 +89,15 @@ export function CashFlowChart() {
   }, []);
 
   const isDark = theme === 'dark';
-  const axisColor = isDark ? '#d6c9b6' : '#5f564b';
+  const rootStyles = getComputedStyle(document.documentElement);
+  const axisColor =
+    rootStyles.getPropertyValue('--color-text-secondary').trim() ||
+    (isDark ? '#d6c9b6' : '#5f564b');
   const gridColor = isDark ? 'rgba(214,201,182,0.16)' : 'rgba(95,86,75,0.18)';
-  const tooltipBg = isDark ? '#2c261f' : '#fffdf8';
-  const tooltipBorder = isDark ? '#d6c9b6' : '#171717';
+  const tooltipBg = rootStyles.getPropertyValue('--surface-card').trim() || '#fffdf8';
+  const tooltipBorder = rootStyles.getPropertyValue('--color-border').trim() || '#171717';
+  const incomeColor = rootStyles.getPropertyValue('--color-income').trim() || '#2f855a';
+  const expenseColor = rootStyles.getPropertyValue('--color-expense').trim() || '#c53030';
 
   const isEmpty = bars.length > 0 && bars.every((b) => b.income === 0 && b.expense === 0);
 
@@ -100,7 +105,9 @@ export function CashFlowChart() {
     <Card className="p-6">
       <div className="flex items-start justify-between mb-1">
         <div>
-          <h3 className="font-display text-lg font-bold text-ink dark:text-gray-100">Arus Kas RT</h3>
+          <h3 className="font-display text-lg font-bold text-ink dark:text-gray-100">
+            Arus Kas RT
+          </h3>
           <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
             Pemasukan vs Pengeluaran ({MONTHS_TO_SHOW} bulan terakhir)
           </p>
@@ -116,12 +123,20 @@ export function CashFlowChart() {
       {/* Legenda */}
       <div className="flex items-center gap-4 mb-2">
         <div className="flex items-center gap-1.5">
-          <span className="h-3 w-3 rounded-sm border border-ink bg-[#2f855a]" />
+          <span
+            className="h-3 w-3 rounded-sm border border-ink"
+            style={{ backgroundColor: incomeColor }}
+          />
           <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">Pemasukan</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <span className="h-3 w-3 rounded-sm border border-ink bg-[#c53030]" />
-          <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">Pengeluaran</span>
+          <span
+            className="h-3 w-3 rounded-sm border border-ink"
+            style={{ backgroundColor: expenseColor }}
+          />
+          <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">
+            Pengeluaran
+          </span>
         </div>
       </div>
 
@@ -176,14 +191,14 @@ export function CashFlowChart() {
               <Bar
                 dataKey="income"
                 name="Pemasukan"
-                fill="#2f855a"
+                fill={incomeColor}
                 radius={[4, 4, 0, 0]}
                 maxBarSize={22}
               />
               <Bar
                 dataKey="expense"
                 name="Pengeluaran"
-                fill="#c53030"
+                fill={expenseColor}
                 radius={[4, 4, 0, 0]}
                 maxBarSize={22}
               />

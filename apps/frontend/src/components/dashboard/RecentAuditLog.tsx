@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Card } from '../ui/Card';
-import { ClockIcon } from '@heroicons/react/24/outline';
 import { api } from '@/services/api';
 import { humanizeAuditAction } from '@/lib/auditLogHumanize';
 
@@ -50,7 +49,9 @@ export function RecentAuditLog() {
           <h3 className="font-display text-lg font-bold text-ink dark:text-gray-100">
             Aktivitas Terbaru
           </h3>
-          <p className="text-sm font-medium text-gray-700 dark:text-gray-300">5 log sistem terakhir</p>
+          <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+            5 log sistem terakhir
+          </p>
         </div>
         <Link
           to="/audit-log"
@@ -67,19 +68,20 @@ export function RecentAuditLog() {
           ))}
         </div>
       ) : logs.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-8 text-center">
-          <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-sm border-2 border-ink bg-[#f1dfc4] dark:border-gray-500 dark:bg-gray-700"><ClockIcon className="h-7 w-7 text-ink dark:text-white" /></div>
-          <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">Belum ada aktivitas</p>
+        <div className="border-t-2 border-ink/20 py-6 dark:border-gray-600">
+          <p className="text-sm font-bold text-ink dark:text-gray-100">Belum ada aktivitas</p>
+          <p className="mt-1 text-sm text-ink-secondary dark:text-gray-300">
+            Perubahan terbaru akan tercatat di sini.
+          </p>
         </div>
       ) : (
         <ul className="space-y-1">
           {logs.map((log) => (
             <li
               key={log.id}
-              className="flex items-start gap-3 border-b-2 border-ink/20 py-2 last:border-0 dark:border-gray-600"
+              className="border-b-2 border-ink/20 py-2.5 last:border-0 dark:border-gray-600"
             >
-              <div className="w-2 h-2 rounded-full bg-primary-500 mt-1.5 shrink-0" />
-              <div className="flex-1 min-w-0">
+              <div className="min-w-0">
                 <p className="text-sm text-gray-800 dark:text-gray-200">
                   <span className="font-medium">{log.user?.fullName || 'Sistem'}</span>{' '}
                   <span className="text-gray-600 dark:text-gray-400">

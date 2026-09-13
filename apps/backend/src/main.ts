@@ -10,6 +10,11 @@ import { AppModule } from './app.module';
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
+  // Hanya percaya jumlah reverse proxy yang dikonfigurasi. Nilai 0 mencegah
+  // klien memalsukan X-Forwarded-For ketika backend diakses secara langsung.
+  const trustProxyHops = Math.max(0, Number(process.env.TRUST_PROXY_HOPS) || 0);
+  app.set('trust proxy', trustProxyHops);
+
   // Security headers (izinkan load images dari self)
   app.use(
     helmet({

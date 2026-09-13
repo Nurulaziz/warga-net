@@ -13,6 +13,7 @@ import {
   ChatBubbleLeftRightIcon,
   LockClosedIcon,
   DocumentTextIcon,
+  ClipboardDocumentListIcon,
   Cog6ToothIcon,
   UserIcon,
 } from '@heroicons/react/24/outline';
@@ -37,23 +38,24 @@ const wargaPrimaryItems: MobileNavItem[] = [
   { path: '/announcements', label: 'Info', icon: MegaphoneIcon },
 ];
 
-// Urutan disamakan dengan sidebar desktop: Keuangan → Data Warga → Komunikasi
-// → Pengguna & Akses → Sistem → Profil.
+// Urutan disamakan dengan sidebar desktop: Keuangan → Komunikasi → Data Warga
+// → Administrasi → Pengaturan → Profil.
 const moreItems: MobileNavItem[] = [
   // Keuangan (Iuran ada di tab bawah)
   { path: '/cash', label: 'Kas RT', icon: WalletIcon, adminOnly: true },
   { path: '/reports', label: 'Laporan', icon: DocumentTextIcon, adminOnly: true },
-  // Data Warga
-  { path: '/families', label: 'Keluarga', icon: UserGroupIcon, adminOnly: true },
-  { path: '/residents', label: 'Warga', icon: IdentificationIcon, adminOnly: true },
   // Komunikasi (Pengumuman ada di tab bawah)
   { path: '/suara-warga', label: 'Suara Warga', icon: ChatBubbleLeftRightIcon },
   { path: '/letters', label: 'Surat', icon: EnvelopeIcon },
-  // Pengguna & Akses
-  { path: '/users', label: 'Pengguna', icon: UserIcon, adminOnly: true },
-  { path: '/roles', label: 'Role & Permission', icon: LockClosedIcon, adminOnly: true },
-  // Sistem
-  { path: '/settings', label: 'Pengaturan', icon: Cog6ToothIcon, adminOnly: true },
+  // Data Warga
+  { path: '/residents', label: 'Warga', icon: IdentificationIcon, adminOnly: true },
+  { path: '/families', label: 'Keluarga', icon: UserGroupIcon, adminOnly: true },
+  // Administrasi
+  { path: '/users', label: 'Akun Pengguna', icon: UserIcon, adminOnly: true },
+  { path: '/roles', label: 'Peran & Akses', icon: LockClosedIcon, adminOnly: true },
+  { path: '/audit-log', label: 'Riwayat', icon: ClipboardDocumentListIcon, adminOnly: true },
+  // Pengaturan — path disesuaikan dengan role di dalam komponen.
+  { path: '/settings', label: 'Pengaturan', icon: Cog6ToothIcon },
   // Akun
   { path: '/profile', label: 'Profil', icon: UserIcon },
 ];
@@ -67,9 +69,11 @@ export function MobileNavigation() {
 
   // Sembunyikan item yang sudah tampil di tab bawah agar tidak dobel
   const primaryPaths = new Set(primaryItems.map((item) => item.path));
-  const visibleMoreItems = moreItems.filter(
-    (item) => (!item.adminOnly || admin) && !primaryPaths.has(item.path),
-  );
+  const visibleMoreItems = moreItems
+    .filter((item) => (!item.adminOnly || admin) && !primaryPaths.has(item.path))
+    .map((item) => item.path === '/settings' && !admin
+      ? { ...item, path: '/settings/appearance' }
+      : item);
 
   return (
     <>
@@ -84,12 +88,21 @@ export function MobileNavigation() {
                 `flex flex-col items-center justify-center flex-1 h-full transition-all ${
                   item.path === '/suara-warga' && isActive
                     ? 'relative mx-1 h-full rounded-sm border-2 border-ink bg-brand-500 px-1 text-white shadow-[2px_2px_0_#171717] font-black'
-                    : isActive ? 'border-t-4 border-brand-500 bg-[#f1dfc4] font-black text-ink dark:bg-gray-700 dark:text-white' : 'text-gray-600 dark:text-gray-400'
+                    : isActive
+                      ? 'border-t-4 border-brand-500 bg-[#f1dfc4] font-black text-ink dark:bg-gray-700 dark:text-white'
+                      : 'text-gray-600 dark:text-gray-400'
                 }`
               }
             >
-              <item.icon className={`${item.path === '/suara-warga' ? 'h-7 w-7' : 'h-6 w-6'} mb-1`} aria-hidden="true" />
-              <span className={`${item.path === '/suara-warga' ? 'text-[10px] font-black uppercase tracking-tight' : 'text-xs font-medium'}`}>{item.label}</span>
+              <item.icon
+                className={`${item.path === '/suara-warga' ? 'h-7 w-7' : 'h-6 w-6'} mb-1`}
+                aria-hidden="true"
+              />
+              <span
+                className={`${item.path === '/suara-warga' ? 'text-[10px] font-black uppercase tracking-tight' : 'text-xs font-medium'}`}
+              >
+                {item.label}
+              </span>
             </NavLink>
           ))}
           {/* More button */}

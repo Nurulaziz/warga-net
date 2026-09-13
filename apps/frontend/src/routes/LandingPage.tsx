@@ -3,6 +3,7 @@ import { useSettings } from '@/hooks/useSettings';
 import { LoginSlidePanel } from '@/components/auth/LoginSlidePanel';
 import { HeroVisual } from '@/components/landing/HeroVisual';
 import { useDismissibleLayer } from '@/hooks/useDismissibleLayer';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 import {
   ArrowRightIcon,
   Bars3Icon,
@@ -89,17 +90,25 @@ export function LandingPage() {
   const { settings } = useSettings();
   const [isLoginOpen, setLoginOpen] = useState(false);
   const [isMobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { rootRef: mobileMenuRef, triggerRef: mobileMenuTriggerRef } = useDismissibleLayer(isMobileMenuOpen, () => setMobileMenuOpen(false));
+  const { rootRef: mobileMenuRef, triggerRef: mobileMenuTriggerRef } = useDismissibleLayer(
+    isMobileMenuOpen,
+    () => setMobileMenuOpen(false),
+  );
   const [activeRow, setActiveRow] = useState<string | null>(null);
   const [heroWordIndex, setHeroWordIndex] = useState(0);
+  const reduceMotion = useMediaQuery('(prefers-reduced-motion: reduce)');
 
   useEffect(() => {
+    if (reduceMotion) {
+      setHeroWordIndex(0);
+      return;
+    }
     const interval = window.setInterval(() => {
       setHeroWordIndex((current) => (current + 1) % HERO_WORDS.length);
     }, 2400);
 
     return () => window.clearInterval(interval);
-  }, []);
+  }, [reduceMotion]);
 
   const openLogin = () => {
     setMobileMenuOpen(false);
@@ -118,7 +127,10 @@ export function LandingPage() {
         }`}
       >
         {/* ─── NAVBAR ─── */}
-        <header ref={mobileMenuRef} className="sticky top-0 z-30 border-b-2 border-ink bg-warm-50 dark:border-gray-600 dark:bg-gray-950">
+        <header
+          ref={mobileMenuRef}
+          className="sticky top-0 z-30 border-b-2 border-ink bg-warm-50 dark:border-gray-600 dark:bg-gray-950"
+        >
           <nav
             className="mx-auto flex max-w-[1220px] items-center gap-4 px-5 sm:px-8"
             style={{ height: 68 }}
@@ -175,7 +187,10 @@ export function LandingPage() {
 
           {/* Mobile menu */}
           {isMobileMenuOpen && (
-            <div role="menu" className="border-t-2 border-ink bg-warm-50 px-5 py-4 dark:border-gray-600 dark:bg-gray-950 lg:hidden">
+            <div
+              role="menu"
+              className="border-t-2 border-ink bg-warm-50 px-5 py-4 dark:border-gray-600 dark:bg-gray-950 lg:hidden"
+            >
               <ul className="flex flex-col gap-1">
                 {NAV_ITEMS.map((item) => (
                   <li key={item.href}>
@@ -211,7 +226,9 @@ export function LandingPage() {
                 <div className="sm:col-span-6 lg:col-span-7">
                   <div className="flex items-center gap-3">
                     <div className="h-[2px] w-8 bg-brand-500" />
-                    <span className="editorial-label !font-semibold !text-ink-secondary dark:!text-gray-300">Warganet</span>
+                    <span className="editorial-label !font-semibold !text-ink-secondary dark:!text-gray-300">
+                      Warganet
+                    </span>
                   </div>
 
                   <h1 className="mt-6 font-display text-[34px] font-bold leading-[1.02] tracking-[-0.04em] text-ink dark:text-gray-50 min-[420px]:text-[38px] sm:text-[52px] lg:text-[60px] xl:text-[64px]">
@@ -221,7 +238,7 @@ export function LandingPage() {
                       jadi lebih{' '}
                       <span
                         key={HERO_WORDS[heroWordIndex]}
-                        className="inline-block animate-[wordReveal_0.35s_ease-out] text-brand-500"
+                        className="rotating-word inline-block min-w-[5.5em] text-left text-[var(--accent)]"
                       >
                         {HERO_WORDS[heroWordIndex]}.
                       </span>
@@ -268,8 +285,8 @@ export function LandingPage() {
                     tidak tenggelam di grup chat.
                   </h2>
                   <p className="mt-6 max-w-[600px] text-[16px] leading-[1.65] text-ink-secondary dark:text-gray-300">
-                    Pengumuman, aspirasi, kegiatan, dan layanan warga punya tempatnya masing-masing —
-                    tetapi tetap terhubung dalam satu lingkungan digital.
+                    Pengumuman, aspirasi, kegiatan, dan layanan warga punya tempatnya masing-masing
+                    — tetapi tetap terhubung dalam satu lingkungan digital.
                   </p>
                 </div>
 
@@ -289,7 +306,10 @@ export function LandingPage() {
           {/* ─── 02 / PRODUK — 3 product stories ─── */}
           <section id="produk" className="mx-auto max-w-[1220px] px-5 sm:px-8">
             {/* SUARA WARGA — showcase besar */}
-            <div id="untuk-warga" className="grid min-h-[390px] grid-cols-1 items-center gap-10 py-12 sm:py-14 lg:grid-cols-2 lg:py-16">
+            <div
+              id="untuk-warga"
+              className="grid min-h-[390px] grid-cols-1 items-center gap-10 py-12 sm:py-14 lg:grid-cols-2 lg:py-16"
+            >
               <div>
                 <div className="flex items-center gap-3">
                   <span className="font-mono text-[13px] font-semibold text-brand-500">01</span>
@@ -704,7 +724,7 @@ export function LandingPage() {
                     <br />
                     <span
                       key={`cta-${CTA_WORDS[heroWordIndex]}`}
-                      className="inline-block animate-[wordReveal_0.35s_ease-out] text-brand-700"
+                      className="rotating-word inline-block min-w-[5.5em] text-left text-[var(--accent)]"
                     >
                       {CTA_WORDS[heroWordIndex]}
                     </span>

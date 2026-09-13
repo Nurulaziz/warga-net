@@ -10,6 +10,29 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  --accent: #2563eb;
+  --accent-hover: #1d4ed8;
+  --accent-rgb: 37 99 235;
+  --accent-hover-rgb: 29 78 216;
+  --font-body: 'Geist Variable', Geist, system-ui, sans-serif;
+  --font-display: 'Archivo Variable', Archivo, sans-serif;
+  --base-font-size: 16px;
+  --radius-control: 2px;
+  --space-page: 1.5rem;
+  --space-card: 1.5rem;
+  --space-control: 1rem;
+  --control-height: 44px;
+  --control-padding-x: 1rem;
+  --shadow-small: 2px 2px 0 #171717;
+  --shadow-card: 4px 4px 0 #171717;
+  --shadow-modal: 7px 7px 0 #171717;
+  --surface-page: #fff1dd;
+  --surface-card: #fffdf8;
+  --surface-hover: #fff8ec;
+  --surface-selected: #f1dfc4;
+  --color-income: #2f855a;
+  --color-expense: #c53030;
+  font-size: var(--base-font-size);
 }
 
 /* Light mode colors — warm editorial palette */
@@ -31,6 +54,40 @@
   --color-text-primary: #f7f6f1;
   --color-text-secondary: #a3a3a3;
   --color-border: #3f3f46;
+  --surface-page: #171717;
+  --surface-card: #1f2937;
+  --surface-hover: #374151;
+  --surface-selected: #d8c4a6;
+  --shadow-small: 2px 2px 0 #d4d4d4;
+  --shadow-card: 4px 4px 0 #737373;
+  --shadow-modal: 7px 7px 0 #a3a3a3;
+}
+
+:root[data-font='archivo'] {
+  --font-body: 'Archivo Variable', Archivo, sans-serif;
+}
+:root[data-font='mono'] {
+  --font-body: 'Geist Mono Variable', ui-monospace, monospace;
+  --font-display: 'Geist Mono Variable', ui-monospace, monospace;
+}
+:root[data-text-size='small'] {
+  --base-font-size: 14px;
+}
+:root[data-text-size='large'] {
+  --base-font-size: 18px;
+}
+:root[data-radius='square'] {
+  --radius-control: 0px;
+}
+:root[data-radius='rounded'] {
+  --radius-control: 10px;
+}
+:root[data-density='compact'] {
+  --space-page: 1rem;
+  --space-card: 1rem;
+  --space-control: 0.65rem;
+  --control-height: 38px;
+  --control-padding-x: 0.75rem;
 }
 
 body {
@@ -41,17 +98,179 @@ body {
   transition:
     background-color 0.2s ease,
     color 0.2s ease;
+  font-family: var(--font-body);
+  font-size: var(--base-font-size);
+}
+
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 0;
+  }
+
+  body.letter-print-mode * {
+    visibility: hidden !important;
+  }
+
+  body.letter-print-mode #root {
+    display: none !important;
+  }
+
+  body.letter-print-mode #letter-print-root,
+  body.letter-print-mode #letter-print-root * {
+    visibility: visible !important;
+  }
+
+  body.letter-print-mode #letter-print-root {
+    position: absolute;
+    top: 0;
+    left: 0;
+    display: block !important;
+    width: 210mm;
+    min-height: 0 !important;
+    height: auto !important;
+    margin: 0;
+    background: #fff;
+  }
+
+  body.letter-print-mode #letter-print-root .letter-print-preview {
+    width: 210mm;
+    max-width: none;
+    min-height: 0 !important;
+    height: auto !important;
+    max-height: none !important;
+    padding: 15mm;
+    border: 0;
+    box-shadow: none;
+    page-break-inside: avoid;
+    break-inside: avoid;
+    font-size: 12pt;
+    line-height: 1.6;
+  }
+
+  body.letter-print-mode .letter-print-preview > .whitespace-pre-wrap {
+    font-size: 12pt;
+    line-height: 1.6;
+  }
+
+  body.letter-print-mode .letter-print-preview .grid p {
+    font-size: 11pt;
+  }
+}
+
+.font-body {
+  font-family: var(--font-body) !important;
+}
+.font-display {
+  font-family: var(--font-display) !important;
+}
+
+@layer utilities {
+  .rounded-sm {
+    border-radius: var(--radius-control);
+  }
+
+  /* Jembatan untuk komponen lama agar aksen berubah langsung saat runtime. */
+  .bg-brand-500 {
+    background-color: var(--accent) !important;
+  }
+  .bg-brand-600 {
+    background-color: var(--accent-hover) !important;
+  }
+  .text-brand-500,
+  .text-brand-600,
+  .text-brand-700,
+  .text-brand-800,
+  .text-brand-900 {
+    color: var(--accent) !important;
+  }
+  .border-brand-300,
+  .border-brand-400,
+  .border-brand-500,
+  .border-brand-600,
+  .border-brand-700 {
+    border-color: var(--accent) !important;
+  }
+  .border-l-brand-500 {
+    border-left-color: var(--accent) !important;
+  }
+  .decoration-brand-500\/50 {
+    text-decoration-color: color-mix(in srgb, var(--accent) 50%, transparent) !important;
+  }
+  .hover\:text-brand-500:hover,
+  .hover\:text-brand-600:hover,
+  .hover\:text-brand-700:hover,
+  .hover\:text-brand-800:hover,
+  .group:hover .group-hover\:text-brand-500,
+  .dark .dark\:hover\:text-blue-400:hover,
+  .dark .dark\:hover\:text-blue-300:hover {
+    color: var(--accent) !important;
+  }
+
+  /* Alias palet lama. Ini menjaga komponen yang masih memakai `primary-*`
+     tetap mengikuti pilihan aksen tanpa mengubah warna status semantik. */
+  .bg-primary-50,
+  .bg-brand-50 {
+    background-color: color-mix(in srgb, var(--accent) 8%, var(--surface-card)) !important;
+  }
+  .bg-primary-100,
+  .bg-brand-100 {
+    background-color: color-mix(in srgb, var(--accent) 15%, var(--surface-card)) !important;
+  }
+  .bg-primary-500,
+  .bg-primary-600,
+  .bg-primary-700 {
+    background-color: var(--accent) !important;
+  }
+  .text-primary-300,
+  .text-primary-400,
+  .text-primary-500,
+  .text-primary-600,
+  .text-primary-700,
+  .text-primary-800 {
+    color: var(--accent) !important;
+  }
+  .border-primary-200,
+  .border-primary-300,
+  .border-primary-400,
+  .border-primary-500,
+  .border-primary-600,
+  .border-primary-700,
+  .border-primary-800 {
+    border-color: color-mix(in srgb, var(--accent) 62%, var(--color-border)) !important;
+  }
+  .hover\:bg-primary-700:hover {
+    background-color: var(--accent-hover) !important;
+  }
+  .hover\:border-primary-300:hover,
+  .hover\:border-primary-400:hover,
+  .dark .dark\:hover\:border-primary-700:hover {
+    border-color: var(--accent) !important;
+  }
+  .group:hover .group-hover\:text-primary-600,
+  .dark .group:hover .dark\:group-hover\:text-primary-400 {
+    color: var(--accent) !important;
+  }
+  .dark .dark\:bg-primary-900\/15,
+  .dark .dark\:bg-primary-900\/20,
+  .dark .dark\:bg-primary-900\/30 {
+    background-color: color-mix(in srgb, var(--accent) 18%, var(--surface-card)) !important;
+  }
+  .dark .dark\:text-primary-300,
+  .dark .dark\:text-primary-400 {
+    color: color-mix(in srgb, var(--accent) 72%, white) !important;
+  }
 }
 
 /* Tekstur kertas/dot-grid yang menjadi identitas visual WargaNet. */
 .app-paper {
-  background-color: #fff1dd;
+  background-color: var(--surface-page);
   background-image: radial-gradient(rgba(23, 23, 23, 0.11) 0.75px, transparent 0.75px);
   background-size: 20px 20px;
 }
 
 .dark .app-paper {
-  background-color: #171717;
+  background-color: var(--surface-page);
   background-image: radial-gradient(rgba(255, 255, 255, 0.09) 0.75px, transparent 0.75px);
 }
 
@@ -112,6 +331,16 @@ body {
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+.rotating-word {
+  animation: wordReveal 0.35s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rotating-word {
+    animation: none;
   }
 }
 
@@ -196,11 +425,12 @@ body {
   }
   /* Varian isi (brand) */
   .btn-brutal-primary {
-    background-color: #2563eb; /* brand-500 */
+    background-color: var(--accent);
     color: #ffffff;
   }
   .btn-brutal-primary:hover {
-    background-color: #1d4ed8; /* brand-600 */
+    background-color: var(--accent-hover);
+    filter: brightness(0.92);
   }
   /* Varian outline (di atas bg terang) */
   .btn-brutal-outline {
@@ -213,12 +443,13 @@ body {
   /* Varian di atas bg GELAP — edge & shadow putih agar tetap terlihat */
   .btn-brutal-on-dark {
     border-color: #ffffff;
-    background-color: #2563eb; /* brand-500 */
+    background-color: var(--accent);
     color: #ffffff;
     box-shadow: 6px 6px 0 0 #ffffff;
   }
   .btn-brutal-on-dark:hover {
-    background-color: #1d4ed8; /* brand-600 */
+    background-color: var(--accent-hover);
+    filter: brightness(0.92);
     box-shadow: 3px 3px 0 0 #ffffff;
   }
   .btn-brutal-on-dark:active {

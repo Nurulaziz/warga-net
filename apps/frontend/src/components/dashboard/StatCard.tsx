@@ -11,14 +11,7 @@ interface StatCardProps {
   to?: string;
 }
 
-export function StatCard({
-  icon,
-  value,
-  label,
-  valueClassName = '',
-  badge,
-  to,
-}: StatCardProps) {
+export function StatCard({ icon, value, label, valueClassName = '', badge, to }: StatCardProps) {
   const content = (
     <>
       {/* Icon container */}
@@ -28,7 +21,9 @@ export function StatCard({
 
       {/* Content */}
       <div className="flex flex-col gap-1">
-        <p className={`font-display text-2xl font-bold text-ink dark:text-gray-100 ${valueClassName}`}>
+        <p
+          className={`font-display text-2xl font-bold text-ink dark:text-gray-100 ${valueClassName}`}
+        >
           {value}
           {badge && (
             <span
@@ -44,20 +39,18 @@ export function StatCard({
   );
 
   const baseClass =
-    'rounded-sm border-2 border-ink bg-white p-5 shadow-[4px_4px_0_#171717] transition-transform duration-150 dark:border-gray-500 dark:bg-gray-800 dark:shadow-[4px_4px_0_#737373]';
+    'rounded-[var(--radius-control)] border-2 border-ink bg-[var(--surface-card)] p-5 shadow-[var(--shadow-card)] transition-[transform,background-color] duration-150 dark:border-gray-400';
 
   if (to) {
     return (
       <Link
         to={to}
-        className={`${baseClass} cursor-pointer hover:-translate-y-0.5 hover:bg-[#fff8ec] dark:hover:bg-gray-700`}
+        className={`${baseClass} cursor-pointer hover:-translate-y-0.5 hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus:ring-ink/30 focus:ring-offset-2`}
       >
         {content}
       </Link>
     );
   }
 
-  return (
-    <div className={baseClass}>{content}</div>
-  );
+  return <div className={baseClass}>{content}</div>;
 }

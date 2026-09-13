@@ -163,7 +163,7 @@ export function ProfilePage() {
               </h2>
 
               {/* Role badge */}
-              <span className="mt-2 inline-flex items-center gap-1.5 rounded-sm border border-ink bg-brand-100 px-3 py-1 text-xs font-bold text-brand-800 dark:border-gray-400 dark:bg-blue-950 dark:text-blue-200">
+              <span className="mt-2 inline-flex items-center gap-1.5 rounded-sm border border-ink bg-brand-100 px-3 py-1 text-xs font-bold text-brand-800 dark:border-gray-400">
                 <ShieldCheckIcon className="w-3.5 h-3.5" />
                 {roleLabel}
               </span>
@@ -351,7 +351,7 @@ function NavTab({
       onClick={onClick}
       className={`flex min-h-[44px] w-full items-center gap-3 rounded-sm border-2 px-3 py-2.5 text-sm font-bold transition-colors ${
         active
-          ? 'border-ink bg-brand-500 text-white shadow-[2px_2px_0_#171717] dark:border-gray-300 dark:bg-blue-600'
+          ? 'border-ink bg-brand-500 text-white shadow-[2px_2px_0_#171717] dark:border-gray-300'
           : 'border-transparent text-ink-secondary hover:border-ink hover:bg-warm-100 dark:text-gray-200 dark:hover:border-gray-400 dark:hover:bg-gray-700'
       }`}
     >

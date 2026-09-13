@@ -34,6 +34,18 @@ export class BillsService {
     private readonly notificationsService: NotificationsService,
   ) {}
 
+  private async notifyFamilySafely(
+    familyId: string,
+    data: Parameters<NotificationsService['notifyFamily']>[1],
+  ) {
+    try {
+      await this.notificationsService.notifyFamily(familyId, data);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      this.logger.error(`Gagal membuat notifikasi keluarga ${familyId}: ${message}`);
+    }
+  }
+
   // === Bill Types ===
 
   async findAllBillTypes() {
@@ -159,7 +171,7 @@ export class BillsService {
             status: 'unpaid',
           },
         });
-        void this.notificationsService.notifyFamily(family.id, { type: 'bill_created', title: 'Tagihan iuran baru', message: `Tagihan ${billType.name} periode ${period} sebesar Rp ${billType.amount.toLocaleString('id-ID')} telah dibuat.`, referenceType: 'bill', referenceId: createdBill.id });
+        await this.notifyFamilySafely(family.id, { type: 'bill_created', title: 'Tagihan iuran baru', message: `Tagihan ${billType.name} periode ${period} sebesar Rp ${billType.amount.toLocaleString('id-ID')} telah dibuat.`, referenceType: 'bill', referenceId: createdBill.id });
         created++;
       } catch {
         // Skip jika tagihan sudah ada (unique constraint)
@@ -279,7 +291,7 @@ export class BillsService {
 
     // Pembayaran manual (cash/transfer) langsung dianggap sah -> catat ke Kas RT
     await this.recordBillPaymentToCash(payment.id);
-    void this.notificationsService.notifyFamily(bill.familyId, { type: 'payment_received', title: 'Pembayaran diterima', message: `Pembayaran iuran sebesar Rp ${data.amount.toLocaleString('id-ID')} telah dicatat.`, referenceType: 'payment', referenceId: payment.id });
+    await this.notifyFamilySafely(bill.familyId, { type: 'payment_received', title: 'Pembayaran diterima', message: `Pembayaran iuran sebesar Rp ${data.amount.toLocaleString('id-ID')} telah dicatat.`, referenceType: 'payment', referenceId: payment.id });
 
     return payment;
   }
@@ -727,7 +739,7 @@ export class BillsService {
     }
     await this.recordBillPaymentToCash(payment.id);
     if (bill) {
-      void this.notificationsService.notifyFamily(bill.familyId, {
+      await this.notifyFamilySafely(bill.familyId, {
         type: 'payment_received',
         title: 'Pembayaran online berhasil',
         message: `Pembayaran iuran sebesar Rp ${payment.amount.toLocaleString('id-ID')} telah diterima.`,

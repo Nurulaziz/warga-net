@@ -151,6 +151,7 @@ export class LettersController {
       residentId?: string;
       recipientName: string;
       purpose?: string;
+      letterDate?: string;
       variables?: Record<string, string>;
       createdBy?: string;
     },

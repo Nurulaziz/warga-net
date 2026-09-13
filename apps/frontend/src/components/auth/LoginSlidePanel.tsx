@@ -162,9 +162,7 @@ export function LoginSlidePanel({ open, onClose, redirectTo = '/' }: LoginSlideP
                   MASUK
                 </p>
                 <h2 className="mt-3 font-display text-[26px] font-bold leading-[1.1] tracking-tight text-ink dark:text-gray-50">
-                  Masuk ke lingkungan
-                  <br />
-                  Anda.
+                  Masuk ke WargaNet.
                 </h2>
                 <p className="mt-3 text-[14px] leading-relaxed text-ink-secondary dark:text-gray-400">
                   Gunakan nomor WhatsApp yang terdaftar

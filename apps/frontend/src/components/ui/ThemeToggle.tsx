@@ -1,4 +1,4 @@
-import { useTheme } from '@/hooks/useTheme';
+import { useAppearance } from '@/contexts/AppearanceContext';
 import { MoonIcon, SunIcon } from '@heroicons/react/24/solid';
 
 interface ThemeToggleProps {
@@ -7,8 +7,12 @@ interface ThemeToggleProps {
 }
 
 export const ThemeToggle = ({ showLabel = false }: ThemeToggleProps) => {
-  const { theme, toggleTheme } = useTheme();
-  const isDark = theme === 'dark';
+  const { preferences, save } = useAppearance();
+  const isDark = document.documentElement.classList.contains('dark');
+
+  function toggleTheme() {
+    void save({ ...preferences, mode: isDark ? 'light' : 'dark' });
+  }
 
   return (
     <div className="flex items-center gap-2">
